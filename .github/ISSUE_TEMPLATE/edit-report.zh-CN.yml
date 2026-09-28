@@ -1,0 +1,105 @@
+name: 编辑反馈
+description: 反馈一次"指向某个部件、提出修改要求、结果不对"的问题。
+title: "[edit] "
+labels: ["edit-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        本表单用于反馈"指向了这个部件、提了修改要求、结果不对"这类问题。字段里用到的工具和
+        字段名请先看 `docs/TOOLS.md`（工具参考只有英文版，`studio_get_state`、
+        `studio_edit`、`studio_part_chat`）和 `docs/zh-CN/SCENE_EDITING.md`。
+        `edit-report` 和 `bug` 这两个 label 必须在仓库里存在，本表单的 `labels:`
+        字段才会生效（GitHub 会静默丢弃不存在的 label）。
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: 运行环境
+      description: 出问题时你在哪个环境里使用插件。
+      options:
+        - Codex 桌面端侧边栏面板
+        - Codex 打开的浏览器页面
+        - Claude Code + 浏览器页面
+        - 其他 MCP 客户端
+        - core CLI
+    validations:
+      required: true
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: 插件版本
+      description: >-
+        可从 `.codex-plugin/plugin.json` 的 `version` 字段读取，或看你所在宿主的 MCP
+        server 列表里上报的 `serverInfo.version`。`studio_capabilities` 不会返回版本号。
+      placeholder: 例如 0.8.6
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: false
+
+  - type: textarea
+    id: pointed_at
+    attributes:
+      label: 你指向了什么？
+      description: >-
+        说明你是怎么选中它的（视口点击、对象列表、调用 `studio_edit(action: "select")`，
+        或是从右键菜单打开的 part-chat 分支），以及从对象面板或
+        `studio_get_state.workbench.objects` 里看到的对象名字/id。
+      placeholder: |
+        例如：在视口里点了 "left_door" 这个部件（workbench.objects 里的 id 是 3ac2af0849e94a8cab7a8863bdd67c58）
+    validations:
+      required: true
+
+  - type: textarea
+    id: asked_for
+    attributes:
+      label: 你提出了什么要求？
+      description: 你输入的提示词，或者（如果你知道的话）具体的工具调用（名字和参数）。
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: 实际发生了什么？
+      description: >-
+        面板或工具返回结果显示了什么。如果有报错，请贴出 `error.code` 和错误信息；如相关，
+        请贴出操作日志相关行，并说明每一行归属 AI 还是人类。
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 你期望的结果是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据
+      description: >-
+        截图或 GIF；带 `revision` 和 `selection` 的 `studio_get_state` 片段；模型文件的
+        类型和大致大小。不要粘贴 API key 或 token。
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: shareable
+    attributes:
+      label: 共享
+      options:
+        - label: 模型文件可以共享
+          required: false

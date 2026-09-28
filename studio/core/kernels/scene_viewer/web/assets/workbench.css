@@ -1,0 +1,134 @@
+/* Studio's assembly tools use the same theme.css as editing and printing.
+   Legacy variable names below are adapters, not a second palette. */
+:root {
+  color-scheme:dark;
+  --paper:var(--bg-app); --paper-bright:var(--bg-column);
+  --ink:var(--text); --muted:var(--text-dim);
+  --rule:var(--line); --rule-strong:var(--line-strong);
+  --green:var(--accent-text); --green-soft:var(--bg-selected);
+  --amber:var(--warn); --amber-soft:var(--warn-soft);
+  --blue:var(--accent-text); --red:var(--danger); --shadow:var(--shadow-float);
+  --review-left:224px; --review-right:304px;
+}
+body {font:12px/1.5 var(--pico-font-family); color:var(--text); background:var(--bg-app)}
+#app {background:var(--studio-stage)}
+#app::before {display:none}
+#stage canvas {width:100%;height:100%;object-fit:contain}
+/* One type scale, including the old report's serif headings and numeric labels. */
+#app :is(button,select,input,h2,strong,dd,output,.case-number,.count-stale b) {font-family:inherit;font-style:normal;letter-spacing:0}
+#app :is(button,select,input):focus-visible {outline:2px solid var(--focus-ring);outline-offset:3px}
+#app :is(.case-rail,.audit-panel,.evidence-card,.curation-toolbar,.mode-switch,.pose-deck,.explode-deck) {
+  background:var(--bg-card);border:1px solid var(--line-card);border-radius:var(--r-card);
+  box-shadow:var(--shadow-float);backdrop-filter:var(--blur-float);
+}
+#app :is(button,select) {color:var(--text);font-weight:500;box-shadow:none}
+#app button {cursor:pointer;transition:background-color .12s,color .12s}
+#app button:hover:not(:disabled) {background:var(--bg-control-hi)}
+#app button:disabled {cursor:not-allowed}
+#app :is(.panel-kicker,.case-group-label,.inspector h3,.layers p) {font-size:11px;font-weight:500;letter-spacing:0;color:var(--text-dim);text-transform:none}
+#app :is(.case-copy small,.case-number,.case-note,.evidence-caption span,.pose-copy span,.pose-marks,.explode-copy,.scene-legend) {font-size:10px;letter-spacing:0;font-weight:400}
+#app .case-rail {left:16px;top:16px;width:208px;padding:8px;bottom:calc(var(--evidence-h,190px) + 36px);scrollbar-color:var(--line-strong) transparent}
+#app .case-group-label {background:var(--bg-column);padding:8px;border-bottom:1px solid var(--line)}
+#app .case-row {border-color:var(--line)}
+#app .case-mark {border:1px solid var(--line-strong);border-radius:6px;background:var(--bg-control);color:var(--text-dim);opacity:1;width:23px;height:23px}
+#app .case-mark-golden[aria-pressed=true] {background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+#app .case-mark-typical_bad[aria-pressed=true] {background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+#app .case-mark:hover {transform:none}
+#app .case-button {padding:7px 5px;gap:6px;grid-template-columns:23px minmax(0,1fr) auto;border-radius:var(--r-ctl);min-height:52px}
+#app .case-button::before {display:none}
+#app .case-button.is-active {background:var(--bg-selected);color:var(--accent-text)}
+#app .case-copy strong {font-size:12px;font-weight:500}
+#app .curation-toolbar {top:16px;right:16px;width:288px;height:42px;padding:6px 10px;gap:6px;border-radius:999px}
+#app .catalog-readout {grid-template-columns:minmax(0,1fr)}
+#catalog-kind {display:none}
+#app .catalog-readout select {font-size:11px;color:var(--text);font-weight:500}
+#app .curation-summary {font-size:10px;gap:4px;letter-spacing:0}
+#app #curation-export {height:28px;border-radius:999px;background:var(--bg-control);color:var(--text);font-size:10px;letter-spacing:0}
+#app .audit-panel {top:70px;right:16px;bottom:20px;width:288px;height:auto;padding:16px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent}
+#app .audit-panel>* {flex-shrink:0}
+#app .panel-head {gap:8px;padding-bottom:12px;align-items:center}
+#app .panel-head h2 {font-size:16px;line-height:1.4;font-weight:500;overflow-wrap:anywhere}
+#app .status-chip {padding:4px 7px;font-size:9px;font-weight:500;letter-spacing:0;background:var(--warn-soft);color:var(--warn);border-color:var(--line-strong)}
+#app .status-chip[data-state=ready] {color:var(--ok);background:var(--ok-soft)}
+#app .status-chip[data-state=provisional] {color:var(--warn);background:var(--warn-soft)}
+#app .status-chip[data-state=blocked] {color:var(--danger);background:var(--danger-soft)}
+#app .blocker-note {margin:12px 0;padding:10px;background:var(--warn-soft);border:1px solid var(--line);border-left:2px solid var(--warn);border-radius:var(--r-ctl)}
+#app .blocker-note span {font-size:10px;letter-spacing:0;font-weight:500}
+#app .blocker-note strong {font-size:12px;font-weight:500;line-height:1.5}
+#app .blocker-note p {font-size:11px;line-height:1.6}
+#app .fact-grid {margin:12px 0;border:0;gap:6px}
+#app .fact-grid div {border:0;min-height:60px;padding:9px;background:var(--bg-tile);border-radius:var(--r-ctl)}
+#app .fact-grid dt {font-size:10px;font-weight:400;letter-spacing:0}
+#app .fact-grid dd {font-size:11px;line-height:1.5}
+#app .layers {gap:10px 8px;margin:10px 0 14px}
+#app .layers label {font-size:10px;font-weight:400;color:var(--text-dim);min-width:0}
+#app .layers label span {background:var(--bg-control-hi)}
+#app .layers input:checked+span {background:var(--accent)}
+#app .layers input:focus-visible+span {outline:2px solid var(--focus-ring);outline-offset:3px}
+#app .inspector {overflow:visible;flex:none;margin-top:12px;gap:16px}
+#app .inspector-row {border-radius:var(--r-ctl);padding:7px 6px}
+#app .inspector-row.is-active {background:var(--bg-selected);color:var(--accent-text)}
+#app .inspector-row strong {font-size:11px;font-weight:500}
+#app .inspector-row em {font-size:10px;letter-spacing:0}
+#app .evidence-card {width:208px;bottom:20px;left:16px}
+#app .evidence-card.is-expanded {width:min(400px,calc(100vw - 336px))}
+#app .evidence-caption strong {font-size:11px;font-weight:400;line-height:1.6;color:var(--text-dim)}
+#app .evidence-image,#app .evidence-image img {background:var(--bg-control)}
+#app .image-corner {background:var(--bg-toolbar);letter-spacing:0;font-size:9px;font-weight:400;border-radius:5px}
+#app .mode-switch {top:16px;left:calc(var(--review-left) + 16px);right:auto;max-width:calc(100% - var(--review-left) - var(--review-right) - 32px);border-radius:999px}
+#app .mode-switch button {min-width:0;padding:7px 10px;gap:5px;font-size:11px}
+#app .mode-switch button :is(span,i) {font-family:inherit;font-size:11px;letter-spacing:0;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app .mode-switch button.is-active {background:var(--bg-selected);color:var(--accent-text)}
+#app :is(.pose-deck,.explode-deck) {left:calc(var(--review-left) + 16px);right:calc(var(--review-right) + 16px);min-width:0;padding:10px 12px;gap:10px;border-radius:999px}
+#app .pose-deck {grid-template-columns:32px 54px minmax(0,1fr);bottom:78px}
+#app .explode-deck {bottom:20px;grid-template-columns:auto auto minmax(0,1fr) 32px}
+#app .pose-copy strong {font-size:15px;color:var(--text);font-weight:500}
+#app #play-toggle {width:32px;height:32px;background:var(--accent)}
+#app #fit-view {border:1px solid var(--line-strong);border-radius:999px;background:var(--bg-control);font-size:11px;font-weight:500}
+#app :is(#pose-slider,#explode,.joint-slider input) {background:var(--line-strong);accent-color:var(--accent);min-width:0}
+#app :is(#pose-slider,#explode,.joint-slider input)::-webkit-slider-thumb {background:var(--accent-text);border:2px solid var(--bg-column);box-shadow:0 0 0 1px var(--line-strong)}
+#app :is(.joint-slider output,#explode-value) {font-size:10px;color:var(--text-dim)}
+#app .scene-legend {right:calc(var(--review-right) + 16px);bottom:150px;font-size:10px}
+#app .loading-curtain {background:var(--bg-app);color:var(--text)}
+#app .loading-curtain h2 {font-size:18px;font-weight:500}
+#app .review-session {position:absolute;bottom:2px;left:16px;z-index:4;max-width:calc(100% - 32px);color:var(--text-faint);font-size:9px;pointer-events:none}
+#inspector-toggle {display:none}
+#app[data-curation=disabled] :is(.curation-toolbar,.case-markers) {display:none}
+#app[data-curation=disabled] .case-row {grid-template-columns:1fr}
+#app[data-curation=disabled] .audit-panel {top:16px}
+@media(max-width:1100px) {
+  :root {--review-left:0px}
+  #app .case-rail {width:200px;max-height:132px;bottom:auto}
+  #app .evidence-card {display:none}
+  #app .mode-switch {top:160px}
+  #app .scene-legend {display:none}
+}
+@media(max-width:760px) {
+  :root {--review-left:0px;--review-right:0px}
+  #app .case-rail {left:12px;right:12px;top:12px;bottom:auto;width:auto;max-height:64px;padding:4px 8px;border-radius:var(--r-tile);flex-direction:row}
+  #app .case-group-label {padding:0 7px;background:transparent}
+  #app .case-row {min-width:180px;border:0}
+  #app .case-button {min-height:48px}
+  #app .curation-toolbar {top:86px;left:12px;right:12px;width:auto;height:36px}
+  #app .mode-switch {top:132px;left:12px;right:108px;max-width:none;overflow:hidden}
+  #app .mode-switch button {flex:1;min-width:0;padding:5px}
+  #app .mode-switch button i {font-size:10px}
+  #app #inspector-toggle {display:block;position:absolute;top:134px;right:12px;z-index:10;padding:6px 10px;border:1px solid var(--line-strong);border-radius:999px;background:var(--bg-toolbar);font-size:11px}
+  #app .audit-panel {top:176px;bottom:138px;left:12px;right:12px;width:auto;height:auto;padding:14px;background:var(--bg-column)}
+  #app .audit-panel.is-collapsed {display:none}
+  #app .fact-grid {display:grid}
+  #app .case-note {display:block}
+  #app :is(.pose-deck,.explode-deck) {left:12px;right:12px}
+  #app .pose-deck {bottom:76px}
+  #app .explode-deck {bottom:20px}
+  #app[data-curation=disabled] .mode-switch {top:86px}
+  #app[data-curation=disabled] #inspector-toggle {top:88px}
+  #app[data-curation=disabled] .audit-panel {top:130px}
+}
+@media(max-height:560px) and (max-width:760px) {
+  #app .audit-panel {top:76px;bottom:20px;z-index:11}
+  #app #inspector-toggle {z-index:12}
+  #app[data-curation=disabled] .audit-panel {top:76px}
+}
+
+#app .loading-command {background:var(--bg-card);border-color:var(--line-strong);color:var(--text-dim)}

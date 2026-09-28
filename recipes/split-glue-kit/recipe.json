@@ -1,0 +1,147 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "split-glue-kit",
+  "version": "0.2.0",
+  "title": "拆件胶装套件",
+  "goal": "整体手办/雕塑拆成可独立打印、清理、定位、胶装的件",
+  "use_when": [
+    "整体雕塑/手办要拆成能分开打印、再胶合回去的实体件",
+    "有指定的关键外观面（脸、正面）必须独立成件，不能被合并",
+    "拆件靠定位销+胶就够，不需要能活动的关节"
+  ],
+  "not_for": [
+    "只是想按颜色拆分单壳模型 → 改用 color-split",
+    "只是单件超出打印床、想切一刀 → 改用 cut-to-fit",
+    "件与件之间要能转动/活动 → 这条路线不管关节"
+  ],
+  "inputs": [
+    "mesh",
+    "labels",
+    "cut_plan"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "尺寸是不是毫米制、要不要按目标高度统一缩放",
+      "accept": "readiness 里 model 为 pass：全部闭合、放得进机床",
+      "optional": false
+    },
+    {
+      "key": "split",
+      "row": "split",
+      "tool": "studio_edit#split_components",
+      "who": "you",
+      "args": {
+        "action": "split_components"
+      },
+      "decide": "关键外观面有没有被单独分进一件，没有被漏切也没有被误合并",
+      "accept": "件数与关键外观面标签数一致，关键面所在件没有被二次拆分",
+      "optional": false
+    },
+    {
+      "key": "add_pins",
+      "row": "connect",
+      "tool": "studio_task#connect-parts",
+      "who": "either",
+      "decide": "明确两个闭合部件的平面接缝、同向销轴、圆销或 D 形销、孔深和最小壁厚；非平面接缝不适用。",
+      "accept": "报告通过：孔壁包络完整、销孔无相交、拔出采样无碰撞。重载输出后再排盘。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "connect-parts"
+      }
+    },
+    {
+      "key": "check_assembly",
+      "row": "connect",
+      "tool": "studio_task#removal-audit",
+      "who": "either",
+      "args": {
+        "action": "start",
+        "template": "removal-audit"
+      },
+      "decide": "每个件的取出方向有没有被别的件挡住、装配顺序合不合理",
+      "accept": "离散装配路径逐段通过，沿途没有件与件相交",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "strategy": "auto",
+        "shape": "figurine"
+      },
+      "decide": "关键面朝向决定支撑落点，正面能不能避开支撑",
+      "accept": "readiness 里 orient 为 pass",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "单盘放不放得下，要不要拆成多盘",
+      "accept": "readiness 里 arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "figurine"
+      },
+      "decide": "工艺预设的层高与耗材档位是不是这批件想要的",
+      "accept": "readiness 里 export 为 pass，工程文件生成成功",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "关键面附近有没有近距支撑、耗材和时间是否在预期范围",
+      "accept": "readiness 里 check 为 pass，关键面附近近距支撑为 0",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "确认要发送打开的就是这一盘，不是别的候选",
+      "accept": "Bambu Studio 已打开对应工程（loaded 为 unverified，仅供参考）",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/static_kit_015",
+      "date": "2026-09-15",
+      "note": "独立脸 0.02mm 硬约束、D 销孔间隙、装配顺序的做法与阈值"
+    },
+    {
+      "ref": "fdm_preprint/assembly_connectors_028",
+      "date": "2026-09-16",
+      "note": "一体 D 销/孔设计、装配路径分步检查、握持区加工例外的记录方式"
+    },
+    {
+      "ref": "fdm_preprint/minimal_kit_026",
+      "date": "2026-09-16",
+      "note": "主体优先保持完整、只在有明确收益时才加切缝；静态零重叠不等于装得进去"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

@@ -1,0 +1,22 @@
+{
+  "repository": "MotionForge",
+  "commit": "18a11fe175691538962b5659a4797c3d3c24ed17",
+  "license": "MotionForge is the plugin author's own project, public at https://github.com/Hockwang/MotionForge (the vendored files correspond to commit 18a11fe); it is being published under the same license as this repository. See LICENSE.",
+  "patches": [
+    "Normalize CRLF to LF",
+    "Disable KeyframeManager evaluatePkfFormula new Function; override with restricted jsep AST interpreter",
+    "ResultPackageExporter accepts actual fps instead of hard-coded 30"
+  ],
+  "files": [
+    {
+      "file": "KeyframeManager.js",
+      "source_sha256": "f6844359145e20e02e4c5460a499f1d1e0407f552012a5e38ffe86d5840a0466",
+      "vendored_sha256": "85dfca37080f6b8cd738da750a8affb3d50d3735add51d955833b8f69bbe9c14"
+    },
+    {
+      "file": "ResultPackageExporter.js",
+      "source_sha256": "d5308e03e42ac3f68aad2aff985ff3f2d917e7f907c513da78f634de09df82cd",
+      "vendored_sha256": "3da2341412f2f07664135a9cbfdd04b7ea15d55adc5cd555abd3486c74561490"
+    }
+  ]
+}

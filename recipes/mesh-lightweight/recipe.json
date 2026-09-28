@@ -1,0 +1,81 @@
+{
+  "schema": "print-prep.recipe/1",
+  "workspace": "edit",
+  "id": "mesh-lightweight",
+  "version": "0.1.0",
+  "title": "模型减面",
+  "goal": "选择减面比例，对照轮廓和细节损失",
+  "use_when": [
+    "已有静态网格，需要完成明确的编辑任务"
+  ],
+  "not_for": [
+    "骨架、动画或需要生成模型自动理解的任务"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_edit",
+      "who": "you",
+      "args": {
+        "action": "import"
+      },
+      "decide": "导入模型或使用当前工程，确认单位和选区",
+      "accept": "该操作成功返回；检查实际结果，操作成功不代表所有质量条件通过。",
+      "optional": false
+    },
+    {
+      "key": "inspect",
+      "row": "inspect_mesh",
+      "tool": "studio_edit",
+      "who": "you",
+      "args": {
+        "action": "inspect"
+      },
+      "decide": "先看拓扑诊断，确认要处理哪些对象",
+      "accept": "该操作成功返回；检查实际结果，操作成功不代表所有质量条件通过。",
+      "optional": false
+    },
+    {
+      "key": "process",
+      "row": "simplify_mesh",
+      "tool": "studio_edit",
+      "who": "you",
+      "args": {
+        "action": "simplify"
+      },
+      "decide": "选择减面比例，对照轮廓和细节损失",
+      "accept": "该操作成功返回；检查实际结果，操作成功不代表所有质量条件通过。",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export_mesh",
+      "tool": "studio_edit",
+      "who": "you",
+      "args": {
+        "action": "export",
+        "params": {
+          "format": "glb"
+        }
+      },
+      "decide": "导出可见对象或指定对象，核对实际 GLB 文件",
+      "accept": "该操作成功返回；检查实际结果，操作成功不代表所有质量条件通过。",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "studio/core/editor.py",
+      "date": "2026-09-21",
+      "note": "工作台已有编辑操作与工程版本校验"
+    }
+  ],
+  "author": "3D Workbench",
+  "license": "同仓库"
+}

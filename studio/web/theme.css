@@ -1,0 +1,64 @@
+/* Shared product skin. Pico supplies native controls; modules own geometry/layout. */
+@font-face{font-family:Workbench Plex;src:url('./vendor/ui/plex-400.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Workbench Plex;src:url('./vendor/ui/plex-500.woff2') format('woff2');font-weight:500;font-display:swap}
+@font-face{font-family:Workbench Plex;src:url('./vendor/ui/plex-600.woff2') format('woff2');font-weight:600;font-display:swap}
+/* Lux3D palette is the shared authority for every workspace (SPEC.md §9).
+   Neutral surfaces carry hierarchy; blue is reserved for selection and actions. */
+:root, #wb, #print-prep-app {
+  color-scheme: dark;
+  --studio-stage: radial-gradient(ellipse 55% 45% at 12% 0%, #ffffff0d, transparent 70%), radial-gradient(ellipse 60% 46% at 50% 48%, #4da3ff0c, transparent 72%), #000;
+  --bg-app: #000000;
+  --bg-column: #080808;
+  --bg-card: rgba(16,16,18,.86);
+  --bg-toolbar: rgba(41,45,50,.92);
+  --bg-selected: #0d1528;
+  --bg-tile: rgba(255,255,255,.045);
+  --bg-control: rgba(255,255,255,.07);
+  --bg-control-hi: rgba(255,255,255,.12);
+  --line: #ffffff14;
+  --line-strong: #ffffff26;
+  --line-card: #ffffff1f;
+  --text: #ededed;
+  --text-dim: #b8bac1;
+  --text-faint: #929298;
+  --accent: #2261f5;
+  --accent-hover: #3973ff;
+  --accent-ink: #ffffff;
+  --accent-text: #79b7ff;
+  --accent-line: #7199f2;
+  --accent-ring: #7199f233;
+  --focus-ring: #79b7ff;
+  --ok: #34d399;
+  --ok-soft: #34d39914;
+  --warn: #ffbc33;
+  --warn-soft: #ffbc3314;
+  --danger: #fb7185;
+  --danger-soft: #fb718518;
+  --ai: var(--accent-text);
+  --ai-soft: var(--bg-selected);
+  --r-card: 18px;
+  --r-tile: 12px;
+  --r-ctl: 10px;
+  --blur-float: blur(20px);
+  --shadow-float: 0 12px 32px #0005;
+  --pico-font-family: 'Workbench Plex', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --pico-font-size: 12px;
+  --pico-line-height: 1.5;
+  --pico-spacing: 1rem;
+  --pico-form-element-spacing-vertical: .5rem;
+  --pico-form-element-spacing-horizontal: .75rem;
+  --pico-background-color: var(--bg-column);
+  --pico-color: var(--text);
+  --pico-muted-color: var(--text-dim);
+  --pico-primary: var(--accent-text);
+  --pico-primary-background: var(--accent);
+  --pico-primary-border: var(--accent);
+  --pico-form-element-background-color: var(--bg-control);
+  --pico-form-element-color: var(--text);
+  --pico-form-element-border-color: var(--line-strong);
+  --pico-form-element-placeholder-color: var(--text-faint);
+  --pico-form-element-focus-color: var(--accent-ring);
+  --pico-border-radius: 6px;
+  --pico-table-border-color: var(--line);
+  font: 12px/1.5 var(--pico-font-family);
+}

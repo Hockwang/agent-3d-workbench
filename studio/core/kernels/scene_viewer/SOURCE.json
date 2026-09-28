@@ -1,0 +1,43 @@
+{
+  "source": "author's private research tooling: tooling/scene_viewer",
+  "commit": "25ebacd90ae854dcd0ff9133c4d521cbb1e88823",
+  "snapshot": "2026-09-22 working tree (includes uncommitted upstream changes)",
+  "files": [
+    {
+      "file": "scene_contract.py",
+      "sha256": "72435dc2cd335242604ccca4f16dfcb735f2b94f72d6f45626066b0cf41112b1"
+    },
+    {
+      "file": "adapters/merge_ui.py",
+      "sha256": "683c8063072588da85959f885c90bba1f7e9b5fe3a599652ee244ac67d5a17e1"
+    },
+    {
+      "file": "adapters/a8_catalog.py",
+      "sha256": "d8e9e13882429d63e80996c2fffdc063c2c50497f23d5be153f444079fc5fa75"
+    },
+    {
+      "file": "web/index.html",
+      "sha256": "e1220711e28c79380fd5807ed0ff0dc29f7e6a496b976ae89f0766cb68cb5430"
+    },
+    {
+      "file": "web/assets/viewer.js",
+      "sha256": "baf8e9441c5303b4eb9c57b1739f7f7c7d8f3c0b26ecc96e601194f1f0a7fdf6"
+    },
+    {
+      "file": "web/assets/viewer.css",
+      "sha256": "6478eb6d4d552e95cf9a72996da068c446fdb278a4186e21b05eda9216018dd0"
+    }
+  ],
+  "adaptations": [
+    "Relative Python imports",
+    "Offline asset loading and curation export; no registry writes",
+    "Workbench RenderLoop and resize settling; no continuous idle render",
+    "Sandboxed review export through the workbench upload API with saved-path acknowledgement",
+    "Responsive inspector and tool layout for the Codex side workspace",
+    "Dispose stale scene assets and reject obsolete asynchronous case loads",
+    "Retain explicit frameOnly links for Dashboard viewer_model kinematic frames",
+    "Allow an embedding platform to disable local G/B curation",
+    "Studio shared theme tokens and ViewportFrame; neutral scene lighting",
+    "Review curation policy belongs to viewer data, without platform-injected CSS"
+  ]
+}

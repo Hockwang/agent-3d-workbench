@@ -1,0 +1,33 @@
+/* The conversation owns a small launcher; the host's right panel owns the editor. */
+#print-prep-app {
+  --safe-top: 0px; --safe-right: 0px; --safe-bottom: 0px; --safe-left: 0px;
+  color: var(--text); background: var(--bg-app); width: 100%; color-scheme: dark;
+}
+#print-prep-app [hidden] { display: none !important; }
+#workspace { position: relative; width: 100%; height: 100dvh; overflow: hidden; }
+#workspace #wb {
+  position: absolute;
+  inset: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+#launch-card {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px 16px;
+  min-height: 132px; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: #181c25;
+}
+.card-identity { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-identity strong { font-size: 15px; letter-spacing: -.3px; }
+.mark { font-size: 30px; color: #b4d1fa; line-height: 1; }
+#workspace-summary { margin: 4px 0 0; color: var(--text-dim); font-size: 11px; }
+#launch-project { margin:4px 0 0; color:var(--accent-text); font-size:11px; overflow-wrap:anywhere; }
+#launch-status { grid-column: 1 / -1; margin: 0; color: var(--text-dim); font-size: 11px; overflow-wrap: anywhere; }
+#launch-status.error { color: var(--danger); }
+#workspace-error { position: fixed; z-index: 1000; top: 12px; left: 12px; right: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 16px; background: #2c2022; color: #ffd5d7; border: 1px solid #70464c; border-radius: 9px; }
+#workspace-error span { flex: 1; overflow-wrap: anywhere; }
+#workspace-retry { flex: none; width: auto; margin: 0; }
+#open-workspace { border: 0; border-radius: 7px; min-height: 34px; padding: 6px 12px; font: inherit; background: #82b5ff; color: #101a29; cursor: pointer; font-weight: 600; }
+#open-workspace:hover:not(:disabled) { background: #a8ceff; }
+@media (max-width: 360px) {
+  #launch-card { grid-template-columns: 1fr; padding: 16px; }
+  #open-workspace { justify-self: start; }
+  #ctx { padding-inline: 10px; gap: 6px; }
+  .ctx-main { flex-direction: column; gap: 0; }
+}

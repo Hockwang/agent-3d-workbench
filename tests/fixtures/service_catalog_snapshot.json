@@ -1,0 +1,705 @@
+[
+  {
+    "adapter": "lux3d",
+    "configured": false,
+    "id": "lux3d",
+    "key_env": "LUX3D_CN_API_KEY",
+    "needs_base_url": false,
+    "operation_templates": [
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "image-to-3d",
+        "input_mode": "image",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "version": "G1-Turbo"
+        },
+        "title": "图片生成模型"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multi-image-to-3d",
+        "input_mode": "image",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "version": "G1-Turbo"
+        },
+        "title": "多视图生成模型"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "text-to-3d",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "prompt": "",
+          "version": "G1-Turbo"
+        },
+        "title": "文字生成模型"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "material-transfer",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "outputFormat": "glb",
+          "version": "v3.0-standard"
+        },
+        "title": "材质重绘"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "four-view",
+        "input_mode": "image",
+        "optional_params": [
+          "prompt"
+        ],
+        "params": {
+          "prompt": ""
+        },
+        "title": "生成四视图"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multimodal-image",
+        "input_mode": "image",
+        "optional_params": [
+          "prompt"
+        ],
+        "params": {
+          "prompt": ""
+        },
+        "title": "生成参考图"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "3mf": "3MF",
+            "fbx_zip": "FBX_ZIP",
+            "obj_zip": "OBJ_ZIP",
+            "stl": "STL",
+            "usdz": "USDZ"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multi-format-export",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "outputFormat": "stl"
+        },
+        "title": "多格式转换"
+      }
+    ],
+    "operations": [
+      "image-to-3d",
+      "multi-image-to-3d",
+      "text-to-3d",
+      "material-transfer",
+      "four-view",
+      "multimodal-image",
+      "multi-format-export"
+    ],
+    "region": "cn",
+    "setup_message": "配置 Lux3D 专用 API key；国内和国际站密钥分别保存，支持余额、报价和远端任务恢复。",
+    "timeout_seconds": 1800,
+    "title": "Lux3D · 国内站"
+  },
+  {
+    "adapter": "lux3d",
+    "configured": false,
+    "id": "lux3d-global",
+    "key_env": "LUX3D_GLOBAL_API_KEY",
+    "needs_base_url": false,
+    "operation_templates": [
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "image-to-3d",
+        "input_mode": "image",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "version": "G1-Turbo"
+        },
+        "title": "图片生成模型"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multi-image-to-3d",
+        "input_mode": "image",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "version": "G1-Turbo"
+        },
+        "title": "多视图生成模型"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "glb": "GLB",
+            "ply": "高斯 PLY",
+            "zip": "原始 ZIP"
+          },
+          "version": {
+            "G1": "G1",
+            "G1-Turbo": "G1-Turbo"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "text-to-3d",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "faceCount": 100000,
+          "outputFormat": "glb",
+          "prompt": "",
+          "version": "G1-Turbo"
+        },
+        "title": "文字生成模型"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "material-transfer",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "outputFormat": "glb",
+          "version": "v3.0-standard"
+        },
+        "title": "材质重绘"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "four-view",
+        "input_mode": "image",
+        "optional_params": [
+          "prompt"
+        ],
+        "params": {
+          "prompt": ""
+        },
+        "title": "生成四视图"
+      },
+      {
+        "choices": {},
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multimodal-image",
+        "input_mode": "image",
+        "optional_params": [
+          "prompt"
+        ],
+        "params": {
+          "prompt": ""
+        },
+        "title": "生成参考图"
+      },
+      {
+        "choices": {
+          "outputFormat": {
+            "3mf": "3MF",
+            "fbx_zip": "FBX_ZIP",
+            "obj_zip": "OBJ_ZIP",
+            "stl": "STL",
+            "usdz": "USDZ"
+          }
+        },
+        "description": "Lux3D 官方服务。可上传本机文件，或在高级参数填写 img/imgs/meshUrl/modelUrl；材质重绘需要模型和参考图。",
+        "id": "multi-format-export",
+        "input_mode": "files",
+        "optional_params": [],
+        "params": {
+          "outputFormat": "stl"
+        },
+        "title": "多格式转换"
+      }
+    ],
+    "operations": [
+      "image-to-3d",
+      "multi-image-to-3d",
+      "text-to-3d",
+      "material-transfer",
+      "four-view",
+      "multimodal-image",
+      "multi-format-export"
+    ],
+    "region": "international",
+    "setup_message": "配置 Lux3D 专用 API key；国内和国际站密钥分别保存，支持余额、报价和远端任务恢复。",
+    "timeout_seconds": 1800,
+    "title": "Lux3D · 国际站"
+  },
+  {
+    "adapter": "seed3d-chat",
+    "configured": false,
+    "id": "seed3d",
+    "key_env": "SEED3D_API_KEY",
+    "needs_base_url": true,
+    "operation_templates": [
+      {
+        "description": "调用 Seed3D 2.0 生成带纹理模型。本机参考图会发送至所配置服务，通常需数分钟。",
+        "id": "image-to-3d",
+        "input_mode": "image",
+        "labels": {
+          "prompt": "生成要求"
+        },
+        "params": {
+          "prompt": "Generate a 3D model from this image."
+        },
+        "title": "Seed3D · 图片生成模型"
+      }
+    ],
+    "operations": [
+      "image-to-3d"
+    ],
+    "setup_message": "在 services.json 配置 base_url（任意兼容 OpenAI chat/completions 协议的网关）和 SEED3D_API_KEY；无需额外 GPT API。",
+    "timeout_seconds": 1800,
+    "title": "Seed3D"
+  },
+  {
+    "adapter": "hunyuan-responses",
+    "configured": false,
+    "id": "hunyuan",
+    "key_env": "HUNYUAN_API_KEY",
+    "needs_base_url": true,
+    "operation_templates": [
+      {
+        "choices": {
+          "model": {
+            "hunyuan-3d-3.0-pro": "3.0-pro",
+            "hunyuan-3d-3.1-pro": "3.1-pro",
+            "hunyuan-3d-pro": "pro",
+            "hunyuan-3d-rapid": "rapid"
+          },
+          "output_format": {
+            "FBX": "FBX",
+            "GLB": "GLB",
+            "OBJ": "OBJ"
+          }
+        },
+        "description": "直接调用 Hunyuan 3D。需要继续 Part 分件时选择 FBX。本机图片会发送到所配置的服务。",
+        "id": "image-to-3d",
+        "input_mode": "image",
+        "labels": {
+          "face_count": "目标面数",
+          "model": "生成模型",
+          "output_format": "输出格式"
+        },
+        "params": {
+          "face_count": 60000,
+          "model": "hunyuan-3d-3.1-pro",
+          "output_format": "FBX"
+        },
+        "title": "Hunyuan · 图片生成模型"
+      },
+      {
+        "choices": {
+          "model": {
+            "hunyuan-3d-3.0-pro": "3.0-pro",
+            "hunyuan-3d-3.1-pro": "3.1-pro",
+            "hunyuan-3d-pro": "pro",
+            "hunyuan-3d-rapid": "rapid"
+          },
+          "output_format": {
+            "FBX": "FBX",
+            "GLB": "GLB",
+            "OBJ": "OBJ"
+          }
+        },
+        "description": "直接调用 Hunyuan 3D。需要继续 Part 分件时选择 FBX。",
+        "id": "text-to-3d",
+        "input_mode": "remote_urls",
+        "labels": {
+          "face_count": "目标面数",
+          "model": "生成模型",
+          "output_format": "输出格式"
+        },
+        "params": {
+          "face_count": 60000,
+          "model": "hunyuan-3d-3.1-pro",
+          "output_format": "FBX",
+          "prompt": ""
+        },
+        "title": "Hunyuan · 文字生成模型"
+      },
+      {
+        "description": "选择之前生成 FBX 的任务，或填 FBX 链接。生成式分件可能改变原始几何和纹理，需要观察验收。",
+        "id": "segment",
+        "input_mode": "remote_urls",
+        "labels": {
+          "file_url": "或填可访问的 FBX 链接",
+          "source_task": "已生成的 FBX 任务"
+        },
+        "optional_params": [
+          "source_task",
+          "file_url"
+        ],
+        "params": {
+          "file_url": "",
+          "source_task": ""
+        },
+        "title": "Hunyuan Part · 语义分件"
+      }
+    ],
+    "operations": [
+      "image-to-3d",
+      "text-to-3d",
+      "segment"
+    ],
+    "setup_message": "在 services.json 配置 base_url（任意兼容 Hunyuan Responses 协议的 OpenAI 兼容网关）和 HUNYUAN_API_KEY；无需额外 GPT API。",
+    "timeout_seconds": 1800,
+    "title": "Hunyuan 3D / Part"
+  },
+  {
+    "adapter": "assembly",
+    "configured": false,
+    "id": "assembly",
+    "input_mode": "remote_urls",
+    "key_env": null,
+    "needs_base_url": false,
+    "operation_templates": [
+      {
+        "choices": {
+          "cfgType": {
+            "regular": "Regular",
+            "separated": "Separated"
+          },
+          "cutBackend": {
+            "": "默认路线",
+            "cube": "Cubepart"
+          },
+          "meshUpAxis": {
+            "y_up": "Y 向上（标准 GLB）",
+            "z_up": "Z 向上"
+          },
+          "rigBackend": {
+            "auto": "自动选择",
+            "puppeteer": "Puppeteer",
+            "skintokens": "SkinTokens"
+          }
+        },
+        "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
+        "id": "assemble",
+        "labels": {
+          "cfgType": "动作引导模式",
+          "cfgWeight": "动作引导强度",
+          "cutBackend": "拆件路线",
+          "duration": "动作时长 · 秒",
+          "exportBvh": "导出 BVH 动作",
+          "meshUpAxis": "模型向上轴",
+          "meshUrl": "模型 GLB 链接",
+          "numSamples": "候选动作数",
+          "prompt": "任务描述",
+          "returnCosUrl": "返回可下载结果",
+          "rigBackend": "绑骨路线"
+        },
+        "optional_params": [
+          "cutBackend"
+        ],
+        "params": {
+          "cutBackend": "",
+          "meshUpAxis": "y_up",
+          "meshUrl": "",
+          "prompt": ""
+        },
+        "title": "生成可动装配"
+      },
+      {
+        "choices": {
+          "cfgType": {
+            "regular": "Regular",
+            "separated": "Separated"
+          },
+          "cutBackend": {
+            "": "默认路线",
+            "cube": "Cubepart"
+          },
+          "meshUpAxis": {
+            "y_up": "Y 向上（标准 GLB）",
+            "z_up": "Z 向上"
+          },
+          "rigBackend": {
+            "auto": "自动选择",
+            "puppeteer": "Puppeteer",
+            "skintokens": "SkinTokens"
+          }
+        },
+        "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
+        "id": "segment",
+        "labels": {
+          "cfgType": "动作引导模式",
+          "cfgWeight": "动作引导强度",
+          "cutBackend": "拆件路线",
+          "duration": "动作时长 · 秒",
+          "exportBvh": "导出 BVH 动作",
+          "meshUpAxis": "模型向上轴",
+          "meshUrl": "模型 GLB 链接",
+          "numSamples": "候选动作数",
+          "prompt": "任务描述",
+          "returnCosUrl": "返回可下载结果",
+          "rigBackend": "绑骨路线"
+        },
+        "optional_params": [
+          "cutBackend"
+        ],
+        "params": {
+          "cutBackend": "",
+          "meshUpAxis": "y_up",
+          "meshUrl": ""
+        },
+        "title": "模型语义拆件"
+      },
+      {
+        "choices": {
+          "cfgType": {
+            "regular": "Regular",
+            "separated": "Separated"
+          },
+          "cutBackend": {
+            "": "默认路线",
+            "cube": "Cubepart"
+          },
+          "meshUpAxis": {
+            "y_up": "Y 向上（标准 GLB）",
+            "z_up": "Z 向上"
+          },
+          "rigBackend": {
+            "auto": "自动选择",
+            "puppeteer": "Puppeteer",
+            "skintokens": "SkinTokens"
+          }
+        },
+        "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
+        "id": "rig-glb",
+        "labels": {
+          "cfgType": "动作引导模式",
+          "cfgWeight": "动作引导强度",
+          "cutBackend": "拆件路线",
+          "duration": "动作时长 · 秒",
+          "exportBvh": "导出 BVH 动作",
+          "meshUpAxis": "模型向上轴",
+          "meshUrl": "模型 GLB 链接",
+          "numSamples": "候选动作数",
+          "prompt": "任务描述",
+          "returnCosUrl": "返回可下载结果",
+          "rigBackend": "绑骨路线"
+        },
+        "optional_params": [
+          "cutBackend"
+        ],
+        "params": {
+          "meshUpAxis": "y_up",
+          "meshUrl": "",
+          "rigBackend": "auto"
+        },
+        "title": "自动绑骨 · GLB"
+      },
+      {
+        "choices": {
+          "cfgType": {
+            "regular": "Regular",
+            "separated": "Separated"
+          },
+          "cutBackend": {
+            "": "默认路线",
+            "cube": "Cubepart"
+          },
+          "meshUpAxis": {
+            "y_up": "Y 向上（标准 GLB）",
+            "z_up": "Z 向上"
+          },
+          "rigBackend": {
+            "auto": "自动选择",
+            "puppeteer": "Puppeteer",
+            "skintokens": "SkinTokens"
+          }
+        },
+        "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
+        "id": "rig",
+        "labels": {
+          "cfgType": "动作引导模式",
+          "cfgWeight": "动作引导强度",
+          "cutBackend": "拆件路线",
+          "duration": "动作时长 · 秒",
+          "exportBvh": "导出 BVH 动作",
+          "meshUpAxis": "模型向上轴",
+          "meshUrl": "模型 GLB 链接",
+          "numSamples": "候选动作数",
+          "prompt": "任务描述",
+          "returnCosUrl": "返回可下载结果",
+          "rigBackend": "绑骨路线"
+        },
+        "optional_params": [
+          "cutBackend"
+        ],
+        "params": {
+          "meshUpAxis": "y_up",
+          "meshUrl": "",
+          "rigBackend": "auto"
+        },
+        "title": "绑骨与动作资产包"
+      },
+      {
+        "choices": {
+          "cfgType": {
+            "regular": "Regular",
+            "separated": "Separated"
+          },
+          "cutBackend": {
+            "": "默认路线",
+            "cube": "Cubepart"
+          },
+          "meshUpAxis": {
+            "y_up": "Y 向上（标准 GLB）",
+            "z_up": "Z 向上"
+          },
+          "rigBackend": {
+            "auto": "自动选择",
+            "puppeteer": "Puppeteer",
+            "skintokens": "SkinTokens"
+          }
+        },
+        "description": "只生成动作文件；不生成模型，也不自动给模型绑定动作。",
+        "id": "motion",
+        "labels": {
+          "cfgType": "动作引导模式",
+          "cfgWeight": "动作引导强度",
+          "cutBackend": "拆件路线",
+          "duration": "动作时长 · 秒",
+          "exportBvh": "导出 BVH 动作",
+          "meshUpAxis": "模型向上轴",
+          "meshUrl": "模型 GLB 链接",
+          "numSamples": "候选动作数",
+          "prompt": "任务描述",
+          "returnCosUrl": "返回可下载结果",
+          "rigBackend": "绑骨路线"
+        },
+        "optional_params": [
+          "cutBackend"
+        ],
+        "params": {
+          "cfgType": "regular",
+          "cfgWeight": "5.0",
+          "duration": "5.0",
+          "exportBvh": true,
+          "numSamples": 1,
+          "prompt": "",
+          "returnCosUrl": true
+        },
+        "title": "文字生成动作 · BVH"
+      }
+    ],
+    "operations": [
+      "assemble",
+      "segment",
+      "rig-glb",
+      "rig",
+      "motion"
+    ],
+    "setup_message": "在本机 services.json 配置可达地址、启用服务和鉴权环境变量引用。",
+    "timeout_seconds": 1800,
+    "title": "Assembly Workflow"
+  },
+  {
+    "adapter": "meshy",
+    "configured": false,
+    "id": "meshy",
+    "key_env": "MESHY_API_KEY",
+    "needs_base_url": false,
+    "operations": [
+      "text-to-3d",
+      "image-to-3d",
+      "multi-image-to-3d",
+      "retexture",
+      "remesh",
+      "rigging",
+      "animations"
+    ],
+    "title": "Meshy"
+  },
+  {
+    "adapter": "tripo",
+    "configured": false,
+    "id": "tripo",
+    "key_env": "TRIPO_API_KEY",
+    "needs_base_url": false,
+    "operations": [
+      "text_to_model",
+      "image_to_model",
+      "multiview_to_model",
+      "animate_rig",
+      "animate_retarget",
+      "texture_model",
+      "convert_model"
+    ],
+    "title": "Tripo"
+  }
+]

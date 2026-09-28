@@ -1,0 +1,161 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "mechanical-joints",
+  "version": "0.2.0",
+  "title": "机械件加铰链滑轨",
+  "goal": "有明确机构的模型（箱盖/转台/抽屉/挖掘臂），按类型装铰链或滑轨。",
+  "use_when": [
+    "模型有明确的机构角色：箱盖、转台、抽屉、挖掘臂之类",
+    "有关节描述文件（URDF）或能说清哪里转、哪里滑",
+    "允许把五金件（销、螺钉）和打印件分开计"
+  ],
+  "not_for": [
+    "造型是人形/生物、用来摆姿势 —— 改用 poseable-figure",
+    "还没有网格，只有一张参考图 —— 先由 Agent 本地建模或导入已有资产",
+    "伸缩连杆、齿轮传动或本地模块表之外的机构；需另行建模和验收"
+  ],
+  "inputs": [
+    "mesh_set",
+    "urdf"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "源文件声明的朝上轴要用实测几何核对，不能直接信文件字段。",
+      "accept": "readiness.model 为 pass；朝向核对的结论记下来，供后面步骤用。",
+      "optional": false
+    },
+    {
+      "key": "pick_joint",
+      "row": "joint",
+      "tool": "studio_task#install-joint",
+      "who": "you",
+      "decide": "明确固定件/活动件、坐标架、锚点和加工区；选 pin_hinge/slew/slider/ball_socket。",
+      "accept": "加工件闭合连通，静止无相交、加工区外不变；交付新 URDF 与五金清单。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "install-joint"
+      }
+    },
+    {
+      "key": "sweep_motion",
+      "row": "joint",
+      "tool": "studio_task#motion-check",
+      "who": "ai",
+      "decide": "使用本次加工输出的 assembly.urdf，指定笛卡尔网格密度或显式组合姿态；转动用弧度、移动用米。",
+      "accept": "读取每个组合姿态的碰撞和无碰撞配置；不承诺采样点之间的连续安全行程。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "motion-check"
+      }
+    },
+    {
+      "key": "check_fit",
+      "row": "connect",
+      "tool": "studio_task#removal-audit",
+      "who": "ai",
+      "args": {
+        "action": "start",
+        "template": "removal-audit"
+      },
+      "decide": "用本次输出的闭合 STL，明确分组、拆装顺序与逐件取出方向；五金另验。",
+      "accept": "读取离散取出路径报告；受阻须改计划。孔内支撑需切片后人工复核，不由此任务判定。",
+      "optional": false
+    },
+    {
+      "key": "coupon",
+      "row": "connect",
+      "tool": "studio_task#joint-coupon",
+      "who": "either",
+      "args": {
+        "action": "start",
+        "template": "joint-coupon"
+      },
+      "decide": "先打关节试片核对间隙松紧，再打整机。",
+      "accept": "试片切片成功；间隙档位记在案，实测松紧仍需人手工回填。",
+      "optional": true
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "结构件多用 flat 贴床，明显悬空的部位是否需要手工指定朝向。",
+      "accept": "warnings 里没有 unstable_contact，或已手工处理。",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "decide": "五金件和打印件要不要分开摆盘，间距够不够清支撑。",
+      "accept": "readiness 里 arrange 为 pass，返回里的盘数与预期一致。",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "4 层壁、20% 填充够不够这个机构的负载，要不要覆盖。",
+      "accept": "unmatched_parts 为空，project_3mf 生成成功。",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "跑不跑试切估算，作为送 Bambu Studio 前的参考。",
+      "accept": "跑了才报克数/时长；没跑就照实说没估算。",
+      "optional": true
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "先打试片还是直接打整机；多盘默认只开第一盘。",
+      "accept": "loaded 恒为 unverified，只能说已请求打开。",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/gallery_joints_030/EXCAVATOR_RESULTS.md",
+      "date": "2026-09-17",
+      "note": "包声明 y-up 实为 z-up；组合检查比单轴检查多测出碰撞，行程从 -0.7~0.9 rad 收窄到 -0.7~0.55 rad"
+    },
+    {
+      "ref": "fdm_preprint/docs/mechanical-joint-library-playbook.md",
+      "date": "2026-09-17",
+      "note": "8 类选型族与运动副/保持结构/安装外观三职责分离；去料要按实测接触算，不能用大凸包扫掠"
+    },
+    {
+      "ref": "fdm_preprint/mechanical_joints_035",
+      "date": "2026-09-17",
+      "note": "三类参数化生成器+局部实测接触避让，试片先行、独立包复验"
+    },
+    {
+      "ref": "fdm_preprint/gallery_joints_030/WHOLE_RESULTS.md",
+      "date": "2026-09-17",
+      "note": "几何/运动/切片门禁全过仍能外观不合格（挖内腔切穿了浮雕）；装得进去要按真实插装顺序验，不是终态无碰撞就够"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

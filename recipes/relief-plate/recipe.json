@@ -1,0 +1,107 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "relief-plate",
+  "version": "0.1.0",
+  "title": "浮雕与薄板",
+  "goal": "浮雕、铭牌、贴平薄板：贴床面积最大、不加支撑，核对细字会不会被抹平",
+  "use_when": [
+    "一块浮雕、铭牌或带图案薄板，正反面一面平一面有图案",
+    "想让模型自动贴床摆放、正面朝上，不加任何支撑",
+    "模型上有凸起或凹陷的文字/细纹，想先核对清晰度"
+  ],
+  "not_for": [
+    "要保持直立造型的整件手办/雕塑——改用 figurine-whole",
+    "带承力孔或要结构强度的功能件——改用 functional-part",
+    "按颜色拆分而不是按面朝向来分件——改用 color-split",
+    "双面都有图案、两面都不平——本配方假设背面是平的"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "浮雕最细的笔画够不够粗、够不够深，会不会被抹平",
+      "accept": "确认过凸起尺寸，或已问过用户/查过源文件",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "relief"
+      },
+      "decide": "选中的 flat 朝向是图案朝上，还是选反了",
+      "accept": "选中项 contact_area_mm2 明显领先第二候选",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "多块浮雕要不要分盘",
+      "accept": "readiness 里 arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "relief"
+      },
+      "decide": "导出是否按计划摆好；enable_support 是否为 0",
+      "accept": "每盘 unmatched_parts 为空、bambu_moved_objects 为假",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "必须先跑这一步才能报克数与时长",
+      "accept": "每盘 grams、seconds 都不是 null",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "现在要不要把这一盘工程在 Bambu Studio 里打开",
+      "accept": "返回里 launched 为 true；loaded 恒 unverified",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/RESULTS.md",
+      "date": "2026-09-08",
+      "note": "真实凸字(0.6mm凸高+0.08mm轮廓扩张)比贴图纹理更保证打印清晰的做法"
+    },
+    {
+      "ref": "print_prep/shape_table.py",
+      "date": "2026-09-19",
+      "note": "relief 档用 flat+0.16mm+不加支撑的取值理由"
+    },
+    {
+      "ref": "print_prep/orient.py",
+      "date": "2026-09-19",
+      "note": "flat 策略按贴床接触面积最大排序选朝向的算法依据"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

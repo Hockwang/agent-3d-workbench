@@ -1,0 +1,107 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "functional-part",
+  "version": "0.1.0",
+  "title": "功能件与结构件",
+  "goal": "支架、外壳、带孔功能件：贴床、4层壁20%填充，核对孔轴是否顺着受力方向",
+  "use_when": [
+    "支架、外壳、卡扣等结构件或功能件，需要够强度不只是好看",
+    "带装配用的孔、槽或轴，孔的方向会影响装配后的受力路径",
+    "想要4层壁、20%填充这类偏结构强度的工艺档位"
+  ],
+  "not_for": [
+    "纯外观的手办/雕塑——改用 figurine-whole",
+    "浮雕/铭牌类薄板——改用 relief-plate",
+    "件里有明确的铰链/滑轨机构——改用 mechanical-joints",
+    "配合公差没底、想先摸清参数——先用 test-coupon-first 打试片"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "尺寸单位对不对，结构件公差重要，别自己乘除猜",
+      "accept": "readiness 里 model 为 pass",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "you",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "孔轴方向是否顺着装配后的受力方向，工具本身不知道",
+      "accept": "已确认默认朝向可接受，或已用 set 手工改过",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "多件要不要分盘",
+      "accept": "readiness 里 arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "4层壁/20%填充这类工艺覆盖是否真的生效",
+      "accept": "每盘 unmatched_parts 为空；工艺覆盖里见 wall_loops=4",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "必须先跑这一步才能报克数与时长",
+      "accept": "每盘 grams、seconds 都不是 null",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "现在要不要把这一盘工程在 Bambu Studio 里打开",
+      "accept": "返回里 launched 为 true；loaded 恒 unverified",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/gallery_joints_030/RESULTS.md",
+      "date": "2026-09-16",
+      "note": "封闭孔竖放命中633段孔内支撑，改横放后清零，开放槽仍需人工清理"
+    },
+    {
+      "ref": "fdm_preprint/mechanical_joints_035/README.md",
+      "date": "2026-09-17",
+      "note": "机械关节件按0.25mm支撑包络逐件核对孔/槽内支撑的做法"
+    },
+    {
+      "ref": "print_prep/shape_table.py",
+      "date": "2026-09-19",
+      "note": "mechanical 档用 flat+0.20mm+4层壁+20%填充的取值理由"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

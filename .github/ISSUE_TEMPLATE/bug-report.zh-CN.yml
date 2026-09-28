@@ -1,0 +1,77 @@
+name: Bug 反馈
+description: 反馈一个通用问题（不是"指向部件并编辑"这类问题）。
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        如果是"选中了某个部件、提了修改要求、结果不对"这类问题，请改用
+        [编辑反馈](?template=edit-report.zh-CN.yml) 表单。
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: 运行环境
+      description: 出问题时你在哪个环境里使用插件。
+      options:
+        - Codex 桌面端侧边栏面板
+        - Codex 打开的浏览器页面
+        - Claude Code + 浏览器页面
+        - 其他 MCP 客户端
+        - core CLI
+    validations:
+      required: true
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: 插件版本
+      description: >-
+        可从 `.codex-plugin/plugin.json` 的 `version` 字段读取，或看你所在宿主的 MCP
+        server 列表里上报的 `serverInfo.version`。`studio_capabilities` 不会返回版本号。
+      placeholder: 例如 0.8.6
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: false
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望的行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际的行为
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: >-
+        `~/.print-prep/studio.log`（或该工作区自己的 `studio.log`）里的相关行。不要粘贴
+        API key 或 token。
+    validations:
+      required: false

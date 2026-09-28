@@ -1,0 +1,22 @@
+{
+  "name": "print-prep-app-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test --test-timeout=120000 tests/*.mjs",
+    "build:app": "npm run build:ui && node scripts/build_gltf_codecs.mjs && node scripts/build_motion.mjs && node scripts/build_delivery.mjs && node scripts/build_assembly_review.mjs && node scripts/build_app.mjs",
+    "build:ui": "node scripts/build_ui_assets.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "2.0.0",
+    "@picocss/pico": "2.1.1",
+    "jsep": "1.4.0",
+    "jszip": "3.10.2",
+    "three": "0.185.0"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "esbuild": "0.28.2",
+    "lucide-static": "1.47.0"
+  }
+}

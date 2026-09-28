@@ -1,0 +1,111 @@
+{
+  "schema": "print-prep.recipe/1",
+  "workspace": "tasks",
+  "task_template": "shell-kit",
+  "id": "wearable-head-shell",
+  "version": "0.1.0",
+  "title": "角色头壳制作",
+  "goal": "已有角色模型制作可调头壳样稿，保留表情，分别核对结构、头部空间、视线与外观。",
+  "use_when": [
+    "已有静态角色模型，要制作可戴头壳",
+    "需要掏空、颈口、前后磁吸分壳，可保留已有独立色件"
+  ],
+  "not_for": [
+    "仅凭头围直接宣称真人可戴",
+    "自动识别人脸或任意纹理分色",
+    "未经试戴与试片就直接全壳打印"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "prepare",
+      "row": "shell_plan",
+      "tool": "studio_task",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "shell-kit"
+      },
+      "decide": "核对方向、佩戴尺寸、颜色部件与眼嘴保护区",
+      "accept": "输入和参数已绑定到本次生成版本",
+      "optional": false
+    },
+    {
+      "key": "generate",
+      "row": "shell_build",
+      "tool": "studio_task",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "shell-kit"
+      },
+      "decide": "调整壁厚、颈口、分界与磁铁，生成可调样稿",
+      "accept": "生成结束并交付真实模型，保留原输入",
+      "optional": false
+    },
+    {
+      "key": "geometry",
+      "row": "shell_geometry",
+      "tool": "studio_task",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "shell-kit"
+      },
+      "decide": "查看水密、零件干涉和离散装配路径",
+      "accept": "report.workflow_checks.geometry 为 pass",
+      "optional": false
+    },
+    {
+      "key": "head_fit",
+      "row": "head_fit",
+      "tool": "studio_task",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "shell-kit"
+      },
+      "decide": "核对内部头部包络与衬垫空间",
+      "accept": "report.workflow_checks.head_fit 为 pass，仅声明包络",
+      "optional": false
+    },
+    {
+      "key": "sight",
+      "row": "sight",
+      "tool": "studio_task",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "shell-kit"
+      },
+      "decide": "检查人眼射线；遮挡时优先调整佩戴方案",
+      "accept": "report.workflow_checks.sight 为 pass，不等于实测视野",
+      "optional": false
+    },
+    {
+      "key": "appearance",
+      "row": "appearance",
+      "tool": "studio_observe",
+      "who": "you",
+      "args": {
+        "action": "start"
+      },
+      "decide": "对照原造型，人工复核眼形、嘴形与分缝",
+      "accept": "同一模型 SHA 的观察报告已有人工 good 评价",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "docs/HEAD_SHELL.md",
+      "date": "2026-09-22",
+      "note": "皮卡丘 60 cm 头壳：恢复原圆眼后正前方视线遮挡，分开记录外观和佩戴检查"
+    }
+  ],
+  "author": "3D Workbench",
+  "license": "同仓库"
+}

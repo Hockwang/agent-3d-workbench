@@ -1,0 +1,112 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "image-to-print",
+  "version": "0.1.1",
+  "title": "一张图到打印",
+  "goal": "只有一张参考图：先生成网格，再按整件或套件走打印准备。",
+  "use_when": [
+    "手头只有一张参考图，还没有任何网格文件",
+    "愿意用自己申请 key 的图生 3D 服务出一版网格",
+    "生成结果打算整件打印或简单收尾，不追求高保真复刻"
+  ],
+  "not_for": [
+    "已经有网格文件了 —— 直接从 model 这一步开始，不用这条配方",
+    "需要精确复刻某个真实尺寸的物体 —— 生成网格没有真实单位，量不准",
+    "生成结果明显要拆件或分色分件 —— 生成完之后换用拆件相关的配方"
+  ],
+  "inputs": [
+    "image"
+  ],
+  "backends": [
+    "image_to_3d"
+  ],
+  "steps": [
+    {
+      "key": "generate",
+      "row": "source",
+      "tool": "studio_task#image-to-3d",
+      "who": "either",
+      "args": {
+        "action": "start"
+      },
+      "decide": "用自己申请 key 的图生 3D 服务出一版网格；单张图的背面和内部是编出来的，不是实测。",
+      "accept": "生成网格先验连通块数与是否水密，再往下走；多连通块或明显残缺要如实报告。",
+      "optional": false
+    },
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "you",
+      "decide": "生成网格没有真实单位，最长边要用户给实际尺寸，用 target_max_mm 统一缩放。",
+      "accept": "extents_mm、watertight、components 都读过；放不下时给了 suggested_scale。",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "generic"
+      },
+      "decide": "形态不确定先用 support 策略兜底，不要猜成 figurine 硬套 upright。",
+      "accept": "warnings 里没有 unstable_contact，或已看过 top_candidates 再决定。",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "decide": "单盘放不下就交给 auto 自动开新盘，不用手工拆。",
+      "accept": "readiness.arrange 为 pass。",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "generic"
+      },
+      "decide": "要不要按生成件的实际粗糙程度覆盖层高或填充。",
+      "accept": "unmatched_parts 为空，project_3mf 生成成功。",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "跑不跑试切估算。",
+      "accept": "跑了才报克数/时长；没跑就照实说没估算。",
+      "optional": true
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "确认生成件的水密/薄片/尺度问题已经如实告诉用户，再决定要不要送去打开。",
+      "accept": "loaded 恒为 unverified，只能说已请求打开。",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/RESULTS.md",
+      "date": "2026-09-08",
+      "note": "图生 3D 服务出的纸巾盒外观本身没解决内腔/配合/字体清晰度，靠确定性几何工具补齐；float32 导出还踩过退化面的坑"
+    },
+    {
+      "ref": "skills/print-prep/SKILL.md",
+      "date": "2026-09-21",
+      "note": "最长边小于 5mm 或大于 2000mm 多半单位不对；target_max_mm 按整体包围盒统一缩放，不自己猜着乘除"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

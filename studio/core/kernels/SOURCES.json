@@ -1,0 +1,23 @@
+{
+  "owner": "Qunhe / MDE self-owned implementation",
+  "sources": [
+    {
+      "source": "author's private research code: manufacturing_kit/mechanical_joints/geometry.py",
+      "sha256": "1ac9ed86252b4a4b932c40623cbeed72edfd8e805a37b508ba088b625ecd3ea6",
+      "destination": "mechanical_geometry.py",
+      "changes": "Relative imports; geometry includes solid constructors only, excluding historical serialization adjustment."
+    },
+    {
+      "source": "author's private research code: manufacturing_kit/mechanical_joints/modules.py",
+      "sha256": "fba82be6b034e4e82aa99cca2af6af3e8cd5603f2f135939a2567fdda16a4f07",
+      "destination": "mechanical_modules.py",
+      "changes": "Relative imports; geometry includes solid constructors only, excluding historical serialization adjustment."
+    },
+    {
+      "source": "author's private research code: manufacturing_kit/mechanical_joints/linkage.py",
+      "sha256": "9642fd2a8ee4919012be330232acd9c33633cc3831f466165a8ecd3c21f79314",
+      "destination": "mechanical_linkage.py",
+      "changes": "Relative imports; geometry includes solid constructors only, excluding historical serialization adjustment."
+    }
+  ]
+}

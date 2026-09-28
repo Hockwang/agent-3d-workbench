@@ -1,0 +1,131 @@
+/* recipes.css — 配方条 + 配方抽屉。只用 flow.css / style.css 里已有的变量、圆角与状态色。
+   （--ok / --warn / --ai / --accent-line 等在 flow.css 的 :root 里声明，作为自定义属性全局可见，这里直接引用。） */
+
+.recipe { margin: 0 0 10px; }
+
+/* ------------------------------------------------------------------ 常驻条：一行高，跟流程行一致 */
+.recipe-row1 {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  border-radius: var(--r-tile);
+  background: var(--bg-tile);
+  border: 1.5px solid transparent;
+}
+.recipe-label { font-weight: 600; flex: 0 0 auto; }
+.recipe-idle-hint { color: var(--text-faint); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-grow { flex: 1 1 auto; }
+
+.recipe-active { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+.recipe-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+.recipe-progress { color: var(--text-dim); flex: 0 0 auto; white-space: nowrap; }
+
+/* 路线小格：8px 高的圆角条，颜色跟流程行的状态点一致 */
+.recipe-route { display: flex; align-items: center; gap: 3px; flex: 1 1 auto; min-width: 40px; max-width: 160px; }
+.recipe-chip { flex: 1 1 0; height: 8px; min-width: 8px; border-radius: 4px; background: rgba(255, 255, 255, .14); }
+.recipe-chip.is-ok { background: var(--ok); }
+.recipe-chip.is-warn { background: var(--warn); }
+.recipe-chip.is-run { background: var(--ai); }
+.recipe-chip.is-stale { background: transparent; border: 1px dashed var(--warn); height: 6px; }
+.recipe-chip.is-todo { background: rgba(255, 255, 255, .14); }
+.recipe-chip.is-exists { background: var(--accent-line); }
+.recipe-chip.is-missing { background: rgba(255, 255, 255, .10); }
+
+/* ------------------------------------------------------------------ 下一步行 */
+.recipe-row2 { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 4px 11px 2px; }
+.recipe-next-text { color: var(--text-dim); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recipe-next-text b { color: var(--text); font-weight: 600; }
+.recipe-next-btn { flex: 0 0 auto; width: auto; height: 30px; padding: 0 14px; }
+
+/* ------------------------------------------------------------------ 抽屉：盖在流程区上方，不是模态弹窗 */
+.recipe-drawer {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-column);
+}
+.recipe-drawer-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .35); }
+.recipe-drawer-panel {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-column);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+.recipe-drawer-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 6px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+.recipe-drawer-head h3 { margin: 0; flex: 1 1 auto; font-size: 13px; font-weight: 600; }
+.recipe-drawer-close {
+  flex: 0 0 auto; width: 28px; height: 28px; display: grid; place-items: center;
+  border: 0; border-radius: 8px; background: transparent; color: var(--text-dim); cursor: pointer;
+}
+.recipe-drawer-close:hover { background: rgba(255, 255, 255, .10); color: var(--text); }
+.recipe-drawer-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 10px 12px 6px; }
+.recipe-drawer-problems { flex: 0 0 auto; padding: 6px 12px 10px; border-top: 1px solid var(--line); }
+.recipe-problems-toggle { border: 0; background: transparent; color: var(--text-faint); font-size: 11px; cursor: pointer; padding: 2px 0; }
+.recipe-problems-toggle:hover { color: var(--text-dim); }
+.recipe-problems-list { list-style: none; margin: 6px 0 0; padding: 0; color: var(--text-faint); font-size: 11px; }
+.recipe-problems-list li { padding: 2px 0; overflow-wrap: anywhere; }
+
+.recipe-group + .recipe-group { margin-top: 14px; }
+.recipe-group-title { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--text-dim); }
+.recipe-card-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.recipe-card { padding: 10px 11px; border-radius: var(--r-tile); background: var(--bg-tile); border: 1px solid var(--line); }
+.recipe-card-title {
+  display: block; width: 100%; margin: 0 0 4px; padding: 0; border: 0; background: transparent;
+  color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+}
+.recipe-card-title:hover { color: var(--accent-text); }
+.recipe-card-goal { margin: 0 0 8px; color: var(--text-dim); }
+.recipe-card .recipe-route { max-width: none; margin-bottom: 8px; }
+.recipe-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.recipe-badge { padding: 2px 8px; border-radius: 999px; background: var(--bg-control); color: var(--text-faint); font-size: 10.5px; white-space: nowrap; }
+.recipe-card-provenance { margin: 0 0 8px; color: var(--text-faint); font-size: 10.5px; overflow-wrap: anywhere; }
+.recipe-card-guide {
+  margin: 0 0 8px; padding: 8px 9px; border-radius: var(--r-ctl); background: rgba(0, 0, 0, .28);
+  color: var(--text-dim); font-size: 11px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  max-height: 220px; overflow-y: auto; font-family: inherit;
+}
+.recipe-card-foot { display: flex; justify-content: flex-end; }
+.recipe-missing-hint { margin: 0; }
+
+@media (max-width: 420px) {
+  .recipe-progress, .recipe-active > .recipe-route { display: none; }
+}
+
+/* 目检后补：窄侧栏里按钮不折行；卡片上的路线用带行名的小格 */
+.recipe button { white-space: nowrap; flex-shrink: 0; }
+.recipe-route-static { display: flex; flex-wrap: wrap; gap: 4px; }
+.recipe-step-name { font-size: 11px; line-height: 1; padding: 4px 7px; border-radius: 999px; border: 1px solid var(--line, rgba(255,255,255,.12)); color: var(--text-dim); }
+.recipe-step-name.is-missing { opacity: .45; border-style: dashed; }
+/* 「要定什么」是这一行的正文，不能截断：最多折两行 */
+.recipe-next-text { white-space: normal; text-overflow: clip; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-height: 1.45; }
+
+/* The catalog is shared by the editing and printing workspaces. */
+#recipe { flex: none; margin: 0; padding: 4px 12px; border-bottom: 1px solid var(--line); font-size: 12px; }
+#recipe-error { flex: none; margin: 0; padding: 8px 14px; color: #ffb1a6; background: #392426; font-size: 12px; }
+#recipe [hidden] { display: none !important; }
+#recipe .recipe-drawer { z-index: 100; }
+#recipe .recipe-row1 { min-height: 34px; }
+#recipe .recipe-idle-hint { font-size: 11px; }
+
+.recipe-checks { padding: 6px 12px; border-top: 1px solid var(--border, #333); font-size: 12px; }
+.recipe-checks p { color: var(--text-muted, #999); margin: 6px 0; }
+.recipe-check-item { display: block; width: 100%; text-align: left; padding: 7px; background: transparent; color: inherit; border: 0; cursor: pointer; }
+.recipe-check-item:hover { background: rgba(128,128,128,.12); }

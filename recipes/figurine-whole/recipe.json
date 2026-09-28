@@ -1,0 +1,107 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "figurine-whole",
+  "version": "0.1.0",
+  "title": "整件手办直接打",
+  "goal": "不拆件的手办/雕塑整体打印：保持直立、树状支撑、外圈brim，试切后再报参数",
+  "use_when": [
+    "一个不需要拆件的手办、雕塑或人物摆件，整体打印",
+    "模型本身立得住，想保持原始站姿而不是被自动摆平打印",
+    "细长直立、容易在打印中途被蹭倒，需要外圈brim帮忙站稳"
+  ],
+  "not_for": [
+    "要拆成能分开打印再胶装的件——改用 split-glue-kit",
+    "背面平、正面是浮雕/文字的薄板——改用 relief-plate",
+    "带承力孔或要结构强度的功能件——改用 functional-part",
+    "肢段已经分好、想加可动关节——改用 poseable-figure"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "尺寸单位对不对，要不要按 target_max_mm 统一缩放",
+      "accept": "readiness 里 model 为 pass：watertight 且 fits_bed",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "figurine"
+      },
+      "decide": "站不稳时接受支撑撑住，还是换个更稳的姿势",
+      "accept": "warnings 没有 unstable_contact，或已确认接受它",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "单盘放不下时要不要自动开新盘",
+      "accept": "readiness 里 arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "figurine"
+      },
+      "decide": "导出是否按计划摆好，有没有对不上的件",
+      "accept": "每盘 unmatched_parts 为空、bambu_moved_objects 为假",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "必须先跑这一步才能报克数与时长",
+      "accept": "每盘 grams、seconds 都不是 null",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "现在要不要把这一盘工程在 Bambu Studio 里打开",
+      "accept": "返回里 launched 为 true；loaded 恒 unverified",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "print_prep/shape_table.py",
+      "date": "2026-09-19",
+      "note": "figurine 档用 upright+0.16mm+树状支撑+外圈brim 的取值理由"
+    },
+    {
+      "ref": "print_prep/orient.py",
+      "date": "2026-09-19",
+      "note": "贴床面积<20mm²记unstable_contact、+Z不稳才退让为support的判定逻辑"
+    },
+    {
+      "ref": "fdm_preprint/RESULTS.md",
+      "date": "2026-09-08",
+      "note": "整件不拆件打印前，STL/3MF往返验证水密与顶点误差的做法"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

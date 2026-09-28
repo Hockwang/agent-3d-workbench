@@ -1,0 +1,123 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "test-coupon-first",
+  "version": "0.1.1",
+  "title": "先打配合试片",
+  "goal": "先打一组小试片核对配合间隙，确认没问题再打整套。",
+  "use_when": [
+    "套件里有孔轴配合、销孔、卡扣或关节，插拔/转动松紧要提前确认",
+    "同一套配合结构会在多个零件上重复用到，想先摸清这台机器和耗材的公差",
+    "还没在这台打印机、这个耗材上打过这种配合，心里没底"
+  ],
+  "not_for": [
+    "这套配合、这台机器、这个耗材已经打过验证过：直接用 kit-plates 处理整套",
+    "零件之间只靠胶粘、不靠插拔或转动配合：不需要试片这一步"
+  ],
+  "inputs": [
+    "mesh_set"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "coupon",
+      "row": "connect",
+      "tool": "studio_task#joint-coupon",
+      "who": "you",
+      "args": {
+        "action": "start",
+        "template": "joint-coupon"
+      },
+      "decide": "配合处的公称间隙定几档、要不要同时对比几个不同的销径或孔径",
+      "accept": "手上有一组独立的小试片文件，覆盖要验证的几档间隙",
+      "optional": false
+    },
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "这批文件是不是要验证的全部间隙档位、单位对不对",
+      "accept": "readiness.model 为 pass：试片全部 watertight、放得下",
+      "optional": false
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "配合孔/槽的朝向选横放还是竖放，横放通常能清空孔内支撑",
+      "accept": "warnings 没有遗留的 unstable_contact，孔/槽朝向是明确选定的",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "试片能不能都放进一盘，gap 是否留够避免相互干扰",
+      "accept": "readiness.arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "mechanical"
+      },
+      "decide": "工艺参数是不是跟正式打印一致，试片才有参照意义",
+      "accept": "unmatched_parts 为空，project_3mf 生成成功",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "要不要先估一下这盘试片的克数和时长",
+      "accept": "跑了才报 grams 与 seconds；没跑就照实说没估算",
+      "optional": true
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "确认真的要打印这组试片，而不是只看数字就跳过",
+      "accept": "sent.plates 出现这一盘号；打印后需人工插拔/转动确认松紧",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/assembly_connectors_028",
+      "date": "2026-09-16",
+      "note": "四种尺寸的 D 形公差试片，从实际销孔与交叠检查里定下来的"
+    },
+    {
+      "ref": "fdm_preprint/mechanical_joints_035",
+      "date": "2026-09-17",
+      "note": "19 件关节试片单独排朝向、切片与支撑包络，跟正式件分开验"
+    },
+    {
+      "ref": "fdm_preprint/joint_library_032",
+      "date": "2026-09-17",
+      "note": "试片合并一盘单独估算克数与时长，实物松紧仍要人工回填"
+    },
+    {
+      "ref": "fdm_preprint/articulated_029",
+      "date": "2026-09-16",
+      "note": "关节孔改横放后正面支撑清空，但开放槽仍需人工清理支撑"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

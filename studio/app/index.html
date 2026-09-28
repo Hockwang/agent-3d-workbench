@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark"><head><meta charset="utf-8"><meta name="studio-language" content=""><meta name="viewport" content="width=device-width,initial-scale=1">
+<title data-i18n="app.title">3D 工作台</title><style>/* APP_CSS */</style></head>
+<body>
+<div id="print-prep-app" data-presentation="card" data-workspace-id="">
+<section id="launch-card" aria-label="3D 工作区入口" data-i18n-attr="aria-label=main.launcher.ariaLabel">
+  <div class="card-identity"><span class="mark" aria-hidden="true">◇</span><div><strong data-i18n="app.title">3D 工作台</strong><p id="launch-project" hidden></p><p id="workspace-summary" data-i18n="main.launcher.defaultSummary">模型编辑 · 拆件 · 打印准备</p></div></div>
+  <button id="open-workspace" class="primary" disabled><span data-i18n="main.launcher.openButton">在右侧打开模型</span> <span aria-hidden="true">↗</span></button>
+  <p id="launch-status" role="status" data-i18n="main.launcher.connecting">正在连接…</p>
+</section>
+<aside id="workspace-error" role="alert" hidden><span></span><button type="button" id="workspace-retry" data-i18n="main.launcher.retryButton">重新连接</button></aside>
+<main id="workspace" hidden><!-- WORKSPACE_HTML --></main>
+</div><script>/* APP_JS */</script></body></html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="zh-CN" data-viewer-contract="scene-viewer-a8-skin-v1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scene Viewer</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="assets/viewer.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "./assets/vendor/three.module.min.js",
+          "three/addons/": "./assets/vendor/addons/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <!-- 版式与 a8 审阅台一致：满幅舞台 + 悬浮面板。
+         a8 的每块面板都对应一个审阅动作，换成三栏网格后那种"眼睛不用挪"的
+         读法就没了 —— 所以这里照抄 a8 的构图，只把它的四件套输入换成
+         单份 assembly-scene/v1。 -->
+    <main id="app">
+      <div id="stage" aria-label="三维场景"></div>
+
+      <nav id="case-rail" class="case-rail" aria-label="选择场景；↑/↓ 切换"></nav>
+
+      <!-- 对照层三档。没有对照就整条不出现 —— 一个只有一个选项的模式选择器
+           没有意义（a8 现在那条就是，它的 A2 数据源早没了）。 -->
+      <section class="mode-switch" id="mode-switch" hidden aria-label="对照模式">
+        <button type="button" data-mode="a8" class="is-active">
+          <span id="mode-main-name">A8</span>
+          <i id="mode-main-caption">当前</i>
+        </button>
+        <button type="button" data-mode="a2">
+          <span id="mode-compare-name">A2</span>
+          <i id="mode-compare-caption">对照</i>
+        </button>
+        <button type="button" data-mode="split">
+          <span>⇔</span>
+          <i>并排</i>
+        </button>
+      </section>
+
+      <section class="curation-toolbar" aria-label="目录与人工标记">
+        <div class="catalog-readout">
+          <span id="catalog-kind">BATCH</span>
+          <!-- 目录切换（批次 / golden / bad）。用 select 而不是三个按钮：
+               批次数量是随 registry 长的，按钮排不下。 -->
+          <select id="catalog-title" aria-label="切换目录"></select>
+        </div>
+        <div class="curation-summary" aria-label="标记统计">
+          <span class="count-golden"><b id="golden-count">0</b> G</span>
+          <span class="count-bad"><b id="bad-count">0</b> B</span>
+          <span class="count-stale" id="stale-wrap" hidden><b id="stale-count">0</b> 陈旧</span>
+          <button id="curation-export" type="button" title="导出当前目录的人工决定">导出标记</button>
+        </div>
+      </section>
+
+      <aside class="evidence-card" id="evidence-card" hidden>
+        <button id="reference-toggle" class="evidence-image" type="button" aria-label="放大或收起参考图">
+          <img id="reference-image" alt="" />
+          <span class="image-corner">输入参考</span>
+        </button>
+        <div class="evidence-caption">
+          <span id="reference-hash">—</span>
+          <strong id="reference-note">下面的件与关节都是这一单实际跑出来的。</strong>
+        </div>
+      </aside>
+
+      <aside class="audit-panel">
+        <div class="panel-head">
+          <div>
+            <p id="case-index" class="panel-kicker">—</p>
+            <h2 id="case-title">Loading</h2>
+          </div>
+          <span id="status-chip" class="status-chip" data-state="loading"><i></i>LOADING</span>
+        </div>
+
+        <div id="blocker-note" class="blocker-note" hidden>
+          <span>这案要看的地方</span>
+          <strong id="blocker-title">—</strong>
+          <p id="blocker-copy">—</p>
+        </div>
+
+        <dl class="fact-grid">
+          <div><dt>拓扑</dt><dd id="fact-topology">—</dd></div>
+          <div><dt>来源</dt><dd id="fact-source">—</dd></div>
+          <div><dt>切割 label</dt><dd id="fact-a2">—</dd></div>
+          <div><dt>分组 · 关节</dt><dd id="fact-a8">—</dd></div>
+        </dl>
+
+        <div class="layers">
+          <p>显示图层</p>
+          <label>
+            <input id="source-toggle" type="checkbox" checked />
+            <span></span>
+            原始模型
+          </label>
+          <label id="completion-label">
+            <input id="completion-toggle" type="checkbox" />
+            <span></span>
+            补全部分
+          </label>
+          <label>
+            <input id="label-toggle" type="checkbox" />
+            <span></span>
+            编号 / 分组
+          </label>
+          <label>
+            <input id="audit-toggle" type="checkbox" />
+            <span></span>
+            透视检查
+          </label>
+          <label>
+            <input id="wire-toggle" type="checkbox" />
+            <span></span>
+            线框
+          </label>
+          <label id="texture-layer-label">
+            <input id="texture-toggle" type="checkbox" />
+            <span></span>
+            原材质（关掉=分件配色）
+          </label>
+        </div>
+
+        <p id="case-note" class="case-note">—</p>
+
+        <div class="inspector" id="inspector">
+          <section id="selection-detail" hidden></section>
+          <section id="joints-section" hidden>
+            <h3>关节 <small id="joints-count">0</small></h3>
+            <div id="joints-list"></div>
+          </section>
+          <section id="parts-section">
+            <h3>部件 <small id="parts-count">0</small></h3>
+            <div id="parts-list"></div>
+          </section>
+        </div>
+      </aside>
+
+      <button id="inspector-toggle" type="button" aria-expanded="false">部件与关节</button>
+
+      <!-- 机构相位：一个 0→1 驱动全部关节。参数化线的行程全写成 [0,X]，
+           逐关节滑杆对它是错的抽象。没有可动关节时整条隐藏。 -->
+      <section class="pose-deck" id="pose-deck" hidden>
+        <button id="play-toggle" type="button" aria-label="播放姿态动画" aria-pressed="false"><span></span></button>
+        <div class="pose-copy">
+          <span>机构开合</span>
+          <strong id="pose-value">0%</strong>
+        </div>
+        <input id="pose-slider" type="range" min="0" max="1" step="0.005" value="0" aria-label="机构姿态" />
+        <div class="pose-marks"><span id="phase-lo">0</span><span>REFERENCE</span><span id="phase-hi">1</span></div>
+      </section>
+
+      <section class="explode-deck">
+        <button id="fit-view" type="button">回正视角</button>
+        <label class="explode-copy" for="explode">炸开</label>
+        <input id="explode" type="range" min="0" max="1.5" step="0.01" value="0" aria-label="炸开距离" />
+        <output id="explode-value">0%</output>
+      </section>
+
+      <div class="scene-legend" id="scene-legend" aria-hidden="true">
+        <span><i class="dot dot-source"></i>件几何（逐件配色 / 原材质）</span>
+        <span id="legend-completion" hidden><i class="dot dot-completion"></i>关节示意（求解出来的轴与原点）</span>
+      </div>
+
+      <div id="loading-curtain" class="loading-curtain" data-state="loading">
+        <div id="loader-orbit" class="loader-orbit"><i></i><i></i><i></i></div>
+        <p id="loading-message">LOADING PARTS</p>
+        <code id="loading-command" hidden></code>
+      </div>
+      <p class="review-session">G/B 标记仅在本次预览中，导出 JSON 保存 · 原数据只读</p>
+    </main>
+    <script type="module" src="assets/viewer.js"></script>
+  </body>
+</html>

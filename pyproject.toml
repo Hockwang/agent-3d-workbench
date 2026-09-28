@@ -1,0 +1,45 @@
+[project]
+name = "print-prep"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "cryptography>=46,<51",
+  "numpy==2.4.6",
+  "scipy==1.17.1",
+  "trimesh==4.12.2",
+  "pytest>=8",
+  "mcp==2.2.0",
+  "fast-simplification==0.2.0",
+  "manifold3d==3.3.2",
+  "pillow>=11,<13",
+  "networkx>=3.4,<4",
+  "lxml>=6,<7",
+  "cadquery>=2.6,<3",
+  "shapely>=2,<3",
+  "yourdfpy>=0.0.60,<0.1",
+  "scikit-image>=0.25,<0.27",
+]
+
+[tool.pytest.ini_options]
+markers = [
+  "bambu: 需要本机真实装了 Bambu Studio 才跑的端到端测试",
+]
+testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# Lint. `make lint` / CI run `ruff check .` with this configuration.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["studio/web", "studio/app", "studio/city", "node_modules", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = [
+  "E501",  # line too long: the 120-column limit is enforced by `ruff format`, prose-heavy lines may exceed it
+  "E402",  # module import not at top: entry points bootstrap sys.path before importing the package
+]
+
+[tool.ruff.lint.per-file-ignores]
+"studio/core/kernels/mechanical_*.py" = ["F403", "F405"]  # vendored kernels use star imports

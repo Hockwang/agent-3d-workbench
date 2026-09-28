@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "print_prep_studio": {
+      "command": "<ABSOLUTE_PATH_TO_PLUGIN>/.venv/bin/python",
+      "args": ["<ABSOLUTE_PATH_TO_PLUGIN>/studio/shell/mcp_server.py"],
+      "cwd": "<ABSOLUTE_PATH_TO_PLUGIN>"
+    }
+  }
+}

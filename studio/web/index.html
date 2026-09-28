@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="studio-language" content="">
+<title data-i18n="app.title">3D 工作台</title>
+<link rel="stylesheet" href="./vendor/ui/pico.css">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./flow.css">
+<link rel="stylesheet" href="./editor.css">
+<link rel="stylesheet" href="./recipes.css">
+<link rel="stylesheet" href="./tasks.css">
+<link rel="stylesheet" href="./observe.css">
+<link rel="stylesheet" href="./theme.css">
+<link rel="stylesheet" href="./workbench.css">
+<link rel="stylesheet" href="./studio-layout.css">
+<link rel="stylesheet" href="./evaluation.css">
+<link rel="stylesheet" href="./motion.css">
+<script type="importmap">
+{"imports": {"three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/"}}
+</script>
+</head>
+<body>
+<div id="wb">
+  <nav id="workbench-nav" aria-label="工作区" data-i18n-attr="aria-label=nav.ariaLabel"><strong class="wb-brand"><span class="wb-symbol" aria-hidden="true"></span><span data-i18n="app.title">3D 工作台</span></strong><button data-workspace-mode="edit" aria-pressed="true"><span data-i18n="nav.mode.edit">模型编辑</span></button><button data-workspace-mode="motion" aria-pressed="false"><span data-i18n="nav.mode.motion">动作编辑</span></button><button data-workspace-mode="tasks" aria-pressed="false"><span data-i18n="nav.mode.tasks">建模与任务</span></button><button data-workspace-mode="observe" aria-pressed="false"><span data-i18n="nav.mode.observe">观察与测评</span></button><button data-workspace-mode="print" aria-pressed="false"><span data-i18n="nav.mode.print">打印准备</span></button><button type="button" class="wb-locale" data-locale-toggle data-i18n="nav.localeToggle" data-i18n-attr="title=nav.localeToggleTitle">EN</button></nav>
+  <section id="recipe" class="recipe" aria-label="任务配方" data-i18n-attr="aria-label=recipes.sectionAriaLabel" hidden></section>
+  <p id="recipe-error" role="alert" hidden></p>
+  <div id="editor-space"></div>
+  <div id="task-space" hidden></div>
+  <div id="observe-space" hidden></div>
+  <div id="print-space" hidden>
+
+<div id="wb-body">
+
+  <section id="stage">
+    <div id="viewport"></div>
+    <div class="viewport-vignette" aria-hidden="true"></div>
+
+    <div id="viewport-hud">
+      <div id="plate-tabs" class="hud-group" hidden></div>
+      <div class="hud-group">
+        <button type="button" class="view-btn" data-view="assembly" aria-pressed="false" data-i18n="print.hud.viewAssembly">装配</button>
+        <button type="button" class="view-btn" data-view="plate" aria-pressed="false" data-i18n="print.hud.viewPlate">盘</button>
+      </div>
+      <div class="hud-group">
+        <button type="button" id="fit-view" data-i18n="editor.tool.fitView">适配视图</button>
+      </div>
+    </div>
+
+    <button type="button" id="plan-reopen" class="pill-btn" hidden>
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="9" y2="12"/></svg>
+      <span data-i18n="print.plan.title">打印计划</span>
+    </button>
+
+    <!-- 悬浮卡：摆盘设置 -->
+    <div class="float-card" id="card-arrange">
+      <div class="card-head">
+        <span class="card-icon">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/><circle cx="6" cy="4" r="1.3" fill="currentColor" stroke="none"/><circle cx="10" cy="8" r="1.3" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="card-title" data-i18n="print.card.arrange.title">摆盘设置</span>
+        <span class="card-head-summary" hidden></span>
+        <button type="button" class="card-fold-btn" data-card-toggle="card-arrange" aria-label="收折摆盘设置" data-i18n-attr="aria-label=print.card.arrange.foldAriaLabel" aria-expanded="true">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,6 8,10 12,6"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+
+        <div class="compat-anchor" id="block-printer">
+          <div class="sec-label-row">
+            <span class="sec-label" data-i18n="print.card.arrange.printerSectionLabel">3D 打印机</span>
+            <span class="sec-icon" aria-hidden="true">⇄</span>
+          </div>
+          <div class="printer-row">
+            <span class="printer-row-name" id="printer-row-name" data-i18n="panel.printer.none">未选择打印机</span>
+            <span class="printer-row-bed" id="printer-row-bed">—</span>
+            <select id="printer-select" class="printer-row-select" aria-label="选择打印机" data-i18n-attr="aria-label=print.card.arrange.printerSelectAriaLabel"></select>
+          </div>
+
+          <div class="sec-label-row"><span class="sec-label" data-i18n="print.card.arrange.shapeSectionLabel">形态</span></div>
+          <select id="shape-select" class="visually-hidden" aria-label="形态标签" data-i18n-attr="aria-label=print.card.arrange.shapeSelectAriaLabel">
+            <option value="generic" data-i18n="panel.shape.generic">通用</option>
+            <option value="figurine" data-short="手办" data-i18n="panel.shape.figurine" data-i18n-attr="data-short=flow.shape.figurine">手办雕像</option>
+            <option value="relief" data-short="浮雕" data-i18n="panel.shape.relief" data-i18n-attr="data-short=flow.shape.relief">浮雕薄板</option>
+            <option value="mechanical" data-i18n="panel.shape.mechanical">结构件</option>
+          </select>
+          <div class="choice-seg-row" id="shape-choice"></div>
+
+          <div class="sec-label-row"><span class="sec-label" data-i18n="panel.shapeEnhance.orientStrategy">朝向策略</span></div>
+          <select id="strategy-select" class="visually-hidden" aria-label="朝向策略" data-i18n-attr="aria-label=panel.shapeEnhance.orientStrategy">
+            <option value="auto" data-desc="跟随形态" data-i18n="print.card.arrange.strategy.auto" data-i18n-attr="data-desc=print.card.arrange.strategy.autoDesc">自动</option>
+            <option value="flat" data-desc="底面最稳" data-i18n="panel.strategy.flat" data-i18n-attr="data-desc=print.card.arrange.strategy.flatDesc">贴床最大</option>
+            <option value="support" data-desc="悬空最少" data-i18n="panel.strategy.support" data-i18n-attr="data-desc=print.card.arrange.strategy.supportDesc">少支撑</option>
+            <option value="upright" data-desc="不转模型" data-i18n="panel.strategy.upright" data-i18n-attr="data-desc=print.card.arrange.strategy.uprightDesc">保持原向</option>
+          </select>
+          <div class="choice-cards-grid" id="strategy-choice"></div><details class="advanced-fold"><summary data-i18n="print.card.arrange.perPartOrientSummary">各零件朝向</summary><div id="orient-parts"></div></details>
+        </div>
+
+        <div class="compat-anchor" id="block-arrange">
+          <div class="sec-label-row sec-label-row-split">
+            <span class="sec-label" data-i18n="print.card.arrange.plateSectionLabel">分盘策略</span>
+            <span class="field-suffix field-suffix-inline">
+              <span class="field-suffix-label" data-i18n="print.card.arrange.gapLabel">间距</span>
+              <input type="number" id="gap-input" min="0" step="0.5" value="4">
+              <span class="field-suffix-unit">mm</span>
+            </span>
+          </div>
+          <select id="mode-select" class="visually-hidden" aria-label="分盘方式" data-i18n-attr="aria-label=print.card.arrange.modeSelectAriaLabel">
+            <option value="single" data-i18n="panel.mode.single">单盘</option>
+            <option value="per_part" data-i18n="panel.mode.perPart">一件一盘</option>
+            <option value="auto" data-i18n="panel.mode.auto">自动</option>
+          </select>
+          <div class="choice-seg-row" id="mode-choice"></div>
+        </div>
+
+        <div class="sec-label-row"><span class="sec-label" data-i18n="print.card.arrange.modelSizeLabel">模型尺寸</span></div>
+        <div class="dim-rows">
+          <div class="dim-row"><span class="axis-x">X</span><span class="dim-val" id="model-size-x">—</span><span class="dim-unit">mm</span></div>
+          <div class="dim-row"><span class="axis-y">Y</span><span class="dim-val" id="model-size-y">—</span><span class="dim-unit">mm</span></div>
+          <div class="dim-row"><span class="axis-z">Z</span><span class="dim-val" id="model-size-z">—</span><span class="dim-unit">mm</span></div>
+        </div>
+        <div class="field-row">
+          <span class="field-suffix">
+            <span class="field-suffix-label" data-i18n="print.card.arrange.targetMaxLabel">目标最长边</span>
+            <input type="number" id="model-target-max" min="0" step="0.1" placeholder="180">
+            <span class="field-suffix-unit">mm</span>
+          </span>
+          <span class="field-suffix">
+            <span class="field-suffix-label" data-i18n="editor.tool.scale">缩放</span>
+            <span class="field-suffix-unit field-suffix-prefix">×</span>
+            <input type="number" id="model-scale" min="0" step="0.01" placeholder="1.0">
+          </span>
+        </div>
+        <p class="hint small" data-i18n="print.card.arrange.resizeHint">改尺寸后需重新载入</p>
+
+        <div class="btn-row-2">
+          <button type="button" id="btn-orient" class="btn-secondary" data-i18n="flow.verb.orient">选朝向</button>
+          <button type="button" id="btn-arrange" class="btn-secondary" data-i18n="workspace.op.arrange">排盘</button>
+        </div>
+        <div class="compat-anchor" id="block-prepare">
+          <button type="button" id="btn-prepare" class="btn-white-primary" data-i18n="flow.op.prepare">一键准备</button>
+        </div>
+        <div id="plates-summary" class="hint"></div>
+      </div>
+    </div>
+
+    <!-- 悬浮卡：模型 -->
+    <div class="float-card" id="card-model">
+      <div class="card-head">
+        <span class="card-icon">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M2 5l6-3 6 3-6 3-6-3z"/><path d="M2 5v6l6 3 6-3V5"/><line x1="8" y1="8" x2="8" y2="14"/></svg>
+        </span>
+        <span class="card-title" data-i18n="flow.step.model.name">模型</span>
+        <span class="card-head-summary" id="model-card-summary" hidden></span>
+        <button type="button" class="card-fold-btn" data-card-toggle="card-model" aria-label="收折模型" data-i18n-attr="aria-label=print.card.model.foldAriaLabel" aria-expanded="true">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,6 8,10 12,6"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="compat-anchor" id="block-model">
+          <label class="field">
+            <span data-i18n="print.card.model.pathLabel">路径（每行一个绝对路径）</span>
+            <textarea id="model-paths" rows="3" class="mono-input" placeholder="/绝对/路径/to/part.stl" data-i18n-attr="placeholder=print.card.model.pathPlaceholder"></textarea>
+          </label>
+          <div id="drop-zone" class="drop-zone">
+            <span class="drop-zone-icon">
+              <svg viewBox="0 0 16 16" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V3"/><path d="M4.5 6.5L8 3l3.5 3.5"/><path d="M3 12.5h10"/></svg>
+            </span>
+            <span><span data-i18n="print.card.model.dropHint">拖入文件，或</span>
+              <label class="file-pick">
+                <span data-i18n="motionPanel.chooseFileLabel">选择文件</span>
+                <input type="file" id="file-input" multiple hidden>
+              </label>
+            </span>
+          </div>
+          <div id="upload-status" class="hint" hidden></div>
+          <label class="field-inline">
+            <input type="checkbox" id="model-merge">
+            <span data-i18n="print.card.model.mergeLabel">合并成一件</span>
+          </label>
+          <button type="button" id="btn-load" class="btn-secondary btn-block" data-i18n="flow.verb.model">载入</button>
+
+          <table class="parts-list" id="parts-table">
+            <thead><tr><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div id="model-warnings" class="warn-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dock-bl">
+      <div id="load-progress" class="hud-panel" hidden></div>
+
+      <!-- 悬浮卡：选中零件 -->
+      <div class="float-card" id="card-selected" hidden>
+        <div class="card-head">
+          <span class="card-icon">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>
+          </span>
+          <span class="card-title" id="selected-title" data-i18n="print.card.selected.title">选中零件</span>
+          <button type="button" class="card-close-btn" id="selected-close-btn" aria-label="取消选中" data-i18n-attr="aria-label=print.card.selected.closeAriaLabel">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="compat-anchor" id="block-selected">
+            <div id="selected-empty" class="hint" hidden data-i18n="print.card.selected.emptyHint">点击视口中的零件查看详情。</div>
+            <div id="selected-detail" hidden>
+              <p id="sel-shared" class="hint"></p><div class="kv-grid" id="selected-metrics"></div>
+              <div id="selected-warnings" class="warn-list"></div>
+              <h3 data-i18n="print.card.selected.candidatesTitle">候选朝向</h3>
+              <div id="selected-candidates" class="candidate-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="busy-card" class="busy-card" hidden>
+      <div class="busy-card-title" id="busy-card-title" data-i18n="flow.plan.busy.label">正在处理</div>
+      <div class="busy-card-time" id="busy-card-time" data-i18n="print.busyCard.time">已用时 0s</div>
+      <div class="busy-bar"><i></i></div>
+    </div>
+
+    <div id="hover-tip" hidden></div>
+  </section>
+
+  <aside id="panel">
+    <div class="panel-head">
+      <span class="card-icon">
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="12" x2="9" y2="12"/></svg>
+      </span>
+      <span class="panel-title" data-i18n="print.plan.title">打印计划</span>
+      <button type="button" class="card-close-btn" id="panel-collapse" aria-label="收起打印计划" data-i18n-attr="aria-label=print.plan.collapseAriaLabel">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div id="panel-body">
+
+      <div id="cards-dock"></div>
+      <header id="ctx">
+    <div class="ctx-main">
+      <span class="ctx-file" id="ctx-file" data-i18n="flow.ctx.noModel">还没有模型</span>
+      <span class="ctx-meta" id="ctx-meta"></span>
+    </div>
+    <button type="button" class="ready" id="ready-pill" aria-expanded="false" aria-controls="ready-list" hidden>
+      <span class="ready-ring" id="ready-ring"><span></span></span>
+      <span><span data-i18n="print.plan.readyLabel">就绪</span> <b id="ready-text">0 / 6</b></span>
+    </button>
+  </header>
+  <div id="ready-list" class="ready-list" aria-label="打印进度明细" data-i18n-attr="aria-label=print.plan.readyListAriaLabel" hidden></div>
+
+      <section id="plan-feedback" class="plan-feedback" aria-label="当前进度" data-i18n-attr="aria-label=flow.plan.done.label">
+        <span id="plan-next-label" class="plan-next-label" data-i18n="flow.plan.disconnected.label">连接状态</span>
+        <strong id="plan-next-title" role="status" data-i18n="flow.plan.disconnected.title">正在读取工作区</strong>
+        <p id="plan-next-detail" data-i18n="flow.plan.disconnected.detail">连接后显示当前进度。</p>
+        <button type="button" id="plan-next" hidden></button>
+      </section>
+
+      <div id="stale-banner" class="stale-banner" hidden>
+        <div class="stale-text">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 6.5A5 5 0 1 0 13 9"/><path d="M13 3v3.5H9.5"/></svg>
+          <span id="stale-text"></span>
+        </div>
+        <div class="stale-actions">
+          <button type="button" id="btn-redo" class="btn-white-primary" data-i18n="print.plan.redoButton">更新失效步骤</button>
+          <span class="sec-hint" data-i18n="print.plan.redoAltHint">也可以在对话里让 AI 接着做</span>
+        </div>
+      </div>
+
+<details class="plan-section plan-history"><summary><span data-i18n="editor.records.title">操作记录</span> <span id="history-count"></span></summary><ul id="history" class="log"></ul><p id="history-empty" class="hint" data-i18n="print.plan.historyEmptyHint">这里会记下你和 AI 的操作。</p></details>
+
+      <section class="plan-section">
+        <div class="sec-label-row"><span class="sec-label" data-i18n="print.plan.qualitySectionLabel">摆盘质量</span></div>
+        <div class="metric-grid">
+          <button type="button" class="metric-tile" id="metric-parts-plates-tile" disabled>
+            <span class="metric-label" data-i18n="print.plan.metric.partsPerPlate">零件 / 盘</span>
+            <span class="metric-value" id="metric-parts-plates">—</span>
+          </button>
+          <button type="button" class="metric-tile" id="metric-bed-util-tile" disabled>
+            <span class="metric-label" id="metric-bed-util-label" data-i18n="panel.metric.bedUtilLabel">床利用率</span>
+            <span class="metric-value" id="metric-bed-util">—</span>
+          </button>
+          <button type="button" class="metric-tile" id="metric-contact-area-tile" disabled>
+            <span class="metric-label" data-i18n="print.plan.metric.contactArea">贴床面积</span>
+            <span class="metric-value" id="metric-contact-area">—</span>
+          </button>
+          <button type="button" class="metric-tile" id="metric-overhang-area-tile" disabled>
+            <span class="metric-label" data-i18n="print.plan.metric.overhangArea">悬空面积</span>
+            <span class="metric-value" id="metric-overhang-area">—</span>
+          </button>
+          <button type="button" class="metric-tile metric-tile-wide" id="metric-warnings-tile">
+            <span class="metric-label" data-i18n="print.plan.metric.warnings">告警</span>
+            <span class="metric-value" id="metric-warnings">0</span>
+          </button>
+        </div>
+        <div id="plan-warnings-list" class="warn-list" hidden></div>
+      </section>
+
+      <section class="plan-section">
+        <div class="compat-anchor" id="block-check">
+          <div class="sec-label-row">
+            <span class="sec-label" data-i18n="print.plan.estimateSectionLabel">打印预估</span>
+            <button type="button" id="btn-check" class="btn-mini" data-i18n="flow.step.check.name">试切</button>
+          </div>
+          <div class="metric-grid">
+            <div class="metric-tile metric-tile-wide">
+              <span class="metric-label" data-i18n="print.plan.metric.finalSize">成品尺寸</span>
+              <span class="metric-value" id="metric-final-size">—</span>
+              <span class="metric-sub" data-i18n="print.plan.metric.finalSizeSub">装配后整体</span>
+            </div>
+            <div class="metric-tile metric-tile-wide">
+              <span class="metric-label" id="metric-plate-size-label" data-i18n="panel.metric.plateSizeLabel">摆盘尺寸</span>
+              <span class="metric-value" id="metric-plate-size">—</span>
+              <span class="metric-sub" data-i18n="print.plan.metric.plateSizeSub">床上占用范围</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-label" data-i18n="print.common.filamentLabel">耗材</span>
+              <span class="metric-value" id="metric-filament" data-i18n="panel.metric.notChecked">未试切</span>
+            </div>
+            <div class="metric-tile">
+              <span class="metric-label" data-i18n="print.plan.metric.duration">时长</span>
+              <span class="metric-value" id="metric-time" data-i18n="panel.metric.notChecked">未试切</span>
+              <span class="metric-sub" id="metric-time-sub"></span>
+            </div>
+          </div>
+          <div id="check-result" class="result-list">
+            <div class="hint" data-i18n="print.plan.notEstimatedYet">尚未估算。</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="plan-section">
+        <div class="enhance-card" id="shape-enhance-card">
+          <div class="enhance-title" id="shape-enhance-title" data-i18n="print.plan.shapeEnhanceTitle">形态增强</div>
+          <div class="enhance-list" id="shape-enhance-list"></div>
+        </div>
+      </section>
+
+      <section class="plan-section">
+        <div class="compat-anchor" id="block-export">
+          <div class="sec-label-row"><span class="sec-label" data-i18n="print.export.threeMfParamsLabel">3MF 工程参数</span></div>
+          <div class="kv-card" id="export-presets">
+            <div class="kv-row">
+              <span class="kv-label" data-i18n="print.export.printerLabel">打印机</span>
+              <span class="kv-value-wrap"><span class="kv-value" id="mf-printer-name">—</span><span class="kv-sub" id="mf-printer-bed">—</span></span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label" data-i18n="flow.step.export.name">工艺</span>
+              <span class="kv-value-wrap"><span class="kv-value" id="export-process-name" data-i18n="panel.export.defaultProcessNote">（默认，按形态选取）</span><span class="kv-sub" id="export-process-note" data-i18n="panel.export.chosenAtExportTime">导出时按形态选取</span></span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label" data-i18n="print.common.filamentLabel">耗材</span>
+              <span class="kv-value-wrap"><span class="kv-value" id="export-filament-name" data-i18n="print.export.filamentDefaultShort">（默认）</span></span>
+            </div>
+            <div class="kv-row" id="overrides-head">
+              <span class="kv-label" data-i18n="print.export.overridesLabel">覆盖项</span>
+              <span class="kv-value-wrap kv-value-row"><span class="kv-value" id="overrides-count" data-i18n="print.export.overridesCountDefault">0 项</span><button type="button" id="btn-override-add" class="btn-mini" data-i18n="print.export.addOverrideButton">+ 添加</button></span>
+            </div>
+            <div class="kv-row">
+              <span class="kv-label" data-i18n="print.export.unitsLabel">单位</span>
+              <span class="kv-value-wrap"><span class="kv-value">mm</span></span>
+            </div>
+          </div>
+          <table class="data-table" id="overrides-table" hidden>
+            <thead><tr><th data-i18n="print.export.overridesTableKeyHeader">键</th><th data-i18n="print.export.overridesTableValueHeader">值</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+
+          <details class="advanced-fold">
+            <summary data-i18n="print.export.advancedSummary">高级</summary>
+            <label class="field">
+              <span data-i18n="print.export.processInputLabel">指定工艺预设（可选）</span>
+              <input type="text" id="process-input" placeholder="留空按形态自动选取" data-i18n-attr="placeholder=print.export.processInputPlaceholder">
+            </label>
+            <label class="field">
+              <span data-i18n="print.export.filamentInputLabel">指定耗材预设（可选）</span>
+              <input type="text" id="filament-input" placeholder="留空用打印机默认" data-i18n-attr="placeholder=print.export.filamentInputPlaceholder">
+            </label>
+            <label class="field-inline">
+              <input type="checkbox" id="no-project-check">
+              <span data-i18n="print.export.geometryOnlyLabel">只写几何 3MF，不生成 Bambu 工程</span>
+            </label>
+          </details>
+        </div>
+      </section>
+
+      <section class="plan-section">
+        <div class="sec-label-row"><span class="sec-label" data-i18n="print.export.resultsSectionLabel">导出与发送结果</span></div>
+        <div id="export-result" class="result-list">
+          <div class="hint" data-i18n="panel.export.notYet">尚未导出。</div>
+        </div>
+        <div id="send-result" class="result-list"></div>
+      </section>
+
+    </div>
+
+    <div class="compat-anchor" id="block-send">
+      <div id="panel-actions">
+        <p class="actions-hint" data-i18n="print.export.actionsHint">只在 Bambu Studio 里打开，不会发到打印机</p>
+        <div class="actions-row">
+          <button type="button" id="btn-export" class="icon-btn" title="导出工程" aria-label="导出工程" data-i18n-attr="title=workspace.op.export aria-label=workspace.op.export">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 7L8 10.5 11.5 7"/><path d="M3 13h10"/></svg>
+          </button>
+          <select id="send-plate-select" class="plate-select" aria-label="选择要发送的盘" data-i18n-attr="aria-label=print.export.sendPlateSelectAriaLabel"></select>
+          <input type="checkbox" id="send-all-check" class="visually-hidden">
+          <button type="button" id="btn-send" class="btn-send" title="在 Bambu Studio 里打开工程" data-i18n="print.export.sendButton" data-i18n-attr="title=flow.step.deliver.todo">发送</button>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<footer id="statusbar">
+  <span id="status-busy" class="status-item"></span>
+  <span id="status-error" class="status-item status-error" hidden><button type="button" id="status-error-close" aria-label="关闭" data-i18n-attr="aria-label=common.close">×</button><span id="status-error-text"></span></span>
+  <span id="status-tools" class="status-item"></span>
+  <span id="status-rev" class="status-item"></span>
+</footer>
+
+
+</div>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

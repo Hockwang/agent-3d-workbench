@@ -1,0 +1,37 @@
+# Continuous integration for the public repository. Desktop-only prerequisites
+# are absent on Linux runners; those integration tests skip explicitly.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --locked
+      - run: uvx ruff@0.14.3 check .
+      - run: uv run pytest -q
+      - run: uv run python examples/demo/verify_tutorial.py
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:app
+      # The built bundles are committed. Warn (do not fail) when they drift from source
+      # until the build is confirmed byte-reproducible on Linux.
+      - name: Check committed bundles are up to date
+        run: git diff --stat --exit-code studio/app/dist studio/web/vendor || echo "::warning::studio/app/dist or studio/web/vendor differ from a fresh build"

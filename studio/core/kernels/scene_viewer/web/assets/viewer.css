@@ -1,0 +1,1413 @@
+/* Scene Viewer 皮肤 —— 从 tooling/a8_viewer/styles.css 复制而来。
+ *
+ * ⚠️ 这是**副本不是引用**：a8 那份改了，这里不会跟着变。之所以复制而不是
+ * 共享一份，是因为 scene_viewer 要随 web/ 整包同步进产品仓（sync_to_studio.sh），
+ * 跨目录引用在那边取不到。两边真分叉了以 a8 为准回抄。
+ *
+ * 复制自：tooling/a8_viewer/styles.css
+ * 文件末尾 "scene_viewer 增补" 之后是 a8 没有的部分（炸开、部件/关节清单、
+ * 陈旧计数、错误帘），照 a8 的排版语言写。
+ */
+
+:root {
+  color-scheme: light;
+  --paper: #f1efe7;
+  --paper-bright: #fbfaf5;
+  --ink: #1d2825;
+  --muted: #68736d;
+  --rule: rgba(29, 40, 37, 0.15);
+  --rule-strong: rgba(29, 40, 37, 0.28);
+  --green: #1f5f4c;
+  --green-soft: #dbe7df;
+  --amber: #d87a32;
+  --amber-soft: #f4dfca;
+  --blue: #387a83;
+  --red: #a74434;
+  --shadow: 0 24px 70px rgba(45, 54, 48, 0.13);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Avenir Next Condensed", "DIN Condensed", "Helvetica Neue",
+    sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+#app {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 48% 32%, rgba(255, 255, 255, 0.92), transparent 32%),
+    linear-gradient(124deg, #f8f6ef 0%, #e9e8df 52%, #dfe5df 100%);
+}
+
+#app::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.19;
+  background-image:
+    linear-gradient(rgba(29, 40, 37, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29, 40, 37, 0.15) 1px, transparent 1px);
+  background-size: 84px 84px;
+  mask-image: linear-gradient(to bottom, transparent 2%, black 25%, transparent 92%);
+}
+
+#stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+.panel-kicker {
+  margin: 3px 0 7px;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.curation-toolbar {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 8;
+  display: grid;
+  width: 340px;
+  height: 40px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 6px 5px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 3px 14px 3px 3px;
+  background: rgba(251, 250, 245, 0.82);
+  box-shadow: 0 8px 30px rgba(45, 54, 48, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.catalog-readout {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+}
+
+.catalog-readout span {
+  color: var(--green);
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+}
+
+.catalog-readout strong {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: Baskerville, Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.curation-summary {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.curation-summary > span {
+  min-width: 27px;
+  padding: 4px 5px;
+  border: 1px solid var(--rule);
+  border-radius: 99px;
+  text-align: center;
+}
+
+.count-golden {
+  color: var(--green);
+}
+
+.count-bad {
+  color: var(--red);
+}
+
+#curation-export {
+  height: 27px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9px 2px 9px 2px;
+  background: var(--ink);
+  color: white;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 850;
+  letter-spacing: 0.1em;
+}
+
+#curation-export:hover {
+  background: var(--green);
+}
+
+#curation-export:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}
+
+.case-rail {
+  position: absolute;
+  /* 原来只有 top，没有下边界也没有 overflow：case 从 8 个涨到 19 个之后，
+     列表直接溢出到视口外，第 10 个往后完全够不着（页面本身是定高舞台，
+     body 也不滚）。下边界要避开左下角那张参考图卡片 .evidence-card
+     （absolute bottom:28px，高度随图片比例变），所以用 --evidence-h，
+     由 index.html 末尾的 ResizeObserver 实时写入。 */
+  top: 28px;
+  bottom: calc(var(--evidence-h, 240px) + 44px);
+  left: 28px;
+  z-index: 7;
+  display: flex;
+  width: 218px;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid var(--rule-strong);
+  scrollbar-color: rgba(45, 54, 48, 0.25) transparent;
+  scrollbar-width: thin;
+}
+
+.case-rail::-webkit-scrollbar {
+  width: 5px;
+}
+
+.case-rail::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: rgba(45, 54, 48, 0.22);
+}
+
+.case-rail::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 54, 48, 0.4);
+}
+
+/* 失效类别小标题。sticky 让当前分类在滚动时留在顶部，19 个 case 才认得出
+   自己看到哪一类了。 */
+.case-group {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 13px 0 5px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(
+    to bottom,
+    var(--paper, #f4f2ec) 72%,
+    rgba(244, 242, 236, 0)
+  );
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.case-group:first-child {
+  padding-top: 7px;
+}
+
+.case-row {
+  position: relative;
+  display: grid;
+  min-height: 54px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: stretch;
+  border-bottom: 1px solid var(--rule);
+}
+
+.case-markers {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding-right: 7px;
+}
+
+.case-mark {
+  width: 20px;
+  height: 19px;
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px 7px 2px 2px;
+  background: rgba(251, 250, 245, 0.54);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.68;
+  transition: 150ms ease;
+}
+
+.case-mark:hover {
+  opacity: 1;
+  transform: translateX(1px);
+}
+
+.case-mark-golden[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(31, 95, 76, 0.2);
+}
+
+.case-mark-typical_bad[aria-pressed="true"] {
+  border-color: var(--red);
+  background: var(--red);
+  color: white;
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(167, 68, 52, 0.18);
+}
+
+.case-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 31px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 53px;
+  padding: 0 4px 0 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    padding 180ms ease,
+    color 180ms ease,
+    background 180ms ease;
+}
+
+.case-button::before {
+  position: absolute;
+  inset: 5px -7px 5px -10px;
+  z-index: -1;
+  border-radius: 2px 16px 2px 2px;
+  background: rgba(251, 250, 245, 0);
+  content: "";
+  transition: background 180ms ease;
+}
+
+.case-button:hover,
+.case-button.is-active {
+  padding-left: 8px;
+  color: var(--green);
+}
+
+.case-button.is-active::before {
+  background: rgba(251, 250, 245, 0.88);
+  box-shadow: 0 8px 28px rgba(45, 54, 48, 0.08);
+}
+
+.case-button .case-number {
+  color: var(--muted);
+  font-family: Baskerville, Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.case-button strong {
+  font-family: Baskerville, Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.case-button em {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(216, 122, 50, 0.12);
+}
+
+.mode-switch {
+  position: absolute;
+  top: 25px;
+  right: 390px;
+  z-index: 7;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(251, 250, 245, 0.74);
+  box-shadow: 0 8px 30px rgba(45, 54, 48, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.mode-switch button {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: 180ms ease;
+}
+
+.mode-switch button span {
+  font-family: Baskerville, Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mode-switch button.is-active {
+  background: var(--green);
+  color: white;
+  box-shadow: 0 4px 16px rgba(31, 95, 76, 0.2);
+}
+
+.mode-switch button:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
+.audit-panel {
+  position: absolute;
+  top: 76px;
+  right: 24px;
+  bottom: 24px;
+  z-index: 7;
+  display: flex;
+  width: 340px;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 20px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 3px 3px 24px 3px;
+  background: rgba(251, 250, 245, 0.88);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(24px) saturate(0.88);
+}
+
+.panel-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 12px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-family: Baskerville, "Iowan Old Style", Georgia, serif;
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid rgba(216, 122, 50, 0.28);
+  border-radius: 999px;
+  background: var(--amber-soft);
+  color: #81451b;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.status-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-chip[data-state="ready"] {
+  border-color: rgba(31, 95, 76, 0.28);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.status-chip[data-state="provisional"] {
+  border-color: rgba(190, 116, 38, 0.32);
+  background: #f4e3c8;
+  color: #8b511d;
+}
+
+.status-chip[data-state="blocked"] {
+  border-color: rgba(167, 68, 52, 0.25);
+  background: #f2dcd6;
+  color: var(--red);
+}
+
+.blocker-note {
+  margin: 16px 0 14px;
+  padding: 13px 14px 12px;
+  border-left: 3px solid var(--amber);
+  background:
+    linear-gradient(90deg, rgba(216, 122, 50, 0.12), transparent),
+    rgba(244, 223, 202, 0.35);
+}
+
+.blocker-note span,
+.layers p {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--amber);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.blocker-note strong {
+  display: block;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.blocker-note p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.fact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 0 0 14px;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+
+.fact-grid div {
+  min-height: 62px;
+  padding: 9px 10px;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.fact-grid dt {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fact-grid dd {
+  margin: 5px 0 0;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.layers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  padding-top: 1px;
+}
+
+.layers p {
+  grid-column: 1 / -1;
+  color: var(--green);
+}
+
+.layers label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.layers input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.layers label span {
+  position: relative;
+  width: 22px;
+  height: 12px;
+  flex: 0 0 auto;
+  border-radius: 99px;
+  background: #cdd2cd;
+  transition: 160ms ease;
+}
+
+.layers label span::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: white;
+  content: "";
+  box-shadow: 0 1px 3px rgba(29, 40, 37, 0.25);
+  transition: 160ms ease;
+}
+
+.layers input:checked + span {
+  background: var(--green);
+}
+
+.layers input:checked + span::after {
+  transform: translateX(10px);
+}
+
+.case-note {
+  margin: auto 0 0;
+  padding-top: 13px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 560;
+  line-height: 1.55;
+}
+
+.evidence-card {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  z-index: 7;
+  width: 218px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 3px 3px 16px 3px;
+  background: rgba(251, 250, 245, 0.88);
+  box-shadow: 0 14px 38px rgba(45, 54, 48, 0.1);
+  backdrop-filter: blur(18px);
+  transition:
+    width 220ms ease,
+    transform 220ms ease;
+}
+
+.evidence-card.is-expanded {
+  width: min(430px, calc(100vw - 400px));
+  transform: translateY(-4px);
+}
+
+.evidence-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 116px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: #e6e5df;
+  cursor: zoom-in;
+  transition: height 220ms ease;
+}
+
+.evidence-card.is-expanded .evidence-image {
+  height: min(55vh, 460px);
+  cursor: zoom-out;
+}
+
+.evidence-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background:
+    linear-gradient(45deg, #f7f6f1 25%, transparent 25%),
+    linear-gradient(-45deg, #f7f6f1 25%, transparent 25%),
+    #eeede8;
+  background-size: 14px 14px;
+}
+
+.image-corner {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  padding: 3px 5px;
+  background: rgba(29, 40, 37, 0.78);
+  color: white;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.evidence-caption {
+  padding: 9px 10px 10px;
+}
+
+.evidence-caption span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--green);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 7px;
+  letter-spacing: 0.04em;
+}
+
+.evidence-caption strong {
+  display: block;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pose-deck {
+  position: absolute;
+  right: 390px;
+  bottom: 24px;
+  left: 270px;
+  z-index: 7;
+  display: grid;
+  grid-template-columns: 42px 94px 1fr;
+  align-items: center;
+  gap: 12px;
+  min-width: 360px;
+  padding: 11px 16px 12px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 22px 3px 3px 22px;
+  background: rgba(251, 250, 245, 0.8);
+  box-shadow: 0 12px 36px rgba(45, 54, 48, 0.09);
+  backdrop-filter: blur(18px);
+}
+
+#play-toggle {
+  position: relative;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  cursor: pointer;
+  box-shadow: 0 4px 13px rgba(31, 95, 76, 0.24);
+}
+
+#play-toggle span {
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid white;
+}
+
+#play-toggle.is-playing span {
+  width: 7px;
+  height: 10px;
+  margin: 0;
+  border: 0;
+  border-right: 2px solid white;
+  border-left: 2px solid white;
+}
+
+.pose-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.pose-copy span {
+  color: var(--muted);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.pose-copy strong {
+  color: var(--green);
+  font-family: Baskerville, Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+#pose-slider {
+  width: 100%;
+  height: 3px;
+  appearance: none;
+  border-radius: 99px;
+  outline: none;
+  background: linear-gradient(
+    90deg,
+    var(--green) 0%,
+    var(--green) var(--pose, 42%),
+    rgba(29, 40, 37, 0.15) var(--pose, 42%),
+    rgba(29, 40, 37, 0.15) 100%
+  );
+}
+
+#pose-slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  appearance: none;
+  border: 3px solid var(--paper-bright);
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: ew-resize;
+  box-shadow: 0 0 0 1px rgba(29, 40, 37, 0.18);
+}
+
+.pose-marks {
+  grid-column: 3;
+  display: flex;
+  justify-content: space-between;
+  margin-top: -8px;
+  color: var(--muted);
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.scene-legend {
+  position: absolute;
+  right: 390px;
+  bottom: 90px;
+  z-index: 6;
+  display: flex;
+  gap: 14px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.scene-legend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.dot-canonical {
+  background: var(--green);
+}
+
+.dot-source {
+  background: #838d88;
+}
+
+.dot-completion {
+  background: var(--amber);
+}
+
+.loading-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-content: center;
+  background: rgba(241, 239, 231, 0.94);
+  opacity: 1;
+  pointer-events: all;
+  transition: opacity 420ms ease;
+}
+
+.loading-curtain.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-curtain p {
+  margin-top: 18px;
+  color: var(--green);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+}
+
+.loading-curtain code {
+  max-width: calc(100vw - 48px);
+  margin-top: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: rgba(251, 250, 245, 0.86);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0;
+  user-select: all;
+}
+
+.loader-orbit {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  margin: auto;
+  animation: orbit-spin 2.6s linear infinite;
+}
+
+.loader-orbit i {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(31, 95, 76, 0.34);
+  border-radius: 50%;
+}
+
+.loader-orbit i:nth-child(2) {
+  transform: rotateX(68deg);
+}
+
+.loader-orbit i:nth-child(3) {
+  transform: rotateY(68deg);
+}
+
+@keyframes orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1020px) {
+  .mode-switch {
+    right: 342px;
+    top: 20px;
+  }
+
+  .curation-toolbar {
+    top: 20px;
+    right: 16px;
+    width: 310px;
+  }
+
+  .audit-panel {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    width: 310px;
+    height: 54vh;
+  }
+
+  .pose-deck {
+    right: 342px;
+  }
+
+  .scene-legend {
+    right: 342px;
+  }
+}
+
+@media (max-width: 760px) {
+  .case-rail {
+    top: 12px;
+    right: 12px;
+    bottom: auto;  /* 窄屏是横向滚动条，桌面那条 --evidence-h 下边界不适用 */
+    left: 12px;
+    width: auto;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border: 0;
+  }
+
+  .case-group {
+    position: static;
+    display: flex;
+    align-items: center;
+    padding: 0 9px 0 3px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 0;
+    background: none;
+    writing-mode: vertical-rl;
+  }
+
+  .case-row {
+    min-width: 175px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 0;
+  }
+
+  .case-button {
+    min-width: 0;
+    grid-template-columns: 24px 1fr;
+  }
+
+  .case-button em {
+    display: none;
+  }
+
+  .mode-switch {
+    top: 126px;
+    right: 12px;
+  }
+
+  .curation-toolbar {
+    top: 76px;
+    right: 12px;
+    width: min(310px, calc(100vw - 24px));
+  }
+
+  .mode-switch button {
+    padding: 6px 9px;
+  }
+
+  .audit-panel {
+    right: 10px;
+    bottom: 10px;
+    width: min(310px, calc(100vw - 20px));
+    height: 43vh;
+  }
+
+  .fact-grid,
+  .case-note {
+    display: none;
+  }
+
+  .evidence-card {
+    display: none;
+  }
+
+  .pose-deck {
+    right: 10px;
+    bottom: calc(43vh + 20px);
+    left: 10px;
+  }
+
+  .scene-legend {
+    display: none;
+  }
+}
+
+/* ───────────────────────── scene_viewer 增补 ─────────────────────────
+   a8 没有的几块，照 a8 的排版语言写。 */
+
+/* [hidden] 必须压过下面所有 display 规则 —— 否则 .overlay{display:grid}
+   之类会让 hidden 元素照常显示（这条踩过一次，症状是白幕盖住模型）。 */
+[hidden] { display: none !important; }
+
+/* a8 的 #stage 就是 canvas；这里是 canvas 的宿主 div，尺寸语义要一致 */
+#stage > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.count-stale {
+  color: var(--amber);
+}
+
+.count-stale b {
+  font-family: Baskerville, Georgia, serif;
+  font-size: 14px;
+}
+
+/* 部件 / 关节清单：a8 只有四格事实卡，这里要能逐件点选 */
+.inspector {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  gap: 14px;
+  margin-top: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(45, 54, 48, 0.25) transparent;
+  scrollbar-width: thin;
+}
+
+.inspector h3 {
+  margin: 0 0 7px;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.inspector h3 small {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.inspector-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: 140ms ease;
+}
+
+.inspector-row:hover,
+.inspector-row.is-active {
+  background: var(--green-soft);
+}
+
+.inspector-row .color-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--item-color, var(--green));
+}
+
+.inspector-row span {
+  display: grid;
+  min-width: 0;
+}
+
+.inspector-row strong {
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-row em {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: normal;
+  letter-spacing: 0.04em;
+}
+
+#selection-detail dl {
+  display: grid;
+  margin: 0;
+  gap: 4px;
+}
+
+#selection-detail div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+}
+
+#selection-detail dt {
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+#selection-detail dd {
+  margin: 0;
+  font-size: 11px;
+  word-break: break-word;
+}
+
+/* 炸开：a8 没有这一层（它只看姿态）。炸开条永远在，相位条按数据出现 ——
+   所以把常驻的钉在底部锚点，让条件出现的那条往上叠，避免两条打架。 */
+.explode-deck {
+  position: absolute;
+  right: 390px;
+  bottom: 24px;
+  left: 270px;
+  z-index: 7;
+  display: grid;
+  min-width: 360px;
+  grid-template-columns: auto auto minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 22px 3px 3px 22px;
+  background: rgba(251, 250, 245, 0.8);
+  box-shadow: 0 12px 36px rgba(45, 54, 48, 0.09);
+  backdrop-filter: blur(18px);
+}
+
+.pose-deck:not([hidden]) {
+  bottom: 84px;
+}
+
+.pose-deck:not([hidden]) ~ .scene-legend {
+  bottom: 150px;
+}
+
+#fit-view {
+  padding: 5px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+#fit-view:hover {
+  background: var(--green-soft);
+}
+
+.explode-copy {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+/* 填充跟着值走（跟 a8 的 #pose-slider 同一手法）。写死渐变的话，滑块在最左
+   也是半条绿的，看起来像"已经炸开一半了"。 */
+#explode {
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  appearance: none;
+  background: linear-gradient(
+    90deg,
+    var(--green) 0%,
+    var(--green) var(--explode, 0%),
+    rgba(29, 40, 37, 0.15) var(--explode, 0%),
+    rgba(29, 40, 37, 0.15) 100%
+  );
+  outline: none;
+}
+
+#explode::-webkit-slider-thumb {
+  width: 13px;
+  height: 13px;
+  border: 2px solid white;
+  border-radius: 50%;
+  appearance: none;
+  background: var(--green);
+  box-shadow: 0 2px 8px rgba(31, 95, 76, 0.34);
+  cursor: pointer;
+}
+
+#explode-value {
+  color: var(--ink);
+  font-family: Baskerville, Georgia, serif;
+  font-size: 12px;
+  text-align: right;
+}
+
+/* 加载帘复用为错误帘：加载失败必须看得见，不能停在一张"还在转"的画面上 */
+.loading-curtain[data-state="error"] {
+  background: rgba(251, 250, 245, 0.95);
+}
+
+.loading-curtain[data-state="error"] p {
+  max-width: 560px;
+  color: var(--red);
+  text-align: center;
+}
+
+.inspector-row.active {
+  background: var(--green-soft);
+}
+
+.joint-control {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.joint-slider {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 68px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 4px 27px;
+}
+
+.joint-slider input {
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  appearance: none;
+  background: rgba(31, 95, 76, 0.24);
+  outline: none;
+}
+
+.joint-slider input::-webkit-slider-thumb {
+  width: 11px;
+  height: 11px;
+  border: 2px solid white;
+  border-radius: 50%;
+  appearance: none;
+  background: var(--green);
+  box-shadow: 0 2px 6px rgba(31, 95, 76, 0.3);
+  cursor: pointer;
+}
+
+.joint-slider output {
+  color: var(--muted);
+  font-family: Baskerville, Georgia, serif;
+  font-size: 11px;
+  text-align: right;
+}
+
+.case-stale {
+  display: block;
+  padding: 0 10px 6px 34px;
+  color: var(--amber);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.case-row[data-stale="1"] .case-button strong {
+  opacity: 0.55;
+}
+
+/* a8 的案条只有"编号 + 名 + 状态点"三列；这里第二列要再叠一行件数/DOF */
+.case-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.case-copy strong {
+  overflow: hidden;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.case-copy small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.pose-marks span {
+  overflow: hidden;
+  max-width: 33%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 窄屏：a8 把底部那排收成一条，炸开条要跟着走，否则它会用桌面那套
+   left:270/right:390 挤成一条负宽的线。 */
+@media (max-width: 1020px) {
+  .explode-deck {
+    right: 342px;
+  }
+}
+
+@media (max-width: 760px) {
+  .explode-deck {
+    right: 10px;
+    bottom: calc(43vh + 20px);
+    left: 10px;
+    min-width: 0;
+  }
+
+  .pose-deck:not([hidden]) {
+    bottom: calc(43vh + 76px);
+  }
+}
+
+/* a8 的 mode-switch 按钮里是 <span>大名</span> + 一段说明文字；这里说明用 <i>
+   包住，好让它跟大名各自控制字号。 */
+.mode-switch button i {
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.mode-switch button[data-mode="split"] span {
+  font-family: system-ui, sans-serif;
+}
+
+/* 不可用的图层行：常驻但置灰。行消失会让人以为"这版少了个功能"，
+   而真相通常是"这案没有这层的数据"。 */
+.layers label.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.layers label.is-disabled input {
+  pointer-events: none;
+}
+
+.explode-deck.is-disabled .explode-copy,
+.explode-deck.is-disabled #explode,
+.explode-deck.is-disabled #explode-value {
+  cursor: not-allowed;
+  opacity: 0.34;
+}
+
+/* 对照档下，逐件清单说的不是舞台上那个东西 —— 标灰提示 */
+.inspector section.is-muted {
+  opacity: 0.42;
+}
+
+/* 目录选择器要长得跟 a8 那行标题一样，不像个表单控件 */
+.catalog-readout select {
+  overflow: hidden;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: Baskerville, Georgia, serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-readout select:hover {
+  color: var(--green);
+}

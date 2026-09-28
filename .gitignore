@@ -1,0 +1,16 @@
+.venv/
+node_modules/
+__pycache__/
+.pytest_cache/
+*.pyc
+.mcp.json
+.DS_Store
+.env
+.env.*
+*.log
+examples/demo/out/
+
+# Local project state and developer caches
+.3dstudio/
+.print-prep/
+.ruff_cache/

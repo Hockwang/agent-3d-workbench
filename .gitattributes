@@ -1,0 +1,6 @@
+# Bundled Three.js shader strings retain upstream whitespace.
+studio/app/dist/* -whitespace linguist-generated=true
+
+# Preserve upstream source/patch whitespace and generated Markdown hard breaks.
+studio/web/vendor/** -whitespace linguist-vendored=true
+docs/TOOLS.md -whitespace linguist-generated=true

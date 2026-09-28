@@ -1,0 +1,514 @@
+{
+  "hardware": "Apple M5 Pro",
+  "dpr": 2,
+  "baseline_version": "0.6.0+codex.20260921120621",
+  "fixture_faces": 2663830,
+  "method": "4 seconds resizing then 4 seconds idle; same-origin iframe host, real MCP handlers and copied local job",
+  "runs": [
+    {
+      "build": "/app",
+      "scene": "0 个对象 · 0 面",
+      "mode": "模型编辑",
+      "draws": [
+        591,
+        561
+      ],
+      "canvasResizes": [
+        1146,
+        0
+      ],
+      "glCpuMs": [
+        1.5999996662139893,
+        0.6999999284744263
+      ],
+      "frameStats": [
+        {
+          "frames": 590,
+          "p95Ms": 8.099999999999909,
+          "maxMs": 8.699999999999818,
+          "over32ms": 0
+        },
+        {
+          "frames": 561,
+          "p95Ms": 7.799999999999272,
+          "maxMs": 8.700000000000728,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 2
+      },
+      "sizeNotifications": 570,
+      "stage": "activation_guard_only",
+      "valid": true
+    },
+    {
+      "build": "/app-before",
+      "scene": "0 个对象 · 0 面",
+      "mode": "打印准备",
+      "draws": [
+        8246,
+        7840
+      ],
+      "canvasResizes": [
+        2270,
+        0
+      ],
+      "glCpuMs": [
+        2.699999690055847,
+        5.400000333786011
+      ],
+      "frameStats": [
+        {
+          "frames": 588,
+          "p95Ms": 7.900000000001455,
+          "maxMs": 15,
+          "over32ms": 0
+        },
+        {
+          "frames": 560,
+          "p95Ms": 8.099999999998545,
+          "maxMs": 8.60000000000582,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 33
+      },
+      "sizeNotifications": 568,
+      "stage": "baseline_print_warm",
+      "valid": true
+    },
+    {
+      "build": "/app-before",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        6490,
+        6138
+      ],
+      "canvasResizes": [
+        1138,
+        0
+      ],
+      "glCpuMs": [
+        2.299999952316284,
+        3.6999993324279785
+      ],
+      "frameStats": [
+        {
+          "frames": 589,
+          "p95Ms": 7.7999999999883585,
+          "maxMs": 13,
+          "over32ms": 0
+        },
+        {
+          "frames": 558,
+          "p95Ms": 7.7000000000116415,
+          "maxMs": 8.60000000000582,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 31
+      },
+      "sizeNotifications": 569,
+      "stage": "baseline_edit_warm",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "静态网格编辑",
+      "mode": "模型编辑",
+      "draws": [
+        0,
+        0
+      ],
+      "canvasResizes": [
+        0,
+        0
+      ],
+      "glCpuMs": [
+        0,
+        0
+      ],
+      "frameStats": [
+        {
+          "frames": 589,
+          "p95Ms": 8,
+          "maxMs": 8.600000000002183,
+          "over32ms": 0
+        },
+        {
+          "frames": 562,
+          "p95Ms": 8.099999999998545,
+          "maxMs": 8.700000000000728,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {},
+      "sizeNotifications": 0,
+      "stage": "invalid_intermediate_initialization",
+      "valid": false
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        1287,
+        11
+      ],
+      "canvasResizes": [
+        232,
+        2
+      ],
+      "glCpuMs": [
+        0.5999999046325684,
+        0
+      ],
+      "frameStats": [
+        {
+          "frames": 589,
+          "p95Ms": 7.900000000001455,
+          "maxMs": 8.600000000000364,
+          "over32ms": 0
+        },
+        {
+          "frames": 562,
+          "p95Ms": 8,
+          "maxMs": 8.700000000000728,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 3
+      },
+      "sizeNotifications": 0,
+      "stage": "render_fix_edit_warm",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "打印准备",
+      "draws": [
+        1652,
+        28
+      ],
+      "canvasResizes": [
+        232,
+        2
+      ],
+      "glCpuMs": [
+        1.1000001430511475,
+        0.10000002384185791
+      ],
+      "frameStats": [
+        {
+          "frames": 589,
+          "p95Ms": 8,
+          "maxMs": 8.700000000011642,
+          "over32ms": 0
+        },
+        {
+          "frames": 562,
+          "p95Ms": 7.80000000000291,
+          "maxMs": 8.60000000000582,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 2
+      },
+      "sizeNotifications": 0,
+      "stage": "render_fix_print_warm",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        1276,
+        11
+      ],
+      "canvasResizes": [
+        232,
+        2
+      ],
+      "glCpuMs": [
+        0.09999990463256836,
+        0.09999990463256836
+      ],
+      "frameStats": [
+        {
+          "frames": 589,
+          "p95Ms": 7.5,
+          "maxMs": 8.60000000000582,
+          "over32ms": 0
+        },
+        {
+          "frames": 562,
+          "p95Ms": 8.099999999991269,
+          "maxMs": 8.60000000000582,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 3
+      },
+      "sizeNotifications": 0,
+      "stage": "render_fix_edit_warm_repeat",
+      "valid": true
+    },
+    {
+      "build": "/app-before",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        136,
+        6352
+      ],
+      "canvasResizes": [
+        124,
+        4
+      ],
+      "glCpuMs": [
+        0.10000002384185791,
+        3.6000001430511475
+      ],
+      "frameStats": [
+        {
+          "frames": 61,
+          "p95Ms": 69.39999999999998,
+          "maxMs": 1034.7,
+          "over32ms": 5
+        },
+        {
+          "frames": 577,
+          "p95Ms": 7.900000000000546,
+          "maxMs": 1312.5000000000005,
+          "over32ms": 1
+        }
+      ],
+      "longTasks": [
+        {
+          "phase": 0,
+          "duration": 196
+        },
+        {
+          "phase": 1,
+          "duration": 1017
+        },
+        {
+          "phase": 1,
+          "duration": 971
+        },
+        {
+          "phase": 1,
+          "duration": 1296
+        }
+      ],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 5
+      },
+      "sizeNotifications": 62,
+      "stage": "baseline_edit_startup",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        58,
+        11
+      ],
+      "canvasResizes": [
+        30,
+        2
+      ],
+      "glCpuMs": [
+        0,
+        0
+      ],
+      "frameStats": [
+        {
+          "frames": 60,
+          "p95Ms": 1000,
+          "maxMs": 1381.9,
+          "over32ms": 5
+        },
+        {
+          "frames": 571,
+          "p95Ms": 7.900000000000546,
+          "maxMs": 8.600000000000364,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [
+        {
+          "phase": 0,
+          "duration": 176
+        },
+        {
+          "phase": 0,
+          "duration": 1356
+        },
+        {
+          "phase": 0,
+          "duration": 1011
+        },
+        {
+          "phase": 0,
+          "duration": 984
+        }
+      ],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 3
+      },
+      "sizeNotifications": 0,
+      "stage": "render_fix_without_decoder_startup",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        1106,
+        11
+      ],
+      "canvasResizes": [
+        228,
+        2
+      ],
+      "glCpuMs": [
+        0.20000004768371582,
+        0.10000002384185791
+      ],
+      "frameStats": [
+        {
+          "frames": 562,
+          "p95Ms": 8,
+          "maxMs": 55.5,
+          "over32ms": 2
+        },
+        {
+          "frames": 559,
+          "p95Ms": 8,
+          "maxMs": 8.699999999999818,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 3
+      },
+      "sizeNotifications": 0,
+      "stage": "final_edit_startup",
+      "valid": true
+    },
+    {
+      "build": "/app",
+      "scene": "5 个对象 · 2,663,830 面",
+      "mode": "模型编辑",
+      "draws": [
+        1108,
+        11
+      ],
+      "canvasResizes": [
+        228,
+        2
+      ],
+      "glCpuMs": [
+        0.6999999284744263,
+        0
+      ],
+      "frameStats": [
+        {
+          "frames": 564,
+          "p95Ms": 7.799999999999727,
+          "maxMs": 42,
+          "over32ms": 2
+        },
+        {
+          "frames": 559,
+          "p95Ms": 7.799999999999272,
+          "maxMs": 8.699999999999818,
+          "over32ms": 0
+        }
+      ],
+      "longTasks": [],
+      "viewport": [
+        900,
+        840
+      ],
+      "dpr": 2,
+      "requests": {
+        "studio_get_state": 3
+      },
+      "sizeNotifications": 0,
+      "stage": "final_edit_startup_repeat",
+      "valid": true
+    }
+  ]
+}

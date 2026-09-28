@@ -1,0 +1,127 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "cut-to-fit",
+  "version": "0.2.0",
+  "title": "切开加销",
+  "goal": "单件超出打印床时切一刀分两半，各自加销防转再打印",
+  "use_when": [
+    "单个物体的最长边超过打印床，缩小又会丢细节",
+    "想在一个不显眼的位置切开，加销防止装回时转动错位"
+  ],
+  "not_for": [
+    "件本来就能放进机床 → 不需要切，直接走朝向/排盘",
+    "要按颜色/贴图拆件 → 改用 color-split",
+    "需要拆出多个独立外观件（脸、道具等）→ 改用 split-glue-kit"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "尺寸是不是毫米制，缩放后最长边到底超出机床多少",
+      "accept": "readiness 里 model 为 pass，且能读出超出的具体尺寸",
+      "optional": false
+    },
+    {
+      "key": "plane_cut",
+      "row": "split",
+      "tool": "studio_edit#plane_cut",
+      "who": "you",
+      "args": {
+        "action": "plane_cut"
+      },
+      "decide": "切面选在哪：避开外观面和薄壁，落在直段或自然收窄处",
+      "accept": "切出两个实体，切面附近没有薄于最小壁厚的区域",
+      "optional": false
+    },
+    {
+      "key": "add_pin",
+      "row": "connect",
+      "tool": "studio_task#connect-parts",
+      "who": "either",
+      "decide": "明确两个闭合部件的平面接缝、同向销轴、圆销或 D 形销、孔深和最小壁厚；非平面接缝不适用。",
+      "accept": "报告通过：孔壁包络完整、销孔无相交、拔出采样无碰撞。重载输出后再排盘。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "connect-parts"
+      }
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "strategy": "flat"
+      },
+      "decide": "切面是不是朝下贴床，避免切面本身再长出支撑",
+      "accept": "readiness 里 orient 为 pass，两半都以切面朝下摆放",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "auto"
+      },
+      "decide": "两半要不要放同一盘，间距够不够清理和取放",
+      "accept": "readiness 里 arrange 为 pass",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "decide": "两半用同一套工艺预设，层高和填充是否都够强度",
+      "accept": "readiness 里 export 为 pass",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "切面附近、销孔里有没有支撑，清理起来会不会麻烦",
+      "accept": "readiness 里 check 为 pass，销孔内部支撑为 0",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "确认要发的就是这两半，不是别的候选或旧版本",
+      "accept": "Bambu Studio 已打开对应工程（loaded 为 unverified，仅供参考）",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/print_waveab_v0",
+      "date": "2026-09-11",
+      "note": "平面切+销的做法：切面选在自然收窄处、D 销孔壁厚与装配路径闸门定义"
+    },
+    {
+      "ref": "fdm_preprint/rig_print_023",
+      "date": "2026-09-16",
+      "note": "在固定坐标处开一刀解开部件互卡的做法"
+    },
+    {
+      "ref": "fdm_preprint/print_waveab_v0/kitlib",
+      "date": "2026-09-11",
+      "note": "销径按件尺寸分档、径向/轴向间隙、D 键平深比例的默认值来源"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

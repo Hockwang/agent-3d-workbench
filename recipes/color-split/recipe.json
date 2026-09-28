@@ -1,0 +1,139 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "color-split",
+  "version": "0.2.0",
+  "title": "分色分件",
+  "goal": "按明确调色板和单一拔出方向，为闭合模型制作可拆的分色嵌件与主体",
+  "use_when": [
+    "贴图有几大块清晰配色，想按颜色分开、单色打印后拼起来",
+    "想靠换料+分件拼出接近原配色的效果，不依赖多色打印机"
+  ],
+  "not_for": [
+    "贴图是密集细纹或渐变 → 多半分不出能打印的色块，先看下面的判断点",
+    "想按外观关键面（而不是颜色）拆件 → 改用 split-glue-kit",
+    "件超出打印床是主要问题 → 改用 cut-to-fit",
+    "同一色区绕到背面、透明贴图、非闭合网格或没有共同拔出方向的全身分色"
+  ],
+  "inputs": [
+    "mesh"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "尺寸是不是毫米制，贴图有没有正确带进来",
+      "accept": "readiness 里 model 为 pass",
+      "optional": false
+    },
+    {
+      "key": "color_split",
+      "row": "color",
+      "tool": "studio_task#color-inlays",
+      "who": "either",
+      "decide": "指定 palette_rgb（第一色为主体）、单一 pull_direction、嵌件深度、间隙与最小色块面积。",
+      "accept": "闭合主体与嵌件、拔出采样通过；小区域列为涂装提示。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "color-inlays"
+      }
+    },
+    {
+      "key": "check_printability",
+      "row": "color",
+      "tool": "studio_tasks",
+      "who": "either",
+      "decide": "读取本次分色任务的 artifacts 与 report.json，核对闭合件、区域与采样拔出记录。",
+      "accept": "以任务报告与真实产物为准；整体最薄壁厚没有测量，不能用试切估算替代。",
+      "optional": false
+    },
+    {
+      "key": "add_insert_pin",
+      "row": "connect",
+      "tool": "studio_task#connect-parts",
+      "who": "either",
+      "decide": "明确两个闭合部件的平面接缝、同向销轴、圆销或 D 形销、孔深和最小壁厚；非平面接缝不适用。",
+      "accept": "报告通过：孔壁包络完整、销孔无相交、拔出采样无碰撞。重载输出后再排盘。",
+      "optional": true,
+      "args": {
+        "action": "start",
+        "template": "connect-parts"
+      }
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "strategy": "auto",
+        "shape": "figurine"
+      },
+      "decide": "每个分色件单独摆放，尽量减少该颜色可见面上的支撑",
+      "accept": "readiness 里 orient 为 pass",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "args": {
+        "mode": "per_part"
+      },
+      "decide": "同色的件能不能凑到一起换料打印，减少色盘数量",
+      "accept": "readiness 里 arrange 为 pass；当前工具还不能自动按颜色分组，需人工核对分盘结果",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "decide": "各色盘用不同耗材预设时，工艺参数是不是都对应正确",
+      "accept": "readiness 里 export 为 pass",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "嵌件/薄壁附近有没有支撑，颜色边界处清理是不是可行",
+      "accept": "readiness 里 check 为 pass",
+      "optional": false
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "按颜色顺序确认换料计划，逐盘发送打开",
+      "accept": "Bambu Studio 已打开对应工程（loaded 为 unverified，仅供参考）",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/color_kit_008",
+      "date": "2026-09-13",
+      "note": "真彩色语义分件的收益与代价：大色块受益明显，细纹模型损伤可见细节"
+    },
+    {
+      "ref": "fdm_preprint/print_waveab_v0",
+      "date": "2026-09-11",
+      "note": "贴图空间分色、面积阈值合并小色块、嵌件厚度与拔出方向闸门"
+    },
+    {
+      "ref": "fdm_preprint/print_waveab_v0/kitlib",
+      "date": "2026-09-11",
+      "note": "嵌件最小连通面积、每色最多嵌件数量的默认值"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

@@ -1,0 +1,109 @@
+name: Edit report
+description: Report a case where you pointed at a part, asked for a change, and the result was wrong.
+title: "[edit] "
+labels: ["edit-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for "I pointed at this part, asked for a change, and got the wrong
+        result" reports. See `docs/TOOLS.md` (`studio_get_state`, `studio_edit`,
+        `studio_part_chat`) and `docs/SCENE_EDITING.md` for the tool and field names
+        referenced below. The `edit-report` and `bug` labels must exist in the
+        repository for this form's `labels:` field to apply (GitHub silently drops
+        unknown labels).
+
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      description: Where you were running the plugin when this happened.
+      options:
+        - Codex desktop sidebar panel
+        - browser page from Codex
+        - Claude Code + browser page
+        - other MCP client
+        - core CLI
+    validations:
+      required: true
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin version
+      description: >-
+        Read it from `.codex-plugin/plugin.json` (the `version` field), or from the
+        MCP server's reported `serverInfo.version` in your host's MCP server list.
+        `studio_capabilities` does not report a version.
+      placeholder: e.g. 0.8.6
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: false
+
+  - type: textarea
+    id: pointed_at
+    attributes:
+      label: What did you point at?
+      description: >-
+        How you selected it (viewport click, the object list, a
+        `studio_edit(action: "select")` call, or a part-chat branch opened from the
+        right-click menu), and the object's name/id from the object panel or
+        `studio_get_state.workbench.objects`.
+      placeholder: |
+        e.g. clicked the "left_door" part in the viewport (id 3ac2af0849e94a8cab7a8863bdd67c58 in workbench.objects)
+    validations:
+      required: true
+
+  - type: textarea
+    id: asked_for
+    attributes:
+      label: What did you ask for?
+      description: The prompt you typed, or the exact tool call (name and params) if you know it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: >-
+        What the panel or the tool result showed. Paste `error.code` and the message if
+        there was one, and the relevant operation log lines together with whether each was
+        attributed to the AI or a human.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: >-
+        A screenshot or GIF; a `studio_get_state` excerpt including `revision` and
+        `selection`; the model file's type and rough size. Do not paste API keys or tokens.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: shareable
+    attributes:
+      label: Sharing
+      options:
+        - label: The model file can be shared
+          required: false

@@ -1,0 +1,165 @@
+{
+  "schema": "print-prep.recipe/1",
+  "id": "poseable-figure",
+  "version": "0.2.0",
+  "title": "人偶加可动关节",
+  "goal": "在已分好肢段的模型上安装分体球窝或销铰，生成几何样件并检查指定组合姿态",
+  "use_when": [
+    "输入已经是分好肢段的网格（肩、臂、腿、躯干各自独立）",
+    "想让人偶能摆出抬手、迈步、蹲下这类姿势，不只是固定造型",
+    "用户明确允许在关节附近局部改形（削薄内罩、外移轴心、加连接座）"
+  ],
+  "not_for": [
+    "整体还是一块没分件的 mesh —— 先做拆件",
+    "机构有明确工程角色（箱盖/转台/抽屉/机械臂）—— 改用 mechanical-joints",
+    "只有一张参考图，还没有网格 —— 先用 image-to-print"
+  ],
+  "inputs": [
+    "mesh_set"
+  ],
+  "backends": [],
+  "steps": [
+    {
+      "key": "load",
+      "row": "model",
+      "tool": "studio_load",
+      "who": "either",
+      "decide": "肢段分件是否完整；哪几处连接部位要装关节。",
+      "accept": "readiness.model 为 pass：全部水密、放得下。",
+      "optional": false
+    },
+    {
+      "key": "pick_joint",
+      "row": "joint",
+      "tool": "studio_task#install-joint",
+      "who": "you",
+      "decide": "明确固定件/活动件、坐标架、锚点和加工区；选 pin_hinge/slew/slider/ball_socket。",
+      "accept": "加工件闭合连通，静止无相交、加工区外不变；交付新 URDF 与五金清单。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "install-joint"
+      }
+    },
+    {
+      "key": "sweep_motion",
+      "row": "joint",
+      "tool": "studio_task#motion-check",
+      "who": "ai",
+      "decide": "使用本次加工输出的 assembly.urdf，指定笛卡尔网格密度或显式组合姿态；转动用弧度、移动用米。",
+      "accept": "读取每个组合姿态的碰撞和无碰撞配置；不承诺采样点之间的连续安全行程。",
+      "optional": false,
+      "args": {
+        "action": "start",
+        "template": "motion-check"
+      }
+    },
+    {
+      "key": "check_fit",
+      "row": "connect",
+      "tool": "studio_task#removal-audit",
+      "who": "ai",
+      "args": {
+        "action": "start",
+        "template": "removal-audit"
+      },
+      "decide": "用本次输出的闭合 STL，明确分组、拆装顺序与逐件取出方向；五金另验。",
+      "accept": "读取离散取出路径报告；受阻须改计划。孔内支撑需切片后人工复核，不由此任务判定。",
+      "optional": false
+    },
+    {
+      "key": "coupon",
+      "row": "connect",
+      "tool": "studio_task#joint-coupon",
+      "who": "either",
+      "args": {
+        "action": "start",
+        "template": "joint-coupon"
+      },
+      "decide": "销铰或回转用 joint-coupon；球窝用 install-joint 的独立小试件，实测松紧。",
+      "accept": "试片切片成功；插拔力与保持力仍需人手工实测记录。",
+      "optional": true
+    },
+    {
+      "key": "orient",
+      "row": "orient",
+      "tool": "studio_orient",
+      "who": "either",
+      "args": {
+        "shape": "figurine"
+      },
+      "decide": "球窝、销头这类贴床面积小的件，要不要手工指定朝向。",
+      "accept": "warnings 里没有 unstable_contact，或已从 top_candidates 里手工选定。",
+      "optional": false
+    },
+    {
+      "key": "arrange",
+      "row": "arrange",
+      "tool": "studio_arrange",
+      "who": "either",
+      "decide": "关节模块和造型件分盘还是同盘，间距够不够留手工清支撑的空间。",
+      "accept": "readiness 里 arrange 为 pass，返回里的盘数与预期一致。",
+      "optional": false
+    },
+    {
+      "key": "export",
+      "row": "export",
+      "tool": "studio_export",
+      "who": "either",
+      "args": {
+        "shape": "figurine"
+      },
+      "decide": "figurine 档位的层高、支撑够不够撑住薄壁球窝，要不要覆盖。",
+      "accept": "unmatched_parts 为空，project_3mf 生成成功。",
+      "optional": false
+    },
+    {
+      "key": "check",
+      "row": "check",
+      "tool": "studio_check",
+      "who": "either",
+      "decide": "要不要先估一版克数和时长，再决定送 Bambu Studio。",
+      "accept": "跑了才报克数/时长；没跑就照实说没估算。",
+      "optional": true
+    },
+    {
+      "key": "deliver",
+      "row": "deliver",
+      "tool": "studio_send_to_bambu",
+      "who": "you",
+      "decide": "先打试片还是直接打整套；多盘时只开第一盘，其余路径列给用户。",
+      "accept": "loaded 恒为 unverified，只能说已请求打开，不能说已确认载入。",
+      "optional": false
+    }
+  ],
+  "one_shot": null,
+  "provenance": [
+    {
+      "ref": "fdm_preprint/joint_library_032",
+      "date": "2026-09-17",
+      "note": "球窝/摩擦铰参数化机构，固定座与活动摩擦面分离设计与失败记录"
+    },
+    {
+      "ref": "fdm_preprint/docs/poseable-toy-joint-playbook.md",
+      "date": "2026-09-17",
+      "note": "关节六个约束：防脱/限位/摩擦/外观各有职责，姿态保持靠预紧不是精密配合"
+    },
+    {
+      "ref": "fdm_preprint/shell_joints_033",
+      "date": "2026-09-17",
+      "note": "局部改形后轴心外移、内罩缩小才能装入的实测边界"
+    },
+    {
+      "ref": "fdm_preprint/articulated_029",
+      "date": "2026-09-16",
+      "note": "行程上限由实体碰撞复核收窄，孔道支撑与开放槽支撑要分开验"
+    },
+    {
+      "ref": "fdm_preprint/toy_joints_036",
+      "date": "2026-09-17",
+      "note": "外观罩缩小不等于机构本体缩小，两者要分开报数字"
+    }
+  ],
+  "author": "print-prep",
+  "license": "同仓库"
+}

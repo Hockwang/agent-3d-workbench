@@ -1,0 +1,35 @@
+{
+  "name": "print-prep",
+  "version": "0.8.6",
+  "description": "人和 AI 共用的 3D 工作台：编辑拆件、Blender/CAD 建模、观察测评、动画与制造交付。",
+  "author": {
+    "name": "Hockwang"
+  },
+  "license": "MIT",
+  "keywords": [
+    "3d-editor",
+    "mesh",
+    "cutting",
+    "3d-printing",
+    "bambu-studio",
+    "codex-plugin"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "3D 工作台",
+    "shortDescription": "编辑、建模、观察与测评，人和 AI 接续操作",
+    "longDescription": "在 Codex 右侧编辑和拆分模型，运行 Blender/CAD 建模、UV 烘焙、骨架动画和自备 API 服务；同尺度比较不同版本及 URDF 姿态，读取真实观察图、指标和评价，继续制造交付。",
+    "developerName": "Hockwang",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "打开 3D 工作台，导入这个模型并帮我编辑。",
+      "打开观察与测评工作区，对比这两个版本的模型和运动姿态。",
+      "打开打印准备工作区，帮我选朝向、排盘并导出 3MF。"
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
