@@ -25,6 +25,32 @@ Selecting or importing a model no longer automatically adds that card.
 > exist, but full desktop workflows still need validation on those platforms.
 > A geometric check is not proof of printability, fit, strength, or wearability.
 
+## Languages / 语言
+
+**English and Simplified Chinese are supported.**
+
+| Surface | How to choose |
+| --- | --- |
+| This tutorial | [English](README.md) / [简体中文](README.zh-CN.md) |
+| Workbench interface | Click **中文** to switch to Chinese, or **EN** to switch to English, at the top right. The page reloads to apply the choice. |
+| MCP responses and backend messages | Set `STUDIO_LANG=en` or `STUDIO_LANG=zh-CN` in the MCP server's environment, then restart/reconnect that server. |
+| Agent's conversational replies | Ask your agent to reply in English or Chinese; the workbench does not override the host's conversation language. |
+
+For a first installation in your preferred language:
+
+```bash
+STUDIO_LANG=en ./install.sh --add       # English
+# Or:
+STUDIO_LANG=zh-CN ./install.sh --add    # 简体中文
+```
+
+The interface prefers its saved choice, then the configured server language, then
+browser language. In hosts that block browser storage, the toggle is hidden; set
+`STUDIO_LANG` instead and reopen the workbench after restarting its MCP server.
+A UI language switch affects subsequent UI requests; it does not change the MCP
+server's configured language. Model names, user text and existing generated files
+are preserved rather than translated. See [language configuration](docs/CONFIGURATION.md#language--studio_lang).
+
 ## 1. Choose how you want to use it
 
 | You use | Model interface | Agent interface |
