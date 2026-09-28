@@ -1,0 +1,240 @@
+{
+  "date": "2026-09-28",
+  "reference": {
+    "source": "Built-in image_gen; independent of both 3D routes",
+    "sha256": "3931bd17e4593f39242c25697a33c33e0e3566aa08d054f9db024f77ccb8b74d"
+  },
+  "local": {
+    "status": "pass",
+    "route": "Codex authored Python / local execution",
+    "generation_api_calls": 0,
+    "reference_sha256": "3931bd17e4593f39242c25697a33c33e0e3566aa08d054f9db024f77ccb8b74d",
+    "assumptions": {
+      "body_diameter_mm": 88.0,
+      "body_height_mm": 90.0,
+      "cavity": "Invented constant-thickness inner profile; not visible in reference",
+      "manufacturing": "No retention, tolerance, food-contact or real-print validation"
+    },
+    "parts": [
+      {
+        "name": "body",
+        "faces": 15360,
+        "extents_mm": [
+          88.0,
+          88.0,
+          90.0
+        ],
+        "watertight": true,
+        "volume_mm3": 119064.33169444615
+      },
+      {
+        "name": "handle",
+        "faces": 6190,
+        "extents_mm": [
+          34.62446594238281,
+          12.0,
+          66.56046295166016
+        ],
+        "watertight": true,
+        "volume_mm3": 10016.629680966544
+      },
+      {
+        "name": "lid",
+        "faces": 10240,
+        "extents_mm": [
+          89.68474074074074,
+          89.68474074074074,
+          10.5
+        ],
+        "watertight": true,
+        "volume_mm3": 49621.013622403414
+      },
+      {
+        "name": "knob",
+        "faces": 9920,
+        "extents_mm": [
+          20.0,
+          20.0,
+          16.200000000000003
+        ],
+        "watertight": true,
+        "volume_mm3": 3547.0148401420865
+      }
+    ],
+    "execution_seconds": 0.171,
+    "agent_reasoning_time_included": false
+  },
+  "api": {
+    "generate": {
+      "model": "hunyuan-3d-3.1-pro",
+      "seconds_including_receipt": 211.88,
+      "gateway_reported_amount": 2.16,
+      "currency": null,
+      "submission_count": 1
+    },
+    "split": {
+      "model": "hunyuan-3d-1.5-part",
+      "seconds_including_receipt": 78.56,
+      "gateway_reported_amount": 0.0,
+      "currency": null,
+      "submission_count": 1,
+      "parts": 2,
+      "faces": 1735888,
+      "semantic_groups": [
+        "handle",
+        "body + lid + knob"
+      ],
+      "texture_images": 0,
+      "appearance": "provider segment colors, not source PBR"
+    }
+  },
+  "edits": {
+    "local-edit": {
+      "status": "passed",
+      "route": "local",
+      "parts": 4,
+      "handle_name": "handle",
+      "move_handle_mm": 25,
+      "other_objects_unchanged": true,
+      "undo_verified": true,
+      "export_bounds_verified": true,
+      "project_reopened": true,
+      "inspection": [
+        {
+          "name": "knob",
+          "faces": 9920,
+          "watertight": true,
+          "winding_consistent": true,
+          "boundary_edges": 0,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": 3547.0148689435323
+        },
+        {
+          "name": "lid",
+          "faces": 10240,
+          "watertight": true,
+          "winding_consistent": true,
+          "boundary_edges": 0,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": 49621.02400888815
+        },
+        {
+          "name": "handle",
+          "faces": 6190,
+          "watertight": true,
+          "winding_consistent": true,
+          "boundary_edges": 0,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": 10016.629540122321
+        },
+        {
+          "name": "body",
+          "faces": 15360,
+          "watertight": true,
+          "winding_consistent": true,
+          "boundary_edges": 0,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": 119064.33196776418
+        }
+      ],
+      "mcp_calls": [
+        "studio_open",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state"
+      ],
+      "printed": false,
+      "ui_clicks_verified": false
+    },
+    "api-edit": {
+      "status": "passed",
+      "route": "api",
+      "parts": 2,
+      "handle_name": "part-000-part_0",
+      "move_handle_mm": 25,
+      "other_objects_unchanged": true,
+      "undo_verified": true,
+      "export_bounds_verified": true,
+      "project_reopened": true,
+      "inspection": [
+        {
+          "name": "part-000-part_0",
+          "faces": 231718,
+          "watertight": false,
+          "winding_consistent": true,
+          "boundary_edges": 6,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": null
+        },
+        {
+          "name": "part-001-part_1",
+          "faces": 1504170,
+          "watertight": false,
+          "winding_consistent": true,
+          "boundary_edges": 6,
+          "nonmanifold_edges": 0,
+          "components": 1,
+          "volume_mm3": null
+        }
+      ],
+      "mcp_calls": [
+        "studio_open",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state",
+        "studio_edit",
+        "studio_get_state"
+      ],
+      "printed": false,
+      "ui_clicks_verified": false
+    }
+  },
+  "limits": [
+    "One example, not a benchmark",
+    "Physical scale is a design assumption",
+    "No physical printing or food-contact testing",
+    "Native UI clicks are not automated by these scripts"
+  ],
+  "display_normalization": {
+    "api_split_scale": 0.132519197568234,
+    "display_height_mm": 114,
+    "physical_size_calibrated": false
+  }
+}

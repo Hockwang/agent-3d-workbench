@@ -1,5 +1,36 @@
 [
   {
+    "adapter": "hi3d",
+    "configured": false,
+    "id": "hi3d",
+    "key_env": "HI3D_ACCESS_KEY",
+    "needs_base_url": false,
+    "operation_templates": [
+      {
+        "description": "可选付费 API：上传一张图片，生成 GLB 后导入本地编辑；尺寸与分件仍需检查。",
+        "id": "image-to-3d",
+        "input_mode": "image",
+        "params": {
+          "face": 100000,
+          "format": 2,
+          "model": "hitem3dv2.1",
+          "pbr": 1,
+          "request_type": 3,
+          "resolution": "1536fast",
+          "rmbg": 1,
+          "shading": 0.5
+        },
+        "title": "图片生成 3D · Hi3D"
+      }
+    ],
+    "operations": [
+      "image-to-3d"
+    ],
+    "setup_message": "请在 MCP 服务进程环境中设置 HI3D_ACCESS_KEY 和 HI3D_SECRET_KEY，不要放进任务参数。",
+    "timeout_seconds": 1800,
+    "title": "Hi3D"
+  },
+  {
     "adapter": "lux3d",
     "configured": false,
     "id": "lux3d",

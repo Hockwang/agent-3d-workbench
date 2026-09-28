@@ -6,9 +6,12 @@
 
 ## 使用
 
+建议先看 [真实 API 生成演示](../API_GENERATION_DEMO.zh-CN.md)。
+Hi3D 使用 AK/SK 双凭据，配置见 [Hi3D 接入](../HI3D.zh-CN.md)；下述单 key 设置框不支持直接填写双凭据。
+
 1. 打开「建模与任务 → 管理 3D 服务」。
 2. 选择内置连接或添加一个同协议的新连接，填写名称、API 地址和 API key；高级设置也可引用已注入后端环境的变量名。
-3. 保存，再点「测试连接」。测试只 GET 模型清单或余额；连接成功不代表已验收生成质量。
+3. 保存，再点「测试连接」。测试读取模型清单或余额，不生成模型；Hi3D 会先用 AK/SK 换取令牌。连接成功不代表已验收生成质量。
 4. 回到「执行方式」选择该连接、选择任务并提供输入。后台收件后的模型复用当前 viewer，可导入工程继续编辑或送入观察评测。
 
 多个连接可对应同一供应商的不同账户或兼容网关。保存不重置工程和视口。空密钥保留旧凭据；更换地址自动清除继承的凭据，需要重新填写。停用/删除只影响新任务，旧任务保留提交时的配置用于继续收件。
@@ -19,6 +22,7 @@
 | Seed3D | OpenAI 兼容网关 chat/completions；固定 doubao-seed3d-2.0 图片生成 | GET /models，检查 Seed3D |
 | Meshy | 官方 Bearer API；沿用已有生成、纹理、减面、绑骨、动画适配 | GET /openapi/v1/balance |
 | Tripo | 官方 V2 OpenAPI Bearer API；沿用已有适配 | GET /user/balance |
+| Hi3D（环境变量配置） | 官方 AK/SK API；单图几何或带纹理 GLB | POST auth/token 后 GET balance，不生成模型 |
 
 Hunyuan 的腾讯云 SecretId / SecretKey（TC3 签名）不是 Responses 网关协议；Seed3D 的直连火山接口也不能仅换 base URL 就当作兼容。Assembly 自定义鉴权仍通过 `services.json` 配置。没有供应商真凭据的适配器不能标成已做真实服务验收。
 

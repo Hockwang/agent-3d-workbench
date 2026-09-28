@@ -55,6 +55,17 @@ from studio.adapters.tripo import upload as tripo_upload  # noqa: F401 - re-expo
 # a user typed into services.json/a connection is plain text, not a code, and
 # `render()` on an unregistered code just returns it unchanged (see i18n.py).
 BUILTINS = {
+    "hi3d": {
+        "title": "Hi3D",
+        "base_url": "https://api.hitem3d.ai",
+        "adapter": "hi3d",
+        "key_env": "HI3D_ACCESS_KEY",
+        "secret_key_env": "HI3D_SECRET_KEY",
+        "requires_key": True,
+        "operations": {"image-to-3d": "/open-api/v1/submit-task"},
+        "poll_interval": 10,
+        "default_timeout_seconds": 1800,
+    },
     "lux3d": {
         "title": "services.title_lux3d",
         "base_url": "https://api.aholo3d.cn",
@@ -486,3 +497,4 @@ register("generic")(_GenericAdapter())
 from studio.adapters import assembly_service  # noqa: F401,E402
 from studio.adapters import hunyuan_service  # noqa: F401,E402
 from studio.adapters import seed3d_service  # noqa: F401,E402
+from studio.adapters import hi3d_service  # noqa: F401,E402

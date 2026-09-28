@@ -15,6 +15,10 @@ or subscription. Installing dependencies needs internet access; local geometry w
 does not require a hosted 3D service. Optional service adapters are separate and disabled
 until configured.
 
+**Want image-to-3D generation too?** Start with the [same-image local/API comparison](docs/CUP_COMPARISON.md), or follow the [API setup tutorial](docs/API_GENERATION_DEMO.md):
+reference image → Hunyuan API → real GLB → MCP inspection, edit, undo and export.
+[Hi3D AK/SK setup](docs/HI3D.md) is also available. These optional routes need your own service access.
+
 ![Selecting and editing a part](docs/assets/point-and-edit.gif)
 
 The animation demonstrates shared selection. In the current Codex panel, use
@@ -250,6 +254,23 @@ artistic quality and photo-to-3D reconstruction are not guaranteed.
 Read the [public capability contract](docs/PUBLIC_CAPABILITIES.md) for exact
 preconditions and unsupported cases. Optional generation-service recipes are not
 part of the no-key local tutorial.
+
+### Same image: local modeling and generation + splitting
+
+| Shared reference | Codex local model | Hunyuan API model |
+| --- | --- | --- |
+| ![Reference](docs/assets/cup-comparison/reference.png) | ![Local](docs/assets/cup-comparison/local.png) | ![Generated](docs/assets/cup-comparison/generated.png) |
+
+We generated an independent cup image, then ran both routes through MCP. Codex
+built four editable local components. Hunyuan generated the model and its Part API
+split it into two editable pieces. Both completed a single-handle move, undo,
+export, project save and reopen.
+
+The Part result keeps the lid fused to the body, uses segment colors instead of
+PBR textures, and has open edges. Local dimensions are explicit design assumptions.
+Neither result is a verified printable product. Follow the
+[bilingual comparison tutorial](docs/CUP_COMPARISON.md), including input, assembled
+and separated views, measured limitations and downloadable models.
 
 ## 4. Instructions for AI agents
 

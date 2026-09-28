@@ -6,9 +6,13 @@ Inside the workbench, Codex is responsible for planning, calling tools, and acce
 
 ## Usage
 
+Start with the bilingual [real API generation demo](API_GENERATION_DEMO.md).
+For Hi3D's two-part credentials, follow [Hi3D setup](HI3D.md); the current single-key
+dialog below does not configure AK/SK.
+
 1. Open "Modeling & Tasks → Manage 3D Services".
 2. Pick a built-in connection, or add a new connection using the same protocol, filling in a name, API base URL, and API key; advanced settings can also reference a variable name already injected into the backend environment.
-3. Save, then click "Test Connection". The test only does a GET on the model list or the balance; a successful connection does not mean generation quality has been accepted.
+3. Save, then click "Test Connection". It reads a model list or balance without generating; Hi3D first exchanges AK/SK for a token. A successful connection does not mean generation quality has been accepted.
 4. Back in "Execution Method", pick this connection, choose a task, and provide input. Once the model is received in the background it reuses the current viewer, and can be imported into a project for further editing or sent into the observation/evaluation flow.
 
 Multiple connections can map to different accounts of the same vendor, or to compatible gateways. Saving does not reset the project or the viewport. An empty key field keeps the existing credential; changing the address automatically clears the inherited credential and requires re-entering it. Disabling/deleting only affects new tasks; existing tasks keep the configuration they were submitted with, for continued delivery.
@@ -19,6 +23,7 @@ Multiple connections can map to different accounts of the same vendor, or to com
 | Seed3D | OpenAI-compatible gateway chat/completions; fixed doubao-seed3d-2.0 image generation | GET /models, checks for Seed3D |
 | Meshy | Official Bearer API; reuses existing generation, texturing, decimation, rigging, and animation adapters | GET /openapi/v1/balance |
 | Tripo | Official V2 OpenAPI Bearer API; reuses existing adapter | GET /user/balance |
+| Hi3D (environment setup) | Official AK/SK API; single-image geometry or textured GLB | POST auth/token, then GET balance; no generation |
 
 Hunyuan's Tencent Cloud SecretId/SecretKey (TC3 signing) is not the Responses-gateway protocol; Seed3D's direct Volcano Engine interface likewise cannot be treated as compatible just by swapping the base URL. Assembly's custom auth is still configured through `services.json`. An adapter without real vendor credentials must not be marked as having passed real-service acceptance.
 

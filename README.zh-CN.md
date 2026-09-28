@@ -12,6 +12,10 @@ MCP 客户端可以使用同一套工具，并在本地浏览器查看模型。
 宿主自身可能需要账号或订阅。首次安装需要下载依赖；本地几何操作无需远程 3D 服务。
 可选服务适配器需另行配置，不是本教程的前置条件。
 
+**也想接 API 图片建模？** 先看 [同图双路线演示](docs/CUP_COMPARISON.zh-CN.md)，接入步骤见 [API 教程](docs/API_GENERATION_DEMO.zh-CN.md)：
+参考图 → Hunyuan API → 真实 GLB → MCP 检查、编辑、撤销与导出。
+也提供 [Hi3D AK/SK 接入](docs/HI3D.zh-CN.md)。这些可选路线需要自己的服务权限。
+
 ![选中部件并编辑](docs/assets/point-and-edit.gif)
 
 动图展示共享选区。当前 Codex 界面需要点击 **「附加选区到对话」** 才会向输入框添加卡片；
@@ -219,6 +223,20 @@ AI 编写脚本、作为本地任务执行、检查输出，并按需接回编�
 
 确切条件与边界见 [对外能力承诺](docs/zh-CN/PUBLIC_CAPABILITIES.md)。
 需要服务账号的生成配方属于可选扩展，不属于本地无 key 教程。
+
+### 同一张图：本地建模与生成 API＋分件
+
+| 共同参考图 | Codex 本地模型 | Hunyuan API 模型 |
+| --- | --- | --- |
+| ![参考图](docs/assets/cup-comparison/reference.png) | ![本地](docs/assets/cup-comparison/local.png) | ![生成](docs/assets/cup-comparison/generated.png) |
+
+先独立生成杯子图片，再通过 MCP 跑两条路线：Codex 在本机建出四个可编辑部件；
+Hunyuan 生成模型后，再通过 Part API 拆出两个可编辑部件。
+两边都完成了单独移动把手、撤销、导出、保存工程及重新打开。
+
+Part 结果仍把杯盖与杯身合在一起，PBR 贴图变成分件色，并有开边；
+本地尺寸是明确设定的设计假设。两边都没有宣称已成为可打印成品。
+[中英文完整演示](docs/CUP_COMPARISON.zh-CN.md) 包含参考图、整体与分件视图、实测限制和模型下载。
 
 ## 4. 给 AI Agent 的执行规则
 

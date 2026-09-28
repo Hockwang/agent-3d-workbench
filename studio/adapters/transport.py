@@ -71,7 +71,7 @@ def validate_payload(value):
 def credential_refs(spec):
     if type(spec.get("enabled", True)) is not bool:
         raise EditorError.coded("transport.enabled_must_be_bool")
-    direct = [spec.get(name) for name in ("key_env", "oneapi_appkey_env") if spec.get(name) is not None]
+    direct = [spec.get(name) for name in ("key_env", "secret_key_env", "oneapi_appkey_env") if spec.get(name) is not None]
     if any(not isinstance(ref, str) or not re.fullmatch(r"[A-Z_][A-Z0-9_]*", ref) for ref in direct):
         raise EditorError.coded("transport.credential_ref_must_be_env_name")
     refs = spec.get("headers_env", {})
@@ -117,7 +117,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         raise RuntimeError(render("transport.redirect_rejected"))
 
 
-def request(spec, method, path, payload=None, *, raw=None, content_type="application/json", timeout=90):
+def request(spec, method, path, payload=None, *, raw=None, content_type="application/json", timeout=90, authorization=None):
     if not isinstance(path, str) or not path.startswith("/") or path.startswith("//"):
         raise RuntimeError(render("transport.path_must_start_with_slash"))
     origin, route_headers, internal_http = service_transport(
@@ -138,6 +138,11 @@ def request(spec, method, path, payload=None, *, raw=None, content_type="applica
     headers = {"Content-Type": content_type, **route_headers}
     if key:
         headers["Authorization"] = key if spec.get("adapter") == "lux3d" else "Bearer " + key
+    # Short-lived provider tokens stay in memory, never in a persisted spec or env.
+    if authorization is not None:
+        if not isinstance(authorization, str) or not authorization or "\r" in authorization or "\n" in authorization:
+            raise EditorError.coded("transport.credential_contains_invalid_whitespace")
+        headers["Authorization"] = authorization
     credential_refs(spec)
     for name, env in spec.get("headers_env", {}).items():
         value = os.environ.get(env, "")

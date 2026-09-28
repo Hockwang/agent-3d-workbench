@@ -9,6 +9,7 @@ __pycache__/
 .env.*
 *.log
 examples/demo/out/
+examples/api_generation/out/
 
 # Local project state and developer caches
 .3dstudio/
