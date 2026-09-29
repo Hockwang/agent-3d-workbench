@@ -1,6 +1,8 @@
-[简体中文](README.zh-CN.md) · [Agent playbook](docs/AGENT_PLAYBOOK.md) · [Tool reference](docs/TOOLS.md) · [Discord community](https://discord.gg/r8BVSGtR8H)
+[简体中文](README.zh-CN.md) · [Agent playbook](docs/AGENT_PLAYBOOK.md) · [Tool reference](docs/TOOLS.md)
 
 # Agent 3D Workbench
+
+[![💬 Join Discord](docs/assets/discord-join.svg)](https://discord.gg/r8BVSGtR8H)
 
 **Open a model, point at a part, and let your agent edit it with you.**
 

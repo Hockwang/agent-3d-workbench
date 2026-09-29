@@ -1,6 +1,8 @@
-[English](README.md) · [Agent 操作手册](docs/zh-CN/AGENT_PLAYBOOK.md) · [工具参考](docs/TOOLS.md) · [Discord 社群](https://discord.gg/r8BVSGtR8H)
+[English](README.md) · [Agent 操作手册](docs/zh-CN/AGENT_PLAYBOOK.md) · [工具参考](docs/TOOLS.md)
 
 # Agent 3D Workbench · 人和 AI 共用的 3D 工作台
+
+[![💬 加入 Discord 社群](docs/assets/discord-join.zh-CN.svg)](https://discord.gg/r8BVSGtR8H)
 
 **打开模型，点中一个部件，让通用 Agent 和你一起修改。**
 
