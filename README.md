@@ -1,4 +1,4 @@
-[简体中文](README.zh-CN.md) · [Agent playbook](docs/AGENT_PLAYBOOK.md) · [Tool reference](docs/TOOLS.md)
+[简体中文](README.zh-CN.md) · [Agent playbook](docs/AGENT_PLAYBOOK.md) · [Tool reference](docs/TOOLS.md) · [Discord community](https://discord.gg/r8BVSGtR8H)
 
 # Agent 3D Workbench
 
@@ -15,9 +15,29 @@ or subscription. Installing dependencies needs internet access; local geometry w
 does not require a hosted 3D service. Optional service adapters are separate and disabled
 until configured.
 
-**Want image-to-3D generation too?** Start with the [same-image local/API comparison](docs/CUP_COMPARISON.md), or follow the [API setup tutorial](docs/API_GENERATION_DEMO.md):
+## Showcase: turn an existing character model into a head-shell design
+
+Pikachu head shell v6: a general-purpose agent worked locally on an existing model
+to create an interior cavity, front/back shells, separate accessories and magnet
+mounts, then inspect and deliver the result through the workbench. The design uses
+a **declared 60 cm head circumference**, **13 parts** and **six pairs of Ø10×2 mm magnets**.
+
+| Assembled model | Open front/back shells | Magnet mount section |
+| --- | --- | --- |
+| ![Real mesh render of the assembled Pikachu v6 head shell](docs/assets/pikachu-head-shell/assembled.png) | ![Shell cavities and overlapping tabs across the seam](docs/assets/pikachu-head-shell/opened-magnet-tabs.png) | ![Overlapping tab, rear-shell pocket and grey magnet placeholders](docs/assets/pikachu-head-shell/magnet-section.png) |
+
+**This is a local, custom fabrication case starting from an existing character model.**
+All three images render the delivered meshes. All 13 parts passed watertightness
+checks, but forward vision from the provisional eye points remains blocked; the
+design has not been printed or physically worn. The overlapping magnet mounts were
+custom work for this case; the built-in recipe provides the base head-shell workflow.
+[See the process, recorded checks and remaining work](docs/PIKACHU_HEAD_SHELL.md).
+
+**Want image-to-3D generation too?** The cup's [same-image comparison](docs/CUP_COMPARISON.md) demonstrates local modeling and API generation plus splitting. Follow the [API setup tutorial](docs/API_GENERATION_DEMO.md):
 reference image → Hunyuan API → real GLB → MCP inspection, edit, undo and export.
 [Hi3D AK/SK setup](docs/HI3D.md) is also available. These optional routes need your own service access.
+
+## Edit with your agent
 
 ![Selecting and editing a part](docs/assets/point-and-edit.gif)
 
@@ -355,6 +375,14 @@ on Linux. It is shipped as a template; hosted CI is not enabled for the initial 
 - [Tools](docs/TOOLS.md) · [Core CLI](docs/CORE_CLI.md) · [Architecture](docs/ARCHITECTURE.md)
 - [Tasks](docs/WORKBENCH_TASKS.md) · [Motion](docs/MOTION_EDITING.md) · [Recipes](recipes/README.md)
 - [Contributing](CONTRIBUTING.md) · [Capability contract](docs/PUBLIC_CAPABILITIES.md)
+
+## Community and feedback
+
+Join the [Discord community](https://discord.gg/r8BVSGtR8H) for setup help, work in
+progress, and workflow feedback. English and Chinese are both welcome. Use
+[GitHub Issues](https://github.com/Hockwang/agent-3d-workbench/issues) for reproducible
+bugs so reports and fixes stay easy to find. Remove API keys and private data before
+sharing logs or models.
 
 ## License
 

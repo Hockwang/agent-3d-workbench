@@ -1,4 +1,4 @@
-[English](README.md) · [Agent 操作手册](docs/zh-CN/AGENT_PLAYBOOK.md) · [工具参考](docs/TOOLS.md)
+[English](README.md) · [Agent 操作手册](docs/zh-CN/AGENT_PLAYBOOK.md) · [工具参考](docs/TOOLS.md) · [Discord 社群](https://discord.gg/r8BVSGtR8H)
 
 # Agent 3D Workbench · 人和 AI 共用的 3D 工作台
 
@@ -12,9 +12,24 @@ MCP 客户端可以使用同一套工具，并在本地浏览器查看模型。
 宿主自身可能需要账号或订阅。首次安装需要下载依赖；本地几何操作无需远程 3D 服务。
 可选服务适配器需另行配置，不是本教程的前置条件。
 
-**也想接 API 图片建模？** 先看 [同图双路线演示](docs/CUP_COMPARISON.zh-CN.md)，接入步骤见 [API 教程](docs/API_GENERATION_DEMO.zh-CN.md)：
+## 案例：把已有角色模型做成头套结构
+
+皮卡丘头套 v6：通用 Agent 在本地加工已有模型，完成内腔、前后分壳、独立附件与磁铁安装结构，
+再用工作台检查和交付。以 **60 cm 声明头围**设计，共 **13 件**，采用 **6 对 Ø10×2 mm 磁铁**。
+
+| 完整外观 | 打开前后壳 | 磁铁结构剖面 |
+| --- | --- | --- |
+| ![皮卡丘头套 v6 完整装配的真实网格渲染](docs/assets/pikachu-head-shell/assembled.png) | ![前后壳内腔与跨缝搭接耳片](docs/assets/pikachu-head-shell/opened-magnet-tabs.png) | ![搭接耳片、后盖磁铁窝与灰色磁铁占位](docs/assets/pikachu-head-shell/magnet-section.png) |
+
+**这是本地定制结构加工案例，输入是已有角色模型。** 三图均来自实际交付网格；13 件水密检查通过，
+但暂定眼位的正前方视线仍被遮挡，未实打或真人试戴。跨缝磁吸结构是本案例的定制实现，
+当前内置配方提供基础头壳流程。[查看流程、数字检查与待解决项](docs/PIKACHU_HEAD_SHELL.zh-CN.md)。
+
+**也想接 API 图片建模？** 杯子的 [同图双路线演示](docs/CUP_COMPARISON.zh-CN.md) 展示本地建模和 API 生成＋分件，接入步骤见 [API 教程](docs/API_GENERATION_DEMO.zh-CN.md)：
 参考图 → Hunyuan API → 真实 GLB → MCP 检查、编辑、撤销与导出。
 也提供 [Hi3D AK/SK 接入](docs/HI3D.zh-CN.md)。这些可选路线需要自己的服务权限。
+
+## 和 Agent 一起编辑
 
 ![选中部件并编辑](docs/assets/point-and-edit.gif)
 
@@ -309,6 +324,13 @@ make build        # 重建提交到仓库的界面产物
 - [工具参考](docs/TOOLS.md) · [Core CLI](docs/zh-CN/CORE_CLI.md) · [架构](docs/zh-CN/ARCHITECTURE.md)
 - [任务](docs/zh-CN/WORKBENCH_TASKS.md) · [动画](docs/zh-CN/MOTION_EDITING.md) · [配方](recipes/README.md)
 - [贡献指南](CONTRIBUTING.zh-CN.md) · [能力承诺](docs/zh-CN/PUBLIC_CAPABILITIES.md)
+
+## 社群与反馈
+
+加入 [Discord 社群](https://discord.gg/r8BVSGtR8H)，交流安装与使用问题、分享作品和
+真实工作流中的卡点。欢迎用中文或英文交流。可复现的 Bug 请提交到
+[GitHub Issues](https://github.com/Hockwang/agent-3d-workbench/issues)，便于持续跟踪和查找。
+分享日志或模型前，请移除 API key 和私人信息。
 
 ## 许可证
 
