@@ -72,6 +72,13 @@ retrying; never blind-replay a stale instruction.
 means the job ran and wrote files — read the actual report before calling geometry or motion
 correct.
 
+**Result handoff**: Deliver into the current project, not only an isolated test workspace
+or a filesystem link. Give each work stable identity, route/stage, version and a real
+thumbnail via optional `workbench-result.json`; see [result identity](../../docs/RESULT_IDENTITY.md).
+Existing external GLBs can be copied with `register_existing(workbench)` in an ordinary
+Python task. Reuse matching completed registrations. Poll completion, then open the task
+preview; do not import into the editor merely to make a result visible.
+
 **Observe loop**: `studio_open({"mode":"observe"})`, `studio_observe(action:"start", inputs, ...)`
 with up to four versions, then `read({id})` for real PNGs and metrics. Never claim an appearance
 or motion judgment without having looked at the returned image. Observation applies one camera

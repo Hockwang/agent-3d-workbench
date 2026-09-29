@@ -538,13 +538,18 @@ export function recipeStepBaseTool(step) {
 // backend. A print job is a deliberate copy of editable assets, not their state.
 export function createWorkspace(api, options = {}) {
   let editor = null, print = null, mode = options.mock ? "print" : "edit", active = true, nextState = null;
-  let tasks = null, observe = null;
+  let tasks = null, observe = null, previewResult = null;
+  const workflow = document.createElement('details'); workflow.className = 'workspace-workflow';
+  const workflowSummary = document.createElement('summary');
+  const recipeElement = document.getElementById('recipe');
+  recipeElement.before(workflow); workflow.append(workflowSummary, recipeElement);
   let disposed = false, updateBusy = false, updatesTimer = null;
   const access = createQuickAccess({ api,
     onModel: () => { show('edit'); editor.fitView(); },
     onOpenFile: () => { show('edit'); editor.openFile(); },
     onOpenResult: (id, files) => openResult(id, files),
     onAttachSelection: options.onAttachSelection,
+    onOpenHistory: () => { show('tasks'); tasks.openHistory(); },
   });
   async function openResult(id, files = false) {
     show('tasks');
@@ -569,7 +574,9 @@ export function createWorkspace(api, options = {}) {
   const renderRecipe = () => {
     access.setState(nextState);
     recipes?.render({ ...nextState, busy: recipeBusy || nextState?.busy });
-    if (mode === 'motion') document.getElementById('recipe').hidden = true;
+    if (mode === 'motion' || (mode === 'tasks' && previewResult)) document.getElementById('recipe').hidden = true;
+    workflow.hidden = recipeElement.hidden;
+    workflowSummary.textContent = t('entry.projectWorkflow', { name: nextState?.recipe?.title || nextState?.recipe?.name || t('entry.chooseWorkflow') });
   };
   const publishSelection = () => { if (nextState) options.onSelectionContext?.({ mode, state: nextState }); };
   const childOptions = { ...options, onState(next) { nextState = next; renderRecipe(); options.onState?.(next); publishSelection(); } };
@@ -666,6 +673,7 @@ export function createWorkspace(api, options = {}) {
   buttons.forEach(b => { if (!b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', icon(navIcons[b.dataset.workspaceMode])); });
   function show(value) {
     mode = ['edit', 'motion', 'print', 'tasks', 'observe'].includes(value) ? value : 'edit';
+    workflow.open = !['edit', 'motion'].includes(mode);
     document.getElementById("editor-space").hidden = !["edit","motion"].includes(mode);
     document.getElementById("print-space").hidden = mode !== "print";
     document.getElementById('task-space').hidden = mode !== 'tasks';
@@ -675,7 +683,7 @@ export function createWorkspace(api, options = {}) {
     buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.workspaceMode === mode)));
     if (["edit","motion"].includes(mode) && !editor) editor = createEditor(api, { ...childOptions, onPrint: () => show("print"), onMotion: () => show("motion"), onResults: () => access.openResults() });
     if (mode === "print" && !print) print = createPrintWorkspace(api, childOptions);
-    if (mode === 'tasks' && !tasks) tasks = createTasks(api, { onImport: () => { show('edit'); editor.refresh?.(); } });
+    if (mode === 'tasks' && !tasks) tasks = createTasks(api, { onImport: () => { show('edit'); editor.refresh?.(); }, onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); } });
     if (mode === 'observe' && !observe) observe = createObserve(api);
     editor?.setWorkspaceMode(mode);
     editor?.setActive(active && ["edit","motion"].includes(mode));
@@ -697,6 +705,6 @@ export function createWorkspace(api, options = {}) {
     setMode: show,
     setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); publishSelection(); },
     setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); },
-    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); recipes?.dispose(); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
+    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
   };
 }

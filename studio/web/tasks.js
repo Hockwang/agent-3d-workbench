@@ -4,6 +4,7 @@ import { uploadFile } from './upload.js';
 import { createServiceSettings } from './service-settings.js';
 import { t } from './i18n.js';
 import { primaryArtifact, orderedArtifacts } from './quick-access.js';
+import { resultIdentity } from './result-model.js';
 import { sandboxedHtml } from './sandboxed-html.js';
 
 const STATUS = () => ({ queued: t('tasks.status.queued'), running: t('tasks.status.running'), cancelling: t('tasks.status.cancelling'), completed: t('tasks.status.completed'), failed: t('tasks.status.failed'), cancelled: t('tasks.status.cancelled'), interrupted: t('tasks.status.interrupted') });
@@ -64,9 +65,15 @@ export function createTasks(api, options = {}) {
   const speed = node('select'); speed.setAttribute('aria-label', t('tasks.ariaLabel.previewPlaybackSpeed'));
   for (const rate of [.25,.5,1,1.5,2,4]) { const option = node('option', rate+'×'); option.value = rate; speed.append(option); }
   speed.value = 1; speed.onchange = () => preview?.setSpeed(Number(speed.value)); $('.task-animation').append(speed);
+  const newTask = node('button', t('entry.newTask'), 'task-new-button'); newTask.type = 'button';
+  $('.task-result').append(newTask);
+  newTask.onclick = () => { root.classList.remove('result-browsing'); clearRebuild(); shell.reveal($('.task-form')); };
+  const primaryActions = node('div', null, 'task-primary-actions');
+  $('.task-files').before(primaryActions);
+  $('.task-files').open = false; $('.task-records').open = false;
   const media = node('div', null, 'task-media'); media.hidden = true; $('.task-canvas').after(media);
   let active = true, disposed = false, busy = false, selected = null, stamp = '', timer = null, preview = null, previewKey = '', previewType = '', mediaUrl = '', html = '', caps;
-  let rebuildId = null, taskList = [], previewRequest = 0;
+  let rebuildId = null, taskList = [], previewRequest = 0, lastPreview = null;
   let reviewTask = null;
   const saveReview = async event => {
     const frame = media.querySelector('iframe'), data = event.data;
@@ -222,20 +229,29 @@ export function createTasks(api, options = {}) {
   };
   async function showArtifact(task, artifact) {
     const key = `${task.id}:${artifact.id}`;
-    if (previewKey === key) return;
     const request = ++previewRequest;
     const isCurrent = () => !disposed && request === previewRequest;
     const type = artifact.name.endsWith('.glb') ? 'glb' : 'media';
     // Download and parse before replacing the last valid scene or media.
-    const bytes = await api.taskAsset(task.id, artifact, { presentation: /\.html$/i.test(artifact.name) });
-    if (!isCurrent()) return;
-    let clips;
-    if (type === 'glb') {
-      preview ||= new TaskPreview($('.task-canvas'));
-      clips = await preview.load(bytes, { isCurrent, preserveCamera: previewKey.startsWith(`${task.id}:`) });
+    root.classList.add('result-browsing');
+    if (previewKey === key) { options.onPreview?.(lastPreview); return; }
+    options.onPreview?.({ task, artifact, loading: true });
+    let bytes, clips;
+    try {
+      bytes = await api.taskAsset(task.id, artifact, { presentation: /\.html$/i.test(artifact.name) });
       if (!isCurrent()) return;
+      if (type === 'glb') {
+        preview ||= new TaskPreview($('.task-canvas'));
+        clips = await preview.load(bytes, { isCurrent, preserveCamera: previewKey.startsWith(`${task.id}:`) });
+        if (!isCurrent()) return;
+      }
+    } catch (e) {
+      if (!isCurrent()) return;
+      options.onPreview?.(lastPreview); throw e;
     }
     previewKey = key; previewType = type;
+    lastPreview = { task, artifact, loading: false };
+    options.onPreview?.(lastPreview);
     $('.task-error').hidden = true;
     reviewTask = ['merge-review', 'a8-review'].includes(task.template) && artifact.name === 'index.html' ? task.id : null;
     shell.setEmbedded(/\.html$/i.test(artifact.name));
@@ -269,6 +285,25 @@ export function createTasks(api, options = {}) {
     if (disposed || selected !== task.id) return;
     task = result.task; $('.task-log').textContent = task.log || task.error || t('tasks.log.none');
     $('.task-head h2').textContent = task.title;
+    const identity = resultIdentity(task);
+    $('.task-eyebrow').textContent = identity.note;
+    primaryActions.replaceChildren();
+    const main = primaryArtifact(task.artifacts, task.result);
+    if (main?.name.endsWith('.glb')) {
+      const add = node('button', t('entry.addToEditor')); add.type = 'button';
+      add.disabled = !!(main.animations || main.skins);
+      add.onclick = () => action(async () => {
+        const state = await api.getState();
+        await api.task({ action: 'import', id: task.id, artifact_id: main.id, expected_revision: state.workbench.revision });
+        options.onImport?.();
+      });
+      const save = node('button', t('entry.downloadModel')); save.type = 'button';
+      save.onclick = () => action(async () => {
+        const bytes = await api.taskAsset(task.id, main), url = URL.createObjectURL(new Blob([bytes], { type: main.mime }));
+        const link = node('a'); link.href = url; link.download = main.name.split('/').pop(); link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+      });
+      primaryActions.append(add, save, node('small', t('entry.additiveImport')));
+    }
     $('.task-files summary').textContent = t('tasks.filesSummary', { count: task.artifacts?.length || 0 });
     $('.task-files').hidden = !task.artifacts?.length;
     const artifacts = $('.task-artifacts'); artifacts.replaceChildren();
@@ -309,9 +344,10 @@ export function createTasks(api, options = {}) {
       }); row.append(download, pathDetails); artifacts.append(row);
     }
     const review = ['merge-review', 'a8-review'].includes(task.template);
-    const first = (review && task.artifacts?.find(x => x.name === 'index.html')) || primaryArtifact(task.artifacts);
+    const first = (review && task.artifacts?.find(x => x.name === 'index.html')) || primaryArtifact(task.artifacts, task.result);
     if (first && !previewKey.startsWith(`${task.id}:`)) await showArtifact(task, first);
-    else if (!first) { previewKey = ''; clearMedia(); shell.setEmbedded(false); media.hidden = true; preview?.setActive(false); $('.task-empty').hidden = false; $('.task-empty').textContent = task.error || (live(task) ? t('tasks.empty.runningHint') : t('tasks.empty.noPreviewableArtifact')); $('.task-canvas').hidden = true; $('.task-animation').hidden = true; }
+    else if (first && root.classList.contains('result-browsing')) options.onPreview?.(lastPreview);
+    else if (!first) { ++previewRequest; previewKey = ''; lastPreview = null; options.onPreview?.(null); clearMedia(); shell.setEmbedded(false); media.hidden = true; preview?.setActive(false); $('.task-empty').hidden = false; $('.task-empty').textContent = task.error || (live(task) ? t('tasks.empty.runningHint') : t('tasks.empty.noPreviewableArtifact')); $('.task-canvas').hidden = true; $('.task-animation').hidden = true; }
   }
   async function refresh() {
     if (disposed || !active || !api.tasks) return;
@@ -342,6 +378,7 @@ export function createTasks(api, options = {}) {
     }
   }
   function editParameters(task) {
+    root.classList.remove('result-browsing');
     $('.task-provider').value = ''; templates(); $('.task-template').value = task.editable.template; fields(task.editable.params);
     rebuildId = task.id; fromSelection.checked = false; fromSelection.disabled = true; upload.disabled = true;
     $('.task-inputs').value = task.editable.inputs.join('\n'); $('.task-inputs').disabled = true;
@@ -368,6 +405,8 @@ export function createTasks(api, options = {}) {
     timer = setInterval(() => refresh().catch(error), 2000);
   })().catch(error);
   async function openResult(id, files = false) {
+    selected = id;
+    root.classList.add('result-browsing');
     await openRecipe(null, id);
     if (files) {
       shell.reveal($('.task-files'));
@@ -375,5 +414,5 @@ export function createTasks(api, options = {}) {
       $('.task-files summary').focus();
     }
   }
-  return { ready, openRecipe, openResult, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); preview?.dispose(); clearMedia(); } };
+  return { ready, openRecipe, openResult, openHistory() { shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); preview?.dispose(); clearMedia(); } };
 }

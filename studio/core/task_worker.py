@@ -141,7 +141,10 @@ def run(folder):
             save()
         if not artifacts:
             raise RuntimeError(render("task_worker.no_artifacts_delivered"))
-        save(status="completed", artifacts=artifacts, finished=time.time())
+        from studio.core.result_manifest import read_manifest
+
+        result = read_manifest(root, artifacts)
+        save(status="completed", artifacts=artifacts, finished=time.time(), **({"result": result} if result else {}))
     except BaseException as exc:
         if child and child.poll() is None:
             _terminate_child(child, signal.SIGKILL)

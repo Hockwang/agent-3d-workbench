@@ -37,12 +37,13 @@ export function createEditor(api, options = {}) {
           ${button("from_print", t('editor.import.fromPrint'), 'class="ed-wide"')}
           <details class="ui-paths"><summary>${t('editor.import.openProject')}</summary><label>${t('editor.import.projectPathLabel')}<input id="ed-project-path" placeholder="${t('editor.import.projectPathPlaceholder')}"></label>${button("open", t('editor.import.openButton'))}</details>
         </details>
-        <section class="ed-section"><div class="ed-section-head"><h2>${t('editor.scene.title')}</h2>${button("show_all", t('editor.scene.showAll'))}</div>
+        <section class="ed-section ed-current-scene"><div class="ed-section-head"><h2 id="ed-scene-name">${t('editor.scene.title')}</h2>${button("show_all", t('editor.scene.showAll'))}</div>
           <div id="ed-tree" class="ed-tree"></div><div class="ed-row">${button("all", t('editor.scene.selectAll'))}${button("isolate", t('editor.scene.isolate'))}${button("duplicate", t('editor.scene.duplicate'))}${button("delete", t('common.delete'))}</div>
         </section>
       </div></details>
       <details class="ed-inspector studio-card" open><summary>${icon('sliders-horizontal')}<span>${t('editor.props.title')}</span></summary><div class="studio-card-body">
         <div id="ed-error" role="alert" hidden></div>
+        <p class="ed-inspector-empty" hidden>${t('editor.props.selectionGuide')}</p>
         <nav class="ed-tabs" aria-label="${t('editor.props.tabsAriaLabel')}">${[["edit",t('editor.props.tab.edit')],["cut",t('editor.props.tab.cut')],["repair",t('editor.props.tab.repair')],["material",t('editor.props.tab.material')]].map(([id,label]) => `<button data-module="${id}" aria-pressed="${id === "edit"}">${label}</button>`).join("")}</nav>
         <section class="ed-section" data-ed-panel="edit">
           <label>${t('editor.props.nameLabel')}<div class="ed-row"><input id="ed-object-name" placeholder="${t('editor.props.namePlaceholder')}">${button("rename", t('editor.props.renameButton'))}</div></label>
@@ -92,7 +93,8 @@ export function createEditor(api, options = {}) {
       </div></details>
       </div>
     </div>`;
-  const shell = createStudioShell($("editor-space"), { layout: '.ed-main', stage: '.ed-stage', library: '.ed-browser', settings: '.ed-inspector', title: t('editor.shell.title'), sections: ['.ed-toolbar', '#ed-delivery', '#ed-records'], footer: ['[data-edit="print_copy"]'] });
+  const shell = createStudioShell($("editor-space"), { layout: '.ed-main', stage: '.ed-stage', library: '.ed-browser', settings: '.ed-inspector', title: t('editor.shell.title'), sections: ['.ed-toolbar', '#ed-delivery', '#ed-records'], footer: ['[data-edit="print_copy"]'], libraryDefaultOpen: true, dockSettings: true });
+  $('ed-records').open = false;
   const viewport = new EditorViewport($("editor-viewport"), {
     loadAsset: (obj) => api.editorAsset(obj),
     onSelect: (id, multiple) => {
@@ -117,6 +119,12 @@ export function createEditor(api, options = {}) {
   const motionPanel = createMotionPanel({ api, viewport, host: document.querySelector('.ed-inspector > .studio-card-body'), stage: document.querySelector('.ed-stage'), getState: () => state, run, onError: showError });
   const scenePanel = createScenePanel({api, viewport, browser: document.querySelector('.ed-browser > .studio-card-body'), inspector: document.querySelector('.ed-inspector > .studio-card-body'), getState: () => state, run, onMotion: options.onMotion, onError: showError});
   const cityPanel = createCityPanel({api,viewport,browser:document.querySelector('.ed-browser > .studio-card-body'),stage:document.querySelector('.ed-stage'),getState:()=>state,run,onError:showError});
+  // Keep existing objects ahead of all import, city and asset-library controls.
+  const objectBrowser = document.querySelector('.ed-browser > .studio-card-body');
+  const imports = document.createElement('details'); imports.className = 'ed-section ed-add-assets';
+  const importSummary = document.createElement('summary'); importSummary.textContent = t('editor.browser.addAssets');
+  imports.append(importSummary, ...objectBrowser.children);
+  objectBrowser.append(imports.querySelector('.ed-current-scene'), imports);
   const partMenu = document.createElement('div'); partMenu.className = 'ed-part-menu'; partMenu.hidden = true;
   const partChat = createPartChatUI(api);
   partMenu.setAttribute('role', 'menu'); document.body.append(partMenu);
@@ -221,7 +229,9 @@ export function createEditor(api, options = {}) {
     const nextStamp = JSON.stringify([state.revision, state.view_revision, state.selection, state.objects.map(o => o.lease), busy, printSources]);
     if (renderStamp === nextStamp) return;
     renderStamp = nextStamp;
-    $("ed-name").textContent = state.name;
+    const sceneName = state.name && state.name !== 'scene' ? state.name : t('entry.editScene');
+    $("ed-name").textContent = sceneName;
+    $("ed-scene-name").textContent = sceneName;
     $('ed-folder').hidden = !state.project_folder;
     $('ed-folder').textContent = state.project_folder ? t('editor.status.projectFolder', { folder: state.project_folder }) : '';
     $('ed-folder').title = state.project_folder || '';
@@ -239,6 +249,9 @@ export function createEditor(api, options = {}) {
       $("ed-tree").innerHTML = state.objects.map((o) => `<div class="ed-object ${state.selection.includes(o.id) ? "selected" : ""}"><label><input type="checkbox" data-select="${o.id}" ${state.selection.includes(o.id) ? "checked" : ""}><span title="${esc(o.name)}">${esc(o.name)}</span></label><button data-visible="${o.id}" aria-label="${esc(t(o.visible ? 'editor.scene.hideAriaLabel' : 'editor.scene.showAriaLabel', { name: o.name }))}">${o.visible ? "◉" : "○"}</button></div>`).join("") || `<p class="ed-muted">${t('editor.scene.empty')}</p>`;
     }
     const selected = selection();
+    const inspector = document.querySelector('.ed-inspector');
+    inspector.classList.toggle('ed-no-selection', selected.length === 0);
+    inspector.querySelector('.ed-inspector-empty').hidden = selected.length > 0;
     materialOptions(selected);
     const stamp = state.selection.join();
     if (stamp !== selectionStamp) nameDirty = false;

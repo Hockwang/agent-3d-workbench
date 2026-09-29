@@ -2,6 +2,8 @@
 
 # Agent playbook (long form)
 
+**Result handoff**：Deliver outputs into the current project with a work title, route/stage, version and real thumbnail. Follow [the result identity contract](RESULT_IDENTITY.md); open the task preview without importing into the editing scene. Do not leave the only discoverable result in an isolated test workspace.
+
 This is the detailed operating guide the skill file (`skills/print-prep/SKILL.md`) points to.
 
 For the first-use tutorial, see [README](../README.md). In the current panel, selection

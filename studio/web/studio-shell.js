@@ -6,7 +6,7 @@ const cross = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" strok
 const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
 const write = (key, value) => { try { localStorage.setItem(key, value); } catch { /* Storage may be unavailable in embedded apps. */ } };
 
-export function createStudioShell(root, { layout, stage, library, settings, title, sections = [], footer = [] }) {
+export function createStudioShell(root, { layout, stage, library, settings, title, sections = [], footer = [], libraryDefaultOpen = false, dockSettings = false }) {
   const find = selector => root.querySelector(selector);
   const host = find(layout), view = find(stage);
   host.classList.add('v04-layout'); view.classList.add('v04-stage');
@@ -38,17 +38,17 @@ export function createStudioShell(root, { layout, stage, library, settings, titl
     const cardTitle = heading.textContent.trim(); toggle.setAttribute('aria-label', t('shell.foldCard', { title: cardTitle }));
     const content = previous.querySelector(':scope > .studio-card-body'); content.classList.add('card-body'); content.id = `${card.id}-body`; toggle.setAttribute('aria-controls', content.id);
     header.append(heading, toggle); card.append(header, content); previous.replaceWith(card); view.append(card);
-    const key = `pp.card.${card.id}`; let pref = read(key);
+    const key = `pp.card.${card.id}${side === 'library' && libraryDefaultOpen ? '.outline' : ''}`; let pref = read(key);
     const set = collapsed => { card.classList.toggle('collapsed', collapsed); toggle.setAttribute('aria-expanded', String(!collapsed)); };
     const open = () => { pref = 'open'; write(key, pref); set(false); };
     toggle.onclick = () => { pref = card.classList.contains('collapsed') ? 'open' : 'closed'; write(key, pref); set(pref === 'closed'); };
-    const record = { card, set, open, defaults(populated) { if (pref) set(pref === 'closed'); else set(welcome || (side === 'library' ? populated : card.parentElement === view && view.clientWidth < 560)); } };
+    const record = { card, set, open, defaults(populated) { if (pref) set(pref === 'closed'); else set(welcome || (side === 'library' ? populated && !libraryDefaultOpen : card.parentElement === view && view.clientWidth < 560)); } };
     cards.push(record); return record;
   }
-  const libraryCard = convert(library, 'library'); convert(settings, 'settings');
+  const libraryCard = convert(library, 'library'), settingsCard = convert(settings, 'settings');
   const mq = matchMedia('(max-width: 599px)'); let populated = false, embedded = false, welcome = false;
   const defaults = () => cards.forEach(card => card.defaults(populated));
-  const dockCards = () => { for (const { card } of cards) (mq.matches || embedded ? dock : view).append(card); defaults(); };
+  const dockCards = () => { for (const { card } of cards) (mq.matches || embedded || (dockSettings && card === settingsCard?.card) ? dock : view).append(card); defaults(); };
   mq.addEventListener('change', dockCards); dockCards();
   const observer = new ResizeObserver(defaults); observer.observe(view);
   return {

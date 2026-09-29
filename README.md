@@ -156,7 +156,7 @@ and five STL files. This is a toy modeling example, not a food-safe cup design.
 
 1. Ask your agent to **open the 3D Workbench**, or open its entry in Codex's right panel.
 2. Click **Open file** at the top and choose `demo-parts.glb`.
-3. Check **Current model · 5 parts**. The objects are `body`, `handle`, `lid`, `knob`, `base`.
+3. Check **Editing · 5 parts**. The objects are `body`, `handle`, `lid`, `knob`, `base`.
 
 Alternatively, tell your agent:
 
@@ -165,7 +165,7 @@ Alternatively, tell your agent:
 
 Import appends objects. If this project already contains a model, use a separate
 project for this tutorial or deliberately keep both. Reopening an already imported
-model only needs **Current model**; importing it again creates another copy.
+model only needs **Back to editor**; importing it again creates another copy.
 
 ### Step C — select and ask for a change
 
@@ -220,11 +220,19 @@ It checks the tool workflow, not native desktop button behavior.
 
 ### Where did my generated result go?
 
-Use **Recent results** at the top, search by title or filename, then choose
-**View result** or **Output files**. **File location** shows its local path.
-**Import to editor** adds a generated result to the editable scene; previewing it
+Open **Task overview** from any workspace to choose a result. In **Modeling & tasks**,
+the **Latest delivery** cards keep local, generated and split
+variants of the same work together. Click a card to preview it; the header shows
+its route, version and actual filename. For earlier work, open **Task overview**,
+search by title or filename, then choose a model or **Output files**. **File location** shows its local path.
+**Add to editing scene** adds a generated result to the editable scene; previewing it
 alone does not. For replacing an existing part, ask the agent to replace its ID
 instead of importing a second overlapping copy.
+
+In **Model editing**, the left **Models & objects** list starts with the current scene
+and opens by default. Select a part to see its properties in the fixed right sidebar.
+Import tools are under **Add models & assets**. The project workflow starts folded;
+result cards stay in the task view so they cannot be mistaken for the scene being edited.
 
 ## 3. Try a local modeling task
 
@@ -237,7 +245,7 @@ Paste this into your agent:
 > generation service. Ask if a dimension or hole placement is ambiguous.
 
 The agent writes a script, runs it as a local task, inspects the output, and imports
-it when requested. **Recent results** contains the task and its artifacts. Blender
+it when requested. **Task overview** contains the task and its artifacts. Blender
 is only needed for the tasks that use it. Local scripting enables modeling; arbitrary
 artistic quality and photo-to-3D reconstruction are not guaranteed.
 
@@ -293,7 +301,10 @@ Discover the installed tool schemas rather than inventing arguments.
 5. **Verify evidence.** Read reports and artifacts. `completed` means execution ended;
    a report can still say `fail`. View/render the model when appearance matters.
    Sampled collision checks do not certify an entire motion range or physical safety.
-6. **Deliver clearly.** Return output paths, checks and remaining limitations. Import
+6. **Deliver clearly.** Register the model in the current project with a work title,
+   route/stage, version and real thumbnail ([result handoff](docs/RESULT_IDENTITY.md));
+   results left in isolated experiments do not appear in the user’s project. Open the
+   task preview, then return output paths, checks and remaining limitations. Import
    the new result or use `replace` on the intended part as appropriate. Re-read the
    project after the change. UI-only `studio_ui_action` is reserved for human controls.
 
@@ -319,10 +330,10 @@ before operations that require `allow_material_loss=true`.
 
 | Symptom | Next step |
 | --- | --- |
-| Cannot find the model | Use Current model for the editing scene, Recent results for task outputs, or Open file for a file on disk. |
+| Cannot find the model | Use Back to editor for the editing scene, Latest delivery / Task overview for task outputs, or Open file for a file on disk. |
 | Old selection cards appear | Remove each card with × and reopen the workbench after updating. New versions attach only on an explicit click; removing a card does not delete the model. |
 | “No workspace bound” | Update and restart the MCP host. Codex native entries bind from host metadata; other clients need a configured workspace ID. Retry alone does not reload an old Python process. |
-| Model appears twice | Import appends. Undo the duplicate import; use Current model to return to an existing scene. |
+| Model appears twice | Import appends. Undo the duplicate import; use Back to editor to return to an existing scene. |
 | Blender/slicer unavailable | Install/configure that optional application or use a task without it. See Configuration. |
 | Model has the wrong size | Check source units and import settings. Do not compensate with an unexplained scale. |
 | `revision_conflict` | Re-read state and resolve the conflict; do not blindly resend. |

@@ -50,3 +50,9 @@ test('output files put the assembled model and package before audit internals', 
   assert.deepEqual(orderedArtifacts(artifacts).map(a => a.name), ['scene.glb', 'kit.zip', 'back_shell.stl', 'audit/report.json']);
   assert.equal(artifacts[0].name, 'audit/report.json');
 });
+
+test('model browser hides probes/reports and ranks by completion instead of submission', () => {
+  const task = (id, created, finished, name) => ({ id, created, finished, status: 'completed', artifacts: [{ name }] });
+  const tasks = [task('lateFinish', 1, 9, 'scene.glb'), task('earlyFinish', 4, 5, 'model.glb'), task('probe', 10, 11, 'probe.json'), task('report', 11, 12, 'index.html')];
+  assert.deepEqual(recentResults(tasks).map(t => t.id), ['lateFinish', 'earlyFinish']);
+});
