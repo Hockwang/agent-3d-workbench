@@ -1,0 +1,475 @@
+{
+  "schema": "assembly-comparison-media/v1",
+  "created_on": "2026-09-29",
+  "renderer": "Blender 5.1.2 / Cycles / 16 samples / denoising",
+  "video_encoder": "FFmpeg 9.0.1 / libx264 CRF16",
+  "source_unchanged": true,
+  "playback_speed": 1,
+  "frame_interpolation": false,
+  "same_source_camera_per_case": true,
+  "crop_policy": "complete rendered viewport, no content cropping",
+  "colors": "Object display colors only; no semantic correspondence across routes.",
+  "motion": {
+    "fox": "Existing 2.4 s diagnostic pose, not generated gait.",
+    "desk": "Existing 4 s URDF joint range display; API phase reversed for opening.",
+    "fan": "New 4 s display-only centroid explosion and return; no geometry or ownership repair."
+  },
+  "cost_and_time": {
+    "experiment_record": "../usage.json",
+    "additional_3d_api_requests": 0,
+    "media_rendering_excluded_from_experiment": true,
+    "local_compute_monetary_cost": null,
+    "authoring_agent_cost": null,
+    "note": "Local render time is measured per route, two jobs at a time. Electricity and media-authoring agent cost were not metered. No new 3D generation API calls; this does not mean total production was free."
+  },
+  "sources": [
+    {
+      "route": "fox-rig-local",
+      "files": {
+        "model": {
+          "basename": "rigged.glb",
+          "sha256": "67f8974caab7c228b5ea86884cbba35c3567d8897eb6a9455b02b1987466f6e3"
+        },
+        "mapping": {
+          "basename": "joints.json",
+          "sha256": "307ae8bd4724a120528599966d3819caaeee7e2f09f3369c3153f48cdd198c10"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "df9e7dcce86e836355657475a0730987af348782457e2214b466272793ceaf18"
+        }
+      }
+    },
+    {
+      "route": "fox-rig-api",
+      "files": {
+        "model": {
+          "basename": "api-0.glb",
+          "sha256": "0c27e29e3178aaf438bf9e7099b564a3a96e9652602c62d92d203809e2f503ae"
+        },
+        "mapping": {
+          "basename": "joints.json",
+          "sha256": "5e1d05694bb5f1e0be2cc6c7e2cc212f82e80778336daf785107194920e78ace"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "df9e7dcce86e836355657475a0730987af348782457e2214b466272793ceaf18"
+        }
+      }
+    },
+    {
+      "route": "desk-rigid-local",
+      "files": {
+        "urdf": {
+          "basename": "assembly.urdf",
+          "sha256": "e3e93cf0fea5202af087f3477574e9348a2c7d1ca9587dab6259b2d054b65b21"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "b4716ec4c58fb58bb99b1bad2176afc0d62dbaf32d836431885d8f0291d91d17"
+        }
+      }
+    },
+    {
+      "route": "desk-rigid-api",
+      "files": {
+        "urdf": {
+          "basename": "robot.urdf",
+          "sha256": "abd8e8d2f93984c9f3607785064a9b4398c9225ea84a4c0f2c64b88cd6a2a765"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "b4716ec4c58fb58bb99b1bad2176afc0d62dbaf32d836431885d8f0291d91d17"
+        }
+      }
+    },
+    {
+      "route": "fan-segment-local",
+      "files": {
+        "model": {
+          "basename": "segmented.glb",
+          "sha256": "fb69c12d7900d241dfb26d145d337dcd06c820e650de4819d18ffc24ec8761b1"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85"
+        }
+      }
+    },
+    {
+      "route": "fan-segment-p3",
+      "files": {
+        "model": {
+          "basename": "final-segmented_glb.glb",
+          "sha256": "bb6047076dda90835c37fd2ac824432b587e5e2364736255441c554768b8410d"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85"
+        }
+      }
+    },
+    {
+      "route": "fan-segment-cube",
+      "files": {
+        "model": {
+          "basename": "segmented.glb",
+          "sha256": "d63475c0df30702d00ba3eabbc6fa13b4f0d5db93f33c0db7aa21a60cd6a5b4f"
+        },
+        "reference": {
+          "basename": "input.glb",
+          "sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85"
+        }
+      }
+    }
+  ],
+  "individual": [
+    {
+      "fps": 12.5,
+      "frames": 30,
+      "durationMs": 2400,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        420,
+        350
+      ],
+      "bytes": 439651,
+      "sha256": "9d9961dce9dd90947adf513f09783feaf9f280713dec5e3708daa7d0d3be3ea8",
+      "sourceVideoSha256": "b3c942e067b7a2fb366ddf31ae7271f2a31c26b193e46e1ad08b7ffbf2a03a6c",
+      "sourceRangeSeconds": [
+        0,
+        2.4
+      ],
+      "crop": [
+        0,
+        0,
+        420,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fox-rig-local.gif",
+      "render_process_wall_seconds": 21.552,
+      "frame_render_wall_seconds": 10.028,
+      "encoding_wall_seconds": 0.24
+    },
+    {
+      "fps": 12.5,
+      "frames": 30,
+      "durationMs": 2400,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        420,
+        350
+      ],
+      "bytes": 403461,
+      "sha256": "b0befe778a23135beb9a1a8074616e0f26b20e8280871d02338636e96cae3b20",
+      "sourceVideoSha256": "1e877b4735aaea6b08bde8cd30d4bd1a251c7bbe50e25752e75cb5cbee62c151",
+      "sourceRangeSeconds": [
+        0,
+        2.4
+      ],
+      "crop": [
+        0,
+        0,
+        420,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fox-rig-api.gif",
+      "render_process_wall_seconds": 31.208,
+      "frame_render_wall_seconds": 11.478,
+      "encoding_wall_seconds": 0.24
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        420,
+        350
+      ],
+      "bytes": 422314,
+      "sha256": "4c63dd4f7ba3f7bf2cddc9c5512eb57a370fea3ee7574fdb9db1294614276730",
+      "sourceVideoSha256": "fabf6e9d263308ae6d0306914b974ba41b553d5646e3509a97e89798e1087fd1",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        420,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "desk-rigid-local.gif",
+      "render_process_wall_seconds": 35.226,
+      "frame_render_wall_seconds": 29.496,
+      "encoding_wall_seconds": 0.255
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        420,
+        350
+      ],
+      "bytes": 460839,
+      "sha256": "0b086bd91603aa33ba1c9262cc1fb57614fb55a8030804e4c087c60986c659d4",
+      "sourceVideoSha256": "801f1acf5b8379b96e9773e43a433ac4652a9e5406f0adb9240fae08b947aa87",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        420,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "desk-rigid-api.gif",
+      "render_process_wall_seconds": 25.623,
+      "frame_render_wall_seconds": 19.718,
+      "encoding_wall_seconds": 0.271
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "bytes": 987636,
+      "sha256": "dc296bfb1edd92286fdc8392db2518df5643c0b5a8ccb91bd2817a48540f3a13",
+      "sourceVideoSha256": "54a921e85cfc5d90f4bfbb08c2e865680da2ae1fabb09b3f939b9a8757cad595",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        360,
+        360
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fan-segment-local.gif",
+      "render_process_wall_seconds": 22.508,
+      "frame_render_wall_seconds": 18.693,
+      "encoding_wall_seconds": 0.302
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "bytes": 917837,
+      "sha256": "55253fe728085cef52f7055ec0f103ae79063989f352d2f1ca555663e6a42a8e",
+      "sourceVideoSha256": "4ad8bcb61e92fb1e65e818b1abc8fde7cc522e67f60e997c5635db4ebafe67bb",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        360,
+        360
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fan-segment-p3.gif",
+      "render_process_wall_seconds": 22.123,
+      "frame_render_wall_seconds": 18.669,
+      "encoding_wall_seconds": 0.269
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        360,
+        360
+      ],
+      "bytes": 837585,
+      "sha256": "3fb2dbad34caa2152295af3d4f91362d443b7a07ba874210ba1178d1b704a2c2",
+      "sourceVideoSha256": "1df4f3f44c323f146ec4b54fa93e01a56c706404282da3e8fdc89ee8cb806532",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        360,
+        360
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fan-segment-cube.gif",
+      "render_process_wall_seconds": 14.502,
+      "frame_render_wall_seconds": 11.924,
+      "encoding_wall_seconds": 0.238
+    }
+  ],
+  "synchronized": [
+    {
+      "fps": 12.5,
+      "frames": 30,
+      "durationMs": 2400,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        840,
+        350
+      ],
+      "bytes": 790993,
+      "sha256": "44cdfc4c94c7bb91d371ccd2bdc6b14bb28cbf8d4aacbebb3ea4b1dfe1d16767",
+      "sourceVideoSha256": "a165d5270f9afea795d3289147816ca63ad809f3239c8a787ad6736d71cfbf03",
+      "sourceRangeSeconds": [
+        0,
+        2.4
+      ],
+      "crop": [
+        0,
+        0,
+        840,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fox-comparison.gif",
+      "left_to_right": [
+        "fox-rig-local",
+        "fox-rig-api"
+      ],
+      "encoding_wall_seconds": 0.288
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        840,
+        350
+      ],
+      "bytes": 860058,
+      "sha256": "86b9da3b801e0c81bdbe31f722358692e03135a5f89993c644a08f62e780fa25",
+      "sourceVideoSha256": "39bf70a21362a31529216477a01a095802b6d20b56f070b16b15232edc0aa608",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        840,
+        350
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "desk-comparison.gif",
+      "left_to_right": [
+        "desk-rigid-local",
+        "desk-rigid-api"
+      ],
+      "encoding_wall_seconds": 0.345
+    },
+    {
+      "fps": 12.5,
+      "frames": 50,
+      "durationMs": 4000,
+      "frameDurationsMs": [
+        80
+      ],
+      "size": [
+        1080,
+        360
+      ],
+      "bytes": 2674281,
+      "sha256": "c21041b211f98be6218ff2ea4ff21392fe678d30943d5e8becc79ac8fb6e7cb6",
+      "sourceVideoSha256": "cc6896e1fa6a665e4d2e9f387cb280cccd4f011d2db6a27d552d0f9a404010c6",
+      "sourceRangeSeconds": [
+        0,
+        4.0
+      ],
+      "crop": [
+        0,
+        0,
+        1080,
+        360
+      ],
+      "colors": 128,
+      "changed": true,
+      "loop": 0,
+      "file": "fan-comparison.gif",
+      "left_to_right": [
+        "fan-segment-local",
+        "fan-segment-p3",
+        "fan-segment-cube"
+      ],
+      "encoding_wall_seconds": 0.526
+    }
+  ],
+  "scripts": [
+    {
+      "file": "render_sequence.py",
+      "sha256": "0722040ecb95561d2d7fdca69fa0a0359fa0474472e5632bb8ea8c9db36ee3bd"
+    },
+    {
+      "file": "pose_rig.py",
+      "sha256": "b7050a1776d9ed1bf1089fb1da58a4344badfcb59ff67d2a8ec547988db707a1"
+    },
+    {
+      "file": "render_parts.py",
+      "sha256": "bc1782452ca66c10a4fe04964dcb36a4b8d890a693ba34fe914d05e07ac273a6"
+    },
+    {
+      "file": "pose_urdf.py",
+      "sha256": "80a394d8e45f45581fb9f0c8a19ab374ab6ee2a00a7971a416d8027b57da3103"
+    }
+  ]
+}

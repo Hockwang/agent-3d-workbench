@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Assembly · 同源模型对照</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#11151b;color:#e9edf3;font:15px system-ui}header{padding:26px 30px 16px;border-bottom:1px solid #303b4a}h1{font-size:26px;margin:0 0 10px}p{color:#aebaca;line-height:1.6;margin:8px 0}nav{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}button{background:#222c38;border:1px solid #44536a;color:inherit;border-radius:9px;padding:10px 16px;cursor:pointer}button.active{background:#245cc6;border-color:#5489e9}button:disabled{cursor:wait;opacity:.5}button:focus-visible,input:focus-visible{outline:2px solid #87b5ff;outline-offset:4px}.heading{display:flex;align-items:start;justify-content:space-between;gap:14px}.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap}input[type=range]{width:min(400px,55vw)}main{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;padding:24px 30px}.card{background:#1a212b;border:1px solid #354355;border-radius:12px;overflow:hidden}.viewport{height:350px;width:100%;position:relative;background:#202934}.viewport canvas{display:block}.info{padding:16px}h2{font-size:19px;margin:0 0 10px}.metrics{font-size:13px;color:#b6c9df}.status{padding:9px 12px;position:absolute;left:8px;top:8px;z-index:1;max-width:calc(100% - 16px);color:#a8c9ff;background:#18212de6;border-radius:6px;font-size:13px;pointer-events:none}.status[data-state=ready]{color:#a6d8bb}.status[data-state=error],#page-status[data-state=error]{color:#ffb0a9}.note{padding:0 30px 25px;font-size:13px}a{color:#87b5ff}#page-status{font-size:13px;margin-bottom:0;min-height:1.6em}
+</style>
+<script type="importmap">{"imports":{"three":"./vendor/build/three.module.min.js","three/addons/":"./vendor/examples/jsm/"}}</script>
+<header>
+  <div class="heading"><h1 id="heading">同一个模型，三类操作 · 7 条路线</h1><button id="language" type="button" aria-label="Switch to English">EN</button></div>
+  <p id="intro">GPT-6 Astra / ultra · 本地工具与 Assembly API · 2026-09-29 首轮实跑。拖动旋转，滚轮缩放。同案固定源模型取景，保留尺寸差异。</p>
+  <nav aria-label="案例选择"><button data-case="rig" class="active" disabled>狐狸 · 绑骨</button><button data-case="rigid" disabled>书桌 · 抽屉驱动</button><button data-case="segment" disabled>风扇 · 分件</button></nav>
+  <div class="controls"><button id="play" disabled>播放</button><label id="phase-label" for="phase">共同摆姿</label><input id="phase" type="range" min="0" max="1" step=".001" value="0" aria-label="共同摆姿进度" disabled><span id="pct">0%</span></div>
+  <p id="page-status" role="status" aria-live="polite">加载对照清单…</p>
+</header>
+<main id="cards"></main><p class="note" id="note"></p>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const ui={
+  zh:{title:'Assembly · 同源模型对照',heading:'同一个模型，三类操作 · 7 条路线',intro:'GPT-6 Astra / ultra · 本地工具与 Assembly API · 2026-09-29 首轮实跑。拖动旋转，滚轮缩放。同案固定源模型取景，保留尺寸差异。',rig:'狐狸 · 绑骨',rigid:'书桌 · 抽屉驱动',segment:'风扇 · 分件',nav:'案例选择',play:'播放',pause:'暂停',pose:'共同摆姿',explode:'分件展开',poseAria:'共同摆姿进度',explodeAria:'分件展开进度',download:'下载本视图 GLB',loading:'加载模型…',ready:'模型已加载',failed:'加载失败：',manifestLoading:'加载对照清单…',manifestFailed:'对照清单加载失败：',progress:(ready,total,errors)=>`${ready}/${total} 个模型已加载${errors?` · ${errors} 个失败`:''}`},
+  en:{title:'Assembly · Same-source comparison',heading:'One input, three operations · 7 routes',intro:'GPT-6 Astra / ultra · Local tools and Assembly API · First runs on 2026-09-29. Drag to orbit; scroll to zoom. Each case uses a fixed source frame, preserving size differences.',rig:'Fox · Rigging',rigid:'Desk · Drawer motion',segment:'Fan · Segmentation',nav:'Choose a case',play:'Play',pause:'Pause',pose:'Shared pose',explode:'Explode parts',poseAria:'Shared pose progress',explodeAria:'Part explosion progress',download:'Download this view as GLB',loading:'Loading model…',ready:'Model loaded',failed:'Load failed: ',manifestLoading:'Loading comparison manifest…',manifestFailed:'Manifest load failed: ',progress:(ready,total,errors)=>`${ready}/${total} models loaded${errors?` · ${errors} failed`:''}`}
+};
+let manifest=null,views=[],active='rig',playing=false,phase=0,last=performance.now(),generation=0,lang='zh',pageError='',stopped=false;
+const slider=document.querySelector('#phase'),play=document.querySelector('#play'),pageStatus=document.querySelector('#page-status');
+const text=(item,key)=>lang==='en'?(item[`${key}_en`]??item[key]):item[key];
+function refreshText(){
+  const t=ui[lang];document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t.title;
+  document.querySelector('#heading').textContent=t.heading;document.querySelector('#intro').textContent=t.intro;
+  document.querySelector('nav').setAttribute('aria-label',t.nav);
+  document.querySelectorAll('[data-case]').forEach(b=>b.textContent=t[b.dataset.case]);
+  play.textContent=playing?t.pause:t.play;
+  document.querySelector('#phase-label').textContent=active==='segment'?t.explode:t.pose;
+  slider.setAttribute('aria-label',active==='segment'?t.explodeAria:t.poseAria);
+  document.querySelector('#language').textContent=lang==='zh'?'EN':'中文';
+  document.querySelector('#language').setAttribute('aria-label',lang==='zh'?'Switch to English':'切换至中文');
+  document.querySelector('#note').textContent=manifest?text(manifest[active],'note'):'';
+  for(const v of views){v.title.textContent=text(v.item,'title');v.metrics.textContent=text(v.item,'metrics');v.note.textContent=text(v.item,'note');v.link.textContent=t.download;v.status.textContent=v.state==='error'?t.failed+v.error:t[v.state];}
+  updatePageStatus();
+}
+function updatePageStatus(){
+  const t=ui[lang];
+  pageStatus.dataset.state=pageError?'error':'ready';
+  if(pageError){pageStatus.textContent=t.manifestFailed+pageError;return;}
+  if(!manifest){pageStatus.textContent=t.manifestLoading;return;}
+  pageStatus.textContent=t.progress(views.filter(v=>v.state==='ready').length,manifest[active].items.length,views.filter(v=>v.state==='error').length);
+}
+function disposeObject(root){
+  const geometries=new Set(),materials=new Set(),textures=new Set();
+  root?.traverse(o=>{
+    if(o.geometry)geometries.add(o.geometry);
+    for(const material of (Array.isArray(o.material)?o.material:[o.material])){
+      if(!material)continue;materials.add(material);
+      for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
+      for(const uniform of Object.values(material.uniforms??{})){
+        for(const value of (Array.isArray(uniform.value)?uniform.value:[uniform.value]))if(value?.isTexture)textures.add(value);
+      }
+    }
+  });
+  for(const texture of textures)texture.dispose();for(const material of materials)material.dispose();for(const geometry of geometries)geometry.dispose();
+}
+function disposeView(v){
+  if(v.disposed)return;v.disposed=true;v.observer?.disconnect();v.controls?.dispose();
+  if(v.mixer){v.mixer.stopAllAction();v.mixer.uncacheRoot(v.root);}
+  disposeObject(v.root);v.scene?.remove(v.root);v.root=null;
+  v.renderer?.renderLists?.dispose();v.renderer?.dispose();v.renderer?.domElement.remove();
+}
+function clean(){for(const v of views)disposeView(v);views=[];}
+// This frame depends only on the input bounds in manifest.json, never an output mesh.
+function sourceFrame(data,key,aspect){
+  const bounds=data.source_framing?.bounds_y_up;
+  if(!Array.isArray(bounds)||bounds.length!==2||bounds.some(a=>!Array.isArray(a)||a.length!==3||a.some(n=>!Number.isFinite(n))))throw new Error('Missing valid source_framing.bounds_y_up');
+  const min=new THREE.Vector3().fromArray(bounds[0]),max=new THREE.Vector3().fromArray(bounds[1]);
+  const center=min.clone().add(max).multiplyScalar(.5),extent=max.clone().sub(min),size=Math.max(...extent.toArray());
+  if(size<=0||extent.toArray().some(n=>n<0))throw new Error('Invalid source framing extent');
+  const direction=new THREE.Vector3(...(key==='rig'?[.6,.9,2.5]:key==='rigid'?[1.5,.9,-2.4]:[1.5,.9,2.4])).normalize();
+  const right=new THREE.Vector3(0,1,0).cross(direction).normalize(),up=direction.clone().cross(right).normalize();
+  const tan=Math.tan(THREE.MathUtils.degToRad(38)/2);let distance=size*1.8;
+  for(const x of [min.x,max.x])for(const y of [min.y,max.y])for(const z of [min.z,max.z]){
+    const p=new THREE.Vector3(x,y,z).sub(center),depth=p.dot(direction);
+    distance=Math.max(distance,depth+Math.abs(p.dot(right))*1.08/(tan*aspect),depth+Math.abs(p.dot(up))*1.08/tan);
+  }
+  return {center,size,direction,distance};
+}
+function resizeView(v){
+  if(v.disposed||!v.renderer)return;
+  const width=Math.max(1,v.box.clientWidth),height=Math.max(1,v.box.clientHeight),aspect=width/height;
+  v.renderer.setSize(width,height);v.camera.aspect=aspect;
+  const f=sourceFrame(manifest[v.key],v.key,aspect);
+  if(v.frameDistance){
+    const relative=v.camera.position.clone().sub(v.controls.target),ratio=relative.length()/v.frameDistance;
+    v.camera.position.copy(v.controls.target).add(relative.normalize().multiplyScalar(f.distance*ratio));
+  }else{v.controls.target.copy(f.center);v.camera.position.copy(f.center).addScaledVector(f.direction,f.distance);}
+  v.frameDistance=f.distance;v.camera.near=f.size/1000;v.camera.far=f.size*100;v.camera.updateProjectionMatrix();
+}
+function setState(v,state,error=''){
+  v.state=state;v.error=error;v.article.dataset.state=state;v.status.dataset.state=state;
+  v.status.textContent=state==='error'?ui[lang].failed+error:ui[lang][state];
+  v.article.dataset.loaded=String(state==='ready');v.article.dataset.error=String(state==='error');
+  v.box.setAttribute('aria-busy',String(state==='loading'));updatePageStatus();
+}
+async function loadView(item,key,ticket){
+  if(ticket!==generation||stopped)return;
+  const article=document.createElement('article');article.className='card';
+  const box=document.createElement('div');box.className='viewport';
+  const status=document.createElement('div');status.className='status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');box.append(status);
+  const info=document.createElement('div');info.className='info';const title=document.createElement('h2'),metrics=document.createElement('p'),note=document.createElement('p'),link=document.createElement('a');
+  metrics.className='metrics';title.textContent=text(item,'title');metrics.textContent=text(item,'metrics');note.textContent=text(item,'note');link.href=item.file;link.download='';link.textContent=ui[lang].download;
+  info.append(title,metrics,note,link);article.append(box,info);document.querySelector('#cards').append(article);
+  const v={item,key,article,box,status,title,metrics,note,link,state:'loading',root:null,mixer:null,duration:1,parts:[],disposed:false};views.push(v);setState(v,'loading');
+  try{
+    v.scene=new THREE.Scene();v.scene.background=new THREE.Color('#202934');v.camera=new THREE.PerspectiveCamera(38,1,.001,1000);
+    v.renderer=new THREE.WebGLRenderer({antialias:true});v.renderer.setPixelRatio(Math.min(devicePixelRatio,2));v.renderer.outputColorSpace=THREE.SRGBColorSpace;box.append(v.renderer.domElement);
+    v.controls=new OrbitControls(v.camera,v.renderer.domElement);v.controls.enableDamping=true;
+    v.scene.add(new THREE.HemisphereLight(0xffffff,0x607087,2.3));
+    for(const pos of [[3,4,2],[-3,2,-2]]){const light=new THREE.DirectionalLight(0xffffff,2.1);light.position.set(...pos);v.scene.add(light);}
+    resizeView(v);v.observer=new ResizeObserver(()=>resizeView(v));v.observer.observe(box);
+    const gltf=await new GLTFLoader().loadAsync(item.file);
+    if(ticket!==generation||v.disposed||stopped){disposeObject(gltf.scene);return;}
+    v.root=gltf.scene;v.scene.add(v.root);v.root.updateWorldMatrix(true,true);
+    if(gltf.animations.length){v.mixer=new THREE.AnimationMixer(v.root);v.duration=Math.max(...gltf.animations.map(c=>c.duration));for(const clip of gltf.animations)v.mixer.clipAction(clip).play();}
+    if(key==='segment'){
+      const center=sourceFrame(manifest[key],key,v.camera.aspect).center;
+      v.root.traverse(o=>{if(o.isMesh){const c=new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()),offset=c.sub(center).multiplyScalar(.65);const localOffset=o.parent.worldToLocal(o.getWorldPosition(new THREE.Vector3()).add(offset)).sub(o.position);v.parts.push({obj:o,start:o.position.clone(),offset:localOffset});}});
+    }
+    article.dataset.animations=String(gltf.animations.length);setState(v,'ready');
+  }catch(error){
+    if(ticket!==generation||v.disposed||stopped)return;
+    disposeView(v);setState(v,'error',String(error?.message??error));
+  }
+}
+async function show(key){
+  if(!manifest?.[key]||stopped)return;
+  const ticket=++generation;clean();active=key;phase=0;slider.value='0';playing=false;
+  document.querySelector('#pct').textContent='0%';document.querySelectorAll('[data-case]').forEach(b=>b.classList.toggle('active',b.dataset.case===key));
+  document.querySelector('#cards').replaceChildren();refreshText();
+  // Cards load independently; neither a slow model nor an obsolete request blocks the active case.
+  await Promise.all(manifest[key].items.map(item=>loadView(item,key,ticket)));
+}
+function tick(now){
+  if(stopped)return;
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(playing){phase=(phase+dt/5)%1;slider.value=String(phase);}
+  document.querySelector('#pct').textContent=Math.round(phase*100)+'%';
+  for(const v of views){if(v.disposed||!v.renderer)continue;if(v.mixer)v.mixer.setTime(phase*v.duration);for(const p of v.parts)p.obj.position.copy(p.start).addScaledVector(p.offset,phase);v.controls.update();v.renderer.render(v.scene,v.camera);}
+  requestAnimationFrame(tick);
+}
+slider.addEventListener('input',()=>{phase=Number(slider.value);playing=false;play.textContent=ui[lang].play;});
+play.onclick=()=>{playing=!playing;play.textContent=playing?ui[lang].pause:ui[lang].play;};
+document.querySelector('#language').onclick=()=>{lang=lang==='zh'?'en':'zh';refreshText();};
+document.querySelectorAll('[data-case]').forEach(b=>b.onclick=()=>show(b.dataset.case));
+window.addEventListener('pagehide',()=>{stopped=true;generation++;clean();});
+requestAnimationFrame(tick);
+try{
+  const response=await fetch('./manifest.json');if(!response.ok)throw new Error(`HTTP ${response.status}`);manifest=await response.json();
+  for(const key of ['rig','rigid','segment']){if(!Array.isArray(manifest[key]?.items))throw new Error(`Missing ${key} items`);sourceFrame(manifest[key],key,1);}
+  document.querySelectorAll('[data-case]').forEach(b=>b.disabled=false);slider.disabled=false;play.disabled=false;show('rig');
+}catch(error){pageError=String(error?.message??error);updatePageStatus();}
+</script>
+</html>

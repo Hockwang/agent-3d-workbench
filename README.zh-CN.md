@@ -41,6 +41,19 @@ Agent 在本地检查和加工网格，用户在工作台看结果、指出问�
 参考图 → Hunyuan API → 真实 GLB → MCP 检查、编辑、撤销与导出。
 也提供 [Hi3D AK/SK 接入](docs/HI3D.zh-CN.md)。这些可选路线需要自己的服务权限。
 
+**接入专用 3D API 后有什么不同？** [Assembly 同源模型对照](docs/ASSEMBLY_COMPARISON.zh-CN.md)
+用相同输入演示 **狐狸绑骨、三个抽屉驱动、P3RW / Cubepart 风扇分件**。
+7 条独立 GPT-6 路线包含真实网格渲染、已发现的问题、token、耗时与公开 API 等价价格估算。
+本轮验证了服务后端；插件 OpenAPI 网关仍需单独完成端到端验证。
+
+[![狐狸绑骨同屏同步对照：GPT-6 本地与 Assembly API 的 2.4 秒共同诊断动作](docs/assets/assembly-comparison/gifs/fox-comparison.gif)](docs/ASSEMBLY_COMPARISON.zh-CN.md)
+
+左：GPT-6 本地；右：Assembly API。共同诊断动作，2.4 秒，12.5 fps。
+七条路线单次耗时 **7 分 40 秒至 15 分 20 秒**，外层 Agent 标准 API 等价估算为
+**$2.10–$4.71／次**，不含 3D 服务收费和动图制作。
+
+[查看七条路线的动图、限制与原实验消耗](docs/ASSEMBLY_COMPARISON.zh-CN.md)。
+
 ## 和 Agent 一起编辑
 
 ![选中部件并编辑](docs/assets/point-and-edit.gif)

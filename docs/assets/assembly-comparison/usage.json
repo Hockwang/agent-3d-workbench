@@ -1,0 +1,235 @@
+{
+  "schema": "assembly-comparison-usage/v1",
+  "pricing": {
+    "source": "https://developers.openai.com/api/docs/pricing",
+    "checked_on": "2026-09-29",
+    "model": "gpt-6-astra",
+    "currency": "USD",
+    "unit": "per_million_tokens",
+    "standard_short": {
+      "input": 10,
+      "cached_input": 1,
+      "cache_write": 12.5,
+      "output": 50
+    },
+    "standard_long": {
+      "input": 20,
+      "cached_input": 2,
+      "cache_write": 25,
+      "output": 75
+    },
+    "note": "Scenario estimates only. Not actual subscription billing. Excludes service API charges and infrastructure."
+  },
+  "runs": [
+    {
+      "case": "fox-rig",
+      "route": "rig-local",
+      "result": "completed",
+      "input_sha256": "df9e7dcce86e836355657475a0730987af348782457e2214b466272793ceaf18",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 1487807,
+        "cached_input_tokens": 1390848,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 21031,
+        "reasoning_output_tokens": 7104,
+        "total_tokens": 1508838
+      },
+      "max_observed_request_input_tokens": 92957,
+      "wall_seconds": 718.192,
+      "counter_snapshots": 22,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 3.411988,
+          "standard_long": 6.298201
+        }
+      }
+    },
+    {
+      "case": "fox-rig",
+      "route": "rig-api",
+      "result": "completed",
+      "input_sha256": "df9e7dcce86e836355657475a0730987af348782457e2214b466272793ceaf18",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 2522276,
+        "cached_input_tokens": 2451584,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 21326,
+        "reasoning_output_tokens": 5143,
+        "total_tokens": 2543602
+      },
+      "max_observed_request_input_tokens": 98865,
+      "wall_seconds": 878.421,
+      "counter_snapshots": 38,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 4.224804,
+          "standard_long": 7.916458
+        }
+      }
+    },
+    {
+      "case": "drawers-rigid",
+      "route": "rigid-local",
+      "result": "completed",
+      "input_sha256": "b4716ec4c58fb58bb99b1bad2176afc0d62dbaf32d836431885d8f0291d91d17",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 2733414,
+        "cached_input_tokens": 2657920,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 24805,
+        "reasoning_output_tokens": 6866,
+        "total_tokens": 2758219
+      },
+      "max_observed_request_input_tokens": 102504,
+      "wall_seconds": 916.679,
+      "counter_snapshots": 39,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 4.65311,
+          "standard_long": 8.686095
+        }
+      }
+    },
+    {
+      "case": "drawers-rigid",
+      "route": "rigid-api",
+      "result": "completed",
+      "input_sha256": "b4716ec4c58fb58bb99b1bad2176afc0d62dbaf32d836431885d8f0291d91d17",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 2363992,
+        "cached_input_tokens": 2301184,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 22056,
+        "reasoning_output_tokens": 6132,
+        "total_tokens": 2386048
+      },
+      "max_observed_request_input_tokens": 90377,
+      "wall_seconds": 919.647,
+      "counter_snapshots": 36,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 4.032064,
+          "standard_long": 7.512728
+        }
+      }
+    },
+    {
+      "case": "fan-segment",
+      "route": "segment-local",
+      "result": "completed",
+      "input_sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 1736200,
+        "cached_input_tokens": 1664256,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 17790,
+        "reasoning_output_tokens": 5837,
+        "total_tokens": 1753990
+      },
+      "max_observed_request_input_tokens": 99975,
+      "wall_seconds": 626.556,
+      "counter_snapshots": 23,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 3.273196,
+          "standard_long": 6.101642
+        }
+      }
+    },
+    {
+      "case": "fan-segment",
+      "route": "segment-p3",
+      "result": "completed",
+      "input_sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 2813122,
+        "cached_input_tokens": 2733440,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 23616,
+        "reasoning_output_tokens": 5509,
+        "total_tokens": 2836738
+      },
+      "max_observed_request_input_tokens": 106460,
+      "wall_seconds": 864.325,
+      "counter_snapshots": 38,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 4.71106,
+          "standard_long": 8.83172
+        }
+      }
+    },
+    {
+      "case": "fan-segment",
+      "route": "segment-cube",
+      "result": "completed",
+      "input_sha256": "34ca46c0f03f1e90193f8830cf450c0fa85d237bbd235a4caa97b58622842f85",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "ultra",
+      "usage_status": "complete",
+      "tokens": {
+        "input_tokens": 1065996,
+        "cached_input_tokens": 1023232,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 12967,
+        "reasoning_output_tokens": 3007,
+        "total_tokens": 1078963
+      },
+      "max_observed_request_input_tokens": 72151,
+      "wall_seconds": 459.81,
+      "counter_snapshots": 19,
+      "malformed_log": false,
+      "counter_regression": false,
+      "measurement_scope": "session_start_through_first_task_terminal",
+      "api_equivalent_price": {
+        "status": "scenario_estimate_not_invoice",
+        "usd": {
+          "standard_short": 2.099222,
+          "standard_long": 3.874269
+        }
+      }
+    }
+  ]
+}

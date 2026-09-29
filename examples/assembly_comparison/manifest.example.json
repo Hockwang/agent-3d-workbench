@@ -1,0 +1,179 @@
+{
+  "rig": {
+    "note": "同输入、同相机、同语义骨骼角度。只是小角度摆姿测试，不是自然行走。 费用仅按公开标准 API 价折算外层 GPT-6，不是订阅账单，不含 3D 服务收费。",
+    "items": [
+      {
+        "title": "GPT-6 · 本地绑骨",
+        "file": "rig-local.glb",
+        "metrics": "11.97 分钟 · 输入 1,487,807（缓存 1,390,848）· 输出 21,031 · API 等价估算 $3.41",
+        "note": "24 骨；原材质与 50 万面保留。小角度诊断不等于自然步态。",
+        "title_en": "GPT-6 · Local rigging",
+        "note_en": "24 bones; original materials and 500,000 faces retained. Small-angle diagnostics do not establish a natural gait.",
+        "metrics_en": "11.97 min · input 1,487,807 (cached 1,390,848)· output 21,031 · API-equivalent estimate $3.41"
+      },
+      {
+        "title": "GPT-6 + Assembly · Puppeteer",
+        "file": "rig-api.glb",
+        "metrics": "14.64 分钟 · 输入 2,522,276（缓存 2,451,584）· 输出 21,326 · API 等价估算 $4.22",
+        "note": "35 骨；原贴图保留，共同摆姿下前肩有局部形变。",
+        "title_en": "GPT-6 + Assembly · Puppeteer",
+        "note_en": "35 bones; original textures retained. Local deformation at the front shoulder in the shared pose.",
+        "metrics_en": "14.64 min · input 2,522,276 (cached 2,451,584)· output 21,326 · API-equivalent estimate $4.22"
+      }
+    ],
+    "source_framing": {
+      "coordinate_system": "Y-up",
+      "source_world_bounds_y_up": [
+        [
+          -0.5055760145187378,
+          1.4084166721772817e-08,
+          -0.1183130145072937
+        ],
+        [
+          0.5813609957695007,
+          0.5777020454406738,
+          0.1655290275812149
+        ]
+      ],
+      "reference_translation_y_up": [
+        0,
+        0,
+        0
+      ],
+      "bounds_y_up": [
+        [
+          -0.5055760145187378,
+          1.4084166721772817e-08,
+          -0.1183130145072937
+        ],
+        [
+          0.5813609957695007,
+          0.5777020454406738,
+          0.1655290275812149
+        ]
+      ]
+    },
+    "note_en": "Same input, same camera, and same semantic bone angles. This is a small-angle pose test, not natural walking. Costs estimate outer GPT-6 usage at public standard API rates, not a subscription bill; 3D service charges are excluded."
+  },
+  "rigid": {
+    "note": "按各自产物声明的关节范围开合；API 范围方向反向播放用于对齐“打开”，不修改原 URDF。两侧都不是物理验收。 费用仅按公开标准 API 价折算外层 GPT-6，不是订阅账单，不含 3D 服务收费。",
+    "items": [
+      {
+        "title": "GPT-6 · 本地关节",
+        "file": "rigid-local.glb",
+        "metrics": "15.28 分钟 · 输入 2,733,414（缓存 2,657,920）· 输出 24,805 · API 等价估算 $4.65",
+        "note": "3 个抽屉；保留失败首版，修复坐标错误后交付；部分几何替换。",
+        "title_en": "GPT-6 · Local joints",
+        "note_en": "3 drawers; failed first version retained, then a coordinate error was fixed for delivery; some geometry was replaced.",
+        "metrics_en": "15.28 min · input 2,733,414 (cached 2,657,920)· output 24,805 · API-equivalent estimate $4.65"
+      },
+      {
+        "title": "GPT-6 + Assembly · 刚体驱动",
+        "file": "rigid-api.glb",
+        "metrics": "15.33 分钟 · 输入 2,363,992（缓存 2,301,184）· 输出 22,056 · API 等价估算 $4.03",
+        "note": "3 个抽屉；原面保留，闭合检查缺模块，碰撞尚未验证。此 GLB 是按 API URDF 确定性转换。",
+        "title_en": "GPT-6 + Assembly · Rigid motion",
+        "note_en": "3 drawers; original faces retained. Closure check was missing a module; collisions remain unverified. This GLB is a deterministic conversion of the API URDF.",
+        "metrics_en": "15.33 min · input 2,363,992 (cached 2,301,184)· output 22,056 · API-equivalent estimate $4.03"
+      }
+    ],
+    "source_framing": {
+      "coordinate_system": "Y-up",
+      "source_world_bounds_y_up": [
+        [
+          -1.0,
+          -0.5302000641822815,
+          -0.3872140347957611
+        ],
+        [
+          1.0,
+          0.5302000045776367,
+          0.3872140347957611
+        ]
+      ],
+      "reference_translation_y_up": [
+        0,
+        0.5302000641822815,
+        0
+      ],
+      "bounds_y_up": [
+        [
+          -1.0,
+          0.0,
+          -0.3872140347957611
+        ],
+        [
+          1.0,
+          1.0604000687599182,
+          0.3872140347957611
+        ]
+      ]
+    },
+    "note_en": "Motion uses each artifact’s declared joint range. The API range is played in reverse to align the opening direction, without changing its original URDF. Neither route has passed physical validation. Costs estimate outer GPT-6 usage at public standard API rates, not a subscription bill; 3D service charges are excluded."
+  },
+  "segment": {
+    "note": "显示原样分件，仅做平移展开；颜色不表示跨路线语义对应。件数越多不代表质量越好。 费用仅按公开标准 API 价折算外层 GPT-6，不是订阅账单，不含 3D 服务收费。",
+    "items": [
+      {
+        "title": "GPT-6 · 本地分件",
+        "file": "segment-local.glb",
+        "metrics": "10.44 分钟 · 输入 1,736,200（缓存 1,664,256）· 输出 17,790 · API 等价估算 $3.27",
+        "note": "7 件，原面精确保留；一块底座误归到后网罩。",
+        "title_en": "GPT-6 · Local segmentation",
+        "note_en": "7 parts, original faces retained exactly; one base fragment is incorrectly assigned to the rear guard.",
+        "metrics_en": "10.44 min · input 1,736,200 (cached 1,664,256)· output 17,790 · API-equivalent estimate $3.27"
+      },
+      {
+        "title": "GPT-6 + Assembly · P3RW",
+        "file": "segment-p3.glb",
+        "metrics": "14.41 分钟 · 输入 2,813,122（缓存 2,733,440）· 输出 23,616 · API 等价估算 $4.71",
+        "note": "9 件，原面精确保留；前后网罩合并，机身/立柱/底座合并。",
+        "title_en": "GPT-6 + Assembly · P3RW",
+        "note_en": "9 parts, original faces retained exactly; front and rear guards are merged, as are body, pedestal, and base.",
+        "metrics_en": "14.41 min · input 2,813,122 (cached 2,733,440)· output 23,616 · API-equivalent estimate $4.71"
+      },
+      {
+        "title": "GPT-6 + Assembly · Cubepart",
+        "file": "segment-cube.glb",
+        "metrics": "7.66 分钟 · 输入 1,065,996（缓存 1,023,232）· 输出 12,967 · API 等价估算 $2.10",
+        "note": "默认 2 件，扇叶与网罩合并；面数降至 69,384，外廓缩小约 4%。",
+        "title_en": "GPT-6 + Assembly · Cubepart",
+        "note_en": "Default 2 parts; blades and guard are merged. Face count drops to 69,384 and outer dimensions shrink by about 4%.",
+        "metrics_en": "7.66 min · input 1,065,996 (cached 1,023,232)· output 12,967 · API-equivalent estimate $2.10"
+      }
+    ],
+    "source_framing": {
+      "coordinate_system": "Y-up",
+      "source_world_bounds_y_up": [
+        [
+          -0.8000499606132507,
+          -0.9999794363975525,
+          -0.6826986074447632
+        ],
+        [
+          0.7997546195983887,
+          1.0003398656845093,
+          0.682669460773468
+        ]
+      ],
+      "reference_translation_y_up": [
+        0,
+        0,
+        0
+      ],
+      "bounds_y_up": [
+        [
+          -0.8000499606132507,
+          -0.9999794363975525,
+          -0.6826986074447632
+        ],
+        [
+          0.7997546195983887,
+          1.0003398656845093,
+          0.682669460773468
+        ]
+      ]
+    },
+    "note_en": "Original part outputs, with translation-only explosion. Colors do not imply matching semantics across routes. More parts do not imply better quality. Costs estimate outer GPT-6 usage at public standard API rates, not a subscription bill; 3D service charges are excluded."
+  }
+}

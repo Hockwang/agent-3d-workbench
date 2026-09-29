@@ -54,6 +54,20 @@ structure is not yet a one-click template.
 reference image → Hunyuan API → real GLB → MCP inspection, edit, undo and export.
 [Hi3D AK/SK setup](docs/HI3D.md) is also available. These optional routes need your own service access.
 
+**What changes when an agent uses a specialized 3D API?** Our [Assembly comparison](docs/ASSEMBLY_COMPARISON.md)
+uses the same inputs for **fox rigging, three-drawer articulation, and fan segmentation
+with P3RW / Cubepart**. Seven independent GPT-6 runs include real mesh renders, observed
+failures, token usage, elapsed time, and public API-equivalent price estimates.
+This demonstrates the service backends; the plugin's OpenAPI gateway still needs separate end-to-end validation.
+
+[![Synchronized fox rigging comparison: local GPT-6 and Assembly API under a shared 2.4-second diagnostic motion](docs/assets/assembly-comparison/gifs/fox-comparison.gif)](docs/ASSEMBLY_COMPARISON.md)
+
+Left: GPT-6 local. Right: Assembly API. Shared diagnostic motion, 2.4 seconds at 12.5 fps.
+The seven runs took **7 min 40 sec–15 min 20 sec each**; outer-agent standard API-equivalent
+estimates were **$2.10–$4.71 per run**, excluding 3D service fees and media production.
+
+[See all seven results as GIFs, their limitations, and the original usage figures](docs/ASSEMBLY_COMPARISON.md).
+
 ## Edit with your agent
 
 ![Selecting and editing a part](docs/assets/point-and-edit.gif)
