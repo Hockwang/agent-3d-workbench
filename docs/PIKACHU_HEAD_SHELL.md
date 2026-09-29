@@ -1,12 +1,32 @@
 [简体中文](PIKACHU_HEAD_SHELL.zh-CN.md) · [Back to README](../README.md)
 
-# Pikachu head shell: local fabrication from an existing model
+# Pikachu head shell: from a user request to the v6 design draft
 
-This is the custom v6 case from 2026-09-23. A general-purpose agent took an existing
-character model, worked locally on the cavity, front/back shells, accessories and
-magnet mounts, then used the workbench to observe, inspect and save an editable project.
-This fabrication workflow needs no DiT or hosted 3D-generation API. It does not
-include generating the input character model.
+This case started with a small STL. The user wanted a shell that could go over a
+person's head, then refined the requirements while inspecting results: move the
+viewing openings, preserve round eyes, separate the ears, adapt another helmet's
+connectors, and correct the magnet mounting arrangement. The agent inspected meshes,
+wrote missing geometry operations, generated versions and revised them in response.
+
+This account reconstructs the original September 22–23, 2026 conversation titled
+“评估3D工作台打印需求” and its delivery records. The final version shown is v6. Processing
+ran locally without DiT or a hosted 3D-generation API; the user supplied the character model.
+
+## The original request
+
+The user asked to hollow the model into a head shell, split it into front and back
+halves, leave room for magnets at the seam, and separate parts by color if possible.
+They confirmed it should go over a person's head, specified a 60 cm circumference,
+and allowed viewing, ventilation and neck openings that were hidden in the design
+where possible. Magnets initially used a Ø6×3 mm specification, later changed to
+Ø10×2 mm after a helmet reference was introduced. The user also explicitly asked the
+agent to implement missing workbench capabilities while completing the model.
+
+The input, `PikachuGoku_3MF.stl`, measured about **60.71 × 46.51 × 63.38 mm** and contained
+10 separate closed solids. **The STL held no recoverable color values.** Names and
+colors for eyes, cheeks and ear tips came from an explicit part plan, not automatic
+material recovery. Separate solids were not yet detachable parts: they overlapped
+the body and still needed sockets, clearances and insertion paths.
 
 ## The assembled model and its internal structure
 
@@ -19,19 +39,99 @@ on the left and front shell on the right. Grey blocks in the section are magnet
 placeholders, excluded from the printed-part count. Processing marks remain visible
 on the inner walls and seams; human appearance acceptance is still pending.
 
-## What this case demonstrates
+## How the conversation changed the model
 
-1. **Build a cavity around declared dimensions.** Use a 600 mm head-circumference
-   envelope rather than infer someone's measurements from a photograph.
-2. **Preserve the exterior while separating parts.** Front shell, rear cover,
-   yellow ears, black ear tips, eyes, highlights, cheeks and nose total 13 parts.
-   The round eye outlines and closed smile remain; eye lattices and highlights are separate.
-3. **Iterate against a structural reference.** v6 replaced end-face magnet mounts
-   with overlapping tabs extending from the front shell. The rear cover slides
-   over them and magnets face pockets on its inner wall. The other 11 accessories
-   are byte-for-byte identical to v5.
-4. **Inspect and deliver.** Save a colored GLB, 13 STL parts, an editable project
-   and inspection records bound to the specific version.
+### 1. Scaling and separating parts also required assembly paths
+
+The agent scaled the exterior to approximately 400 mm wide, built a cavity around
+the declared 600 mm circumference and padding allowance, opened the neck, split the
+front and back shells, and added magnet mounts. The first delivery had 11 parts:
+two yellow shells and nine colored accessories, with four pairs of Ø6×3 mm magnets.
+
+Checks found that the ear tips needed installation clearance and the red cheeks'
+undercuts prevented insertion along the planned direction. The agent added clearance
+and insertion channels and checked removal paths. The assembly order became explicit:
+**install colored accessories while the shells are open, then close the two halves.**
+The result progressed from separate meshes to sampled assembly paths.
+
+### 2. The user rejected the viewing openings and asked for mask references
+
+Early openings cut through the eye outlines, and an extra mouth hole changed the
+expression. After the user pointed this out, the agent researched mask openings,
+used black eye lattices with separate white highlights, and hid ventilation slots
+in the original smile.
+
+Sightline checks then found that the yellow face still blocked forward rays from
+the provisional human eye points even with the lattices removed: the character's
+eyes were farther apart. Offered inner-eye windows or a changed mouth expression,
+the user chose the former. In v3, extending the inner eye corners let forward rays
+pass from those assumed eye points.
+
+### 3. Preserving the round eyes meant updating the sightline result
+
+The user then explicitly requested that the original eye shape remain unchanged.
+v4 removed the inner-eye extensions, restored the round outlines, kept lattices
+inside the black eyes, and retained the white highlights and closed smile.
+
+Restoring the appearance also restored the obstruction. The agent recorded
+**`forward_blocked`** again instead of carrying v3's passing result into v4. This
+limitation remains in v6; actual eye positions, viewing windows and a physical fit
+test still need work.
+
+### 4. A helmet reference led to separate yellow ears and keyed locators
+
+The user supplied an `Anti Venom Helmet` model and reference images, clarifying that
+they were references for continued Pikachu work. Its dimensions could not simply be
+copied; the user chose to retain the 60 cm head-circumference design and borrow the
+connection approach.
+
+v5 separated the two yellow ears from the main shell, increasing the count from 11
+to **13 parts** while keeping black ear tips separate. Ear roots gained keyed plugs
+with a clipped corner to prevent reversed insertion and sockets with clearance.
+The shells changed to **six pairs of Ø10×2 mm magnets**. The ear keys locate parts;
+fit coupons or adhesive are still needed, and snap-fit retention has not been tested.
+
+![Exploded v5 meshes showing all 13 parts, including yellow ears, black ear tips and facial accessories](assets/pikachu-head-shell/v5-exploded.png)
+
+**This is a real render of v5 meshes moved apart to explain the part layout.** v6
+kept the same STL bytes for 11 accessories and changed the two shells' magnet mounts.
+This v5 image does not show the final v6 magnet arrangement.
+
+### 5. Correct magnet dimensions did not mean the correct mounting arrangement
+
+The user pointed out that the magnets were not installed as shown in the reference.
+v5 placed opposing magnets on seam end faces. The reference called for tabs extending
+from the front shell, with the rear cover sliding over them so magnets faced its inner wall.
+
+v6 rebuilt the mounts accordingly: six tabs crossing the seam, six pairs of Ø10×2 mm
+magnets and matching pockets in the rear cover. Checks covered whether complete
+mounts intruded into the declared head envelope, whether the shells could separate,
+and whether magnets could be inserted along their installation axes. A model-loading
+fix was also integrated so this multipart model could be opened and inspected inside
+the workbench.
+
+The final delivery included a colored GLB, 13 STLs, an editable project, real renders
+and version-bound inspection records. **The unresolved sightline result stayed with
+the delivery; watertightness and sampled assembly checks did not replace it.**
+
+## What this means for using the workbench
+
+The full loop was: **a person states the goal → the agent inspects the source → writes
+needed geometry operations → shows the model in the workbench → the person identifies
+an appearance or structure issue → the agent revises and reruns relevant checks → saves
+a new version.** Users can communicate through natural language and reference images;
+the agent must translate those requests into explicit parameters, meshes and inspectable results.
+
+This case combined custom development with model fabrication. Work during the task
+added shell processing, assembly-path checks, eye and sightline handling, and ear-root
+interfaces. The “Start your own head-shell task” section below distinguishes the
+currently published base workflow from the custom showcase implementation.
+
+## v6 structure and dimensions
+
+The 13 parts are the front shell, rear cover, two yellow ears, two black ear tips,
+two black eye lattices, two white highlights, two red cheeks and one nose. Magnets
+are purchased hardware and are not counted as printed parts.
 
 | Design item | Case parameter |
 | --- | --- |

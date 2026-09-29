@@ -15,23 +15,38 @@ or subscription. Installing dependencies needs internet access; local geometry w
 does not require a hosted 3D service. Optional service adapters are separate and disabled
 until configured.
 
-## Showcase: turn an existing character model into a head-shell design
+## Showcase: from a small Pikachu STL to an iterated head-shell design
 
-Pikachu head shell v6: a general-purpose agent worked locally on an existing model
-to create an interior cavity, front/back shells, separate accessories and magnet
-mounts, then inspect and deliver the result through the workbench. The design uses
-a **declared 60 cm head circumference**, **13 parts** and **six pairs of Ø10×2 mm magnets**.
+The user supplied a Pikachu model about 63 mm tall and asked to **hollow it into a
+head shell, split it into front and back halves, make room for magnets, and separate
+parts by color**. They then specified a **60 cm head circumference**. The agent worked
+on the meshes locally while the user inspected the results and directed revisions:
 
-| Assembled model | Open front/back shells | Magnet mount section |
+1. **Turn the display model into a shell.** Inspect the STL's 10 separate solids,
+   scale it, create the cavity and neck opening, and split the shell and accessories.
+   Add clearances and insertion channels where parts such as the cheeks could not fit.
+2. **Revise the eye openings with the user.** Try eye lattices and inner-eye windows,
+   then restore the original round outlines at the user's request. Recheck sightlines
+   and record the remaining obstruction.
+3. **Adapt a helmet reference.** Separate the yellow ears and add keyed locators.
+   After the user corrected the mounting arrangement, move the magnets onto overlapping
+   front-shell tabs and the rear cover's inner wall.
+4. **Save an inspectable result.** v6 has **13 parts and six pairs of Ø10×2 mm magnets**,
+   delivered as a colored GLB, separate STLs, an editable project and inspection records.
+
+| v6 assembled model | v5 exploded parts | v6 shells and magnet mounts |
 | --- | --- | --- |
-| ![Real mesh render of the assembled Pikachu v6 head shell](docs/assets/pikachu-head-shell/assembled.png) | ![Shell cavities and overlapping tabs across the seam](docs/assets/pikachu-head-shell/opened-magnet-tabs.png) | ![Overlapping tab, rear-shell pocket and grey magnet placeholders](docs/assets/pikachu-head-shell/magnet-section.png) |
+| ![Real mesh render of the assembled Pikachu v6 head shell](docs/assets/pikachu-head-shell/assembled.png) | ![The 13 v5 parts: shells, yellow ears, black ear tips, eye lattices, highlights, cheeks and nose](docs/assets/pikachu-head-shell/v5-exploded.png) | ![v6 shell cavities and overlapping tabs across the seam](docs/assets/pikachu-head-shell/opened-magnet-tabs.png) |
 
-**This is a local, custom fabrication case starting from an existing character model.**
-All three images render the delivered meshes. All 13 parts passed watertightness
-checks, but forward vision from the provisional eye points remains blocked; the
-design has not been printed or physically worn. The overlapping magnet mounts were
-custom work for this case; the built-in recipe provides the base head-shell workflow.
-[See the process, recorded checks and remaining work](docs/PIKACHU_HEAD_SHELL.md).
+These are renders of delivered meshes. The middle image shows the v5 part layout;
+v6 changed the two shells' magnet mounts and kept the other 11 parts unchanged.
+**The user guided the design while the agent wrote missing geometry operations and
+checked each revision.** The source STL contained no color values; an explicit part
+plan assigned them. Processing required no DiT or hosted 3D API. All 13 parts passed
+watertightness checks, but forward vision remains blocked and physical printing and
+fitting are pending. The built-in recipe covers the base workflow; the custom v6
+structure is not yet a one-click template.
+[Read the design iterations, assembly details and verification limits](docs/PIKACHU_HEAD_SHELL.md).
 
 **Want image-to-3D generation too?** The cup's [same-image comparison](docs/CUP_COMPARISON.md) demonstrates local modeling and API generation plus splitting. Follow the [API setup tutorial](docs/API_GENERATION_DEMO.md):
 reference image → Hunyuan API → real GLB → MCP inspection, edit, undo and export.
