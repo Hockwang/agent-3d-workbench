@@ -37,6 +37,14 @@ Each tool has input requirements. Automatic semantic splitting, natural motion, 
 In the current interface, click **Attach selection to chat** to include it in a message; agents can also read the live selection through MCP.
 [Follow the first-edit tutorial →](docs/GETTING_STARTED.md)
 
+**Pikachu head shell: keep editing its 13 existing parts.**
+
+![Select and move the Pikachu ear, undo, then move the back shell to inspect the cavity in the workbench](docs/assets/pikachu-head-shell/workbench-edit.gif)
+
+Move the yellow and black ear pieces together → undo → move the back shell aside to inspect the cavity → restore.
+This is a keyframe replay of new operations on the v6 delivery model, using local MCP tools without a generation API.
+Designed around a 60 cm head circumference; still a structural draft with a blocked sightline, not printed or test-fitted. [See the full STL-to-parts and magnet-mount case →](docs/PIKACHU_HEAD_SHELL.md)
+
 For image-to-3D generation or specialized splitting, you can also choose an API route. The examples below show the differences in actual outputs.
 
 ## Modeling: code or a generation model?

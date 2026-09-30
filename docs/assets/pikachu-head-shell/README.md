@@ -30,7 +30,28 @@ All 11 accessory STLs are unchanged between those versions; the two shells diffe
 v5 展开图展示 13 件的布局，不能当作 v6 磁吸结构的图。两版的 11 个附件 STL 字节相同，
 两半壳不同。
 
-This folder contains documentation images, not source geometry or a reproduction kit.
+## Workbench editing replay / 工作台编辑演示
+
+`workbench-edit.gif` was captured on 2026-09-30 in the actual 3D Workbench,
+using the v6 GLB identified above in a separate demo project. Seven full-viewport
+screenshots show selection, moving both pieces of the left ear by
+`[-35, 0, 45]` mm, undo, moving the back shell by `[170, 120, 0]` mm,
+clearing the selection to inspect the cavity, and undoing the shell move.
+All edits used the local MCP tools. The source file was unchanged; all 13 parts'
+geometry references, transforms and visibility were verified against the initial state.
+
+这段 GIF 是 2026-09-30 基于 v6 模型重新操作的演示，不是当时设计过程的录像。
+七张完整工作台截图各停留三秒，总长 21 秒；播放时长不代表执行耗时。
+演示展示已有部件的选择、移动、撤销和内腔检查，不展示重新生成内腔或磁吸结构。
+原模型未改写，全部 13 件在演示结束后还原。视线、打印和试戴限制仍然适用。
+
+The seven screenshots are held for three seconds each (21 seconds total),
+so playback duration is not execution time. There are no fabricated intermediate
+frames, captions, cropped viewport regions or geometry changes added during encoding.
+This demonstrates editing existing parts, not creating the cavity or magnet mounts.
+See [media provenance](workbench-edit.media.json) for hashes and encoding details.
+
+This folder contains documentation media, not source geometry or a reproduction kit.
 
 See the [English case study](../../PIKACHU_HEAD_SHELL.md) /
 [中文案例](../../PIKACHU_HEAD_SHELL.zh-CN.md) for the recorded checks and outstanding

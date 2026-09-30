@@ -1,0 +1,94 @@
+{
+  "kind": "actual-workbench-ui-keyframe-replay",
+  "capture_date": "2026-09-30",
+  "source_delivery": "pikachu-overlap-magnets-20260923 v6",
+  "source_glb_sha256": "427845497cfe5263060a3b8da12c5c822e9005bdc05ae90d7349fb128396891f",
+  "source_part_count": 13,
+  "capture_size": [
+    1280,
+    720
+  ],
+  "capture": "Seven full-viewport screenshots of actual MCP operations in a separate demo project; not historical design footage.",
+  "frames": [
+    {
+      "name": "00-assembled",
+      "sha256": "906f7d35dcefa4b50106267febb07c4e18f3027208120c6b7bb5ae939dfb077d",
+      "hold_seconds": 3
+    },
+    {
+      "name": "01-selected-ear",
+      "sha256": "5ed7559dbacbdcec63500bbd5517f67262a9005f97c81de56e245e56bc4f72e0",
+      "hold_seconds": 3
+    },
+    {
+      "name": "02-moved-ear",
+      "sha256": "ef5492f300d2b14a59164fc199a892a18a9c3e6c9765fa5b132c9b54f1072e40",
+      "hold_seconds": 3
+    },
+    {
+      "name": "04-selected-shell",
+      "sha256": "f413715f2811a3f361188cb02c6342d2f994fa3e57a4d159fb6f9992e5458726",
+      "hold_seconds": 3
+    },
+    {
+      "name": "05-opened-shell",
+      "sha256": "23a77a81bf230c6b2591562059dafefe776595e6de287679dbd03a90d6df6d8b",
+      "hold_seconds": 3
+    },
+    {
+      "name": "06-inspect-cavity",
+      "sha256": "f099d9033541a4fd950a212c0be58c4531d8df3fea2bf0c555fcf7225f6769ae",
+      "hold_seconds": 3
+    },
+    {
+      "name": "07-restored",
+      "sha256": "75ea0c2618ee0a057b599c3d79ef069d9b34cef6fe674722350883f60aada83b",
+      "hold_seconds": 3
+    }
+  ],
+  "edits": {
+    "left_ear_translation_mm": [
+      -35,
+      0,
+      45
+    ],
+    "back_shell_translation_mm": [
+      170,
+      120,
+      0
+    ],
+    "both_moves_undone": true
+  },
+  "verification": {
+    "source_unchanged": true,
+    "parts": 13,
+    "undo_restored_all_transforms": true,
+    "geometry_assets_unchanged": true,
+    "source_sha256": "427845497cfe5263060a3b8da12c5c822e9005bdc05ae90d7349fb128396891f"
+  },
+  "encoding": {
+    "size": [
+      960,
+      540
+    ],
+    "duration_seconds": 21,
+    "playback_duration_is_execution_time": false,
+    "fps": 5,
+    "decoded_frames": 105,
+    "loop": 0,
+    "colors": 128,
+    "cropped": false,
+    "overlays": false,
+    "interpolated_geometry": false,
+    "source_mp4_sha256": "986b620ca96697bf269c9b84d78be9b0e94d34cca3e307f86d4e6a48bc5079e8"
+  },
+  "output": {
+    "file": "workbench-edit.gif",
+    "bytes": 302320,
+    "sha256": "e93cd90253c18e2455cdc8e454918ab4dbcfc32b9543dfbb1c9bc30dc03f798f"
+  },
+  "limitations": [
+    "Existing-part editing replay; does not show creation of the cavity or magnet mounts.",
+    "Sightline remains blocked; not printed or test-fitted."
+  ]
+}
