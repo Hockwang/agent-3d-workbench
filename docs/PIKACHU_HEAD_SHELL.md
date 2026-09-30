@@ -28,16 +28,11 @@ colors for eyes, cheeks and ear tips came from an explicit part plan, not automa
 material recovery. Separate solids were not yet detachable parts: they overlapped
 the body and still needed sockets, clearances and insertion paths.
 
-## The assembled model and its internal structure
+![Unmodified source STL, without colors or a head cavity](assets/pikachu-head-shell/source-stl.png)
 
-| Assembled | Inside the two shells | Magnet mount section |
-| --- | --- | --- |
-| ![Assembled Pikachu v6](assets/pikachu-head-shell/assembled.png) | ![Rear cover on the left, front shell on the right, with cavities and overlapping tabs](assets/pikachu-head-shell/opened-magnet-tabs.png) | ![Magnet mount section](assets/pikachu-head-shell/magnet-section.png) |
-
-All three images render the delivered meshes. The open view shows the rear cover
-on the left and front shell on the right. Grey blocks in the section are magnet
-placeholders, excluded from the printed-part count. Processing marks remain visible
-on the inner walls and seams; human appearance acceptance is still pending.
+This source render comes from a separate read-only source inspection at the time;
+its input SHA matches this case. The stage images below are unchanged historical
+delivery renders. Cameras and display scales differ, so image size does not compare physical dimensions.
 
 ## How the conversation changed the model
 
@@ -53,6 +48,11 @@ undercuts prevented insertion along the planned direction. The agent added clear
 and insertion channels and checked removal paths. The assembly order became explicit:
 **install colored accessories while the shells are open, then close the two halves.**
 The result progressed from separate meshes to sampled assembly paths.
+
+![First delivery: split shells, head cavity and the initial eye and mouth openings](assets/pikachu-head-shell/first-shell-opened.png)
+
+This is the first delivery's actual open-shell render. Yellow ears are still part
+of the main shell; the openings have not yet received the later appearance revisions.
 
 ### 2. The user rejected the viewing openings and asked for mask references
 
@@ -77,6 +77,11 @@ Restoring the appearance also restored the obstruction. The agent recorded
 **`forward_blocked`** again instead of carrying v3's passing result into v4. This
 limitation remains in v6; actual eye positions, viewing windows and a physical fit
 test still need work.
+
+| v3: inner-eye windows | v4: original round eyes restored |
+| --- | --- |
+| ![v3 extends the inner eye corners to create viewing paths](assets/pikachu-head-shell/inner-eye-v3.png) | ![v4 restores round outlines and keeps lattices inside the black eyes](assets/pikachu-head-shell/round-eyes-v4.png) |
+| Forward rays pass from the assumed eye points | Round appearance restored; forward vision blocked again |
 
 ### 4. A helmet reference led to separate yellow ears and keyed locators
 
@@ -113,6 +118,18 @@ the workbench.
 The final delivery included a colored GLB, 13 STLs, an editable project, real renders
 and version-bound inspection records. **The unresolved sightline result stayed with
 the delivery; watertightness and sampled assembly checks did not replace it.**
+
+## This round's endpoint: the v6 digital draft
+
+| Assembled | Inside the two shells | Magnet mount section |
+| --- | --- | --- |
+| ![Assembled Pikachu v6](assets/pikachu-head-shell/assembled.png) | ![Rear cover on the left, front shell on the right, with cavities and overlapping tabs](assets/pikachu-head-shell/opened-magnet-tabs.png) | ![Magnet mount section](assets/pikachu-head-shell/magnet-section.png) |
+
+All three images render the v6 delivered meshes. The open view shows the rear cover
+on the left and front shell on the right. Grey blocks in the section are magnet
+placeholders, excluded from the printed-part count. Processing marks remain visible
+on the inner walls and seams; human appearance acceptance is still pending.
+The digital draft was built and delivered; sightline work, printing and physical fit testing remain unfinished.
 
 ## What this means for using the workbench
 
@@ -181,4 +198,4 @@ Provide your own source model and ask your agent:
 
 The source STL, GLB and project archive are not included in this repository. This
 page demonstrates a workflow and the limits of digital checks. For a directly
-reproducible bundled model, start with the [five-part README tutorial](../README.md).
+reproducible bundled model, start with the [five-part editing tutorial](GETTING_STARTED.md).

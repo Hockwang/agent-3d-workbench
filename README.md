@@ -37,13 +37,29 @@ Each tool has input requirements. Automatic semantic splitting, natural motion, 
 In the current interface, click **Attach selection to chat** to include it in a message; agents can also read the live selection through MCP.
 [Follow the first-edit tutorial →](docs/GETTING_STARTED.md)
 
-**Pikachu head shell: keep editing its 13 existing parts.**
+### Pikachu: from a small STL to a 13-part head-shell draft
+
+The user supplied an STL about **63 mm tall** and asked for a hollow shell, front/back magnetic closure and separate colored parts, then specified a **60 cm head circumference**.
+The user inspected each version and refined the request; the agent edited and checked meshes locally, without DiT or a generation API.
+
+| Start: original STL | First delivery: hollow, split shell | v6: overlapping magnet mounts |
+| --- | --- | --- |
+| ![Original uncolored STL, about 63 mm tall](docs/assets/pikachu-head-shell/source-stl.png) | ![First shell delivery with the cavity and front/back halves](docs/assets/pikachu-head-shell/first-shell-opened.png) | ![Inside the v6 shells with overlapping magnet tabs](docs/assets/pikachu-head-shell/opened-magnet-tabs.png) |
+
+1. **Build the structure:** scale, hollow and open the neck; two shells plus nine colored accessories make 11 parts. Add insertion channels and clearance.
+2. **Revise the appearance:** the user dislikes the eye and mouth openings. Switch to eye lattices and hidden ventilation; try inner-eye windows, then restore the original round eyes at the user's request.
+3. **Adapt a helmet reference:** v5 separates the yellow ears and adds keyed locators, reaching 13 parts; magnets change to six pairs of Ø10×2 mm.
+4. **Correct the mounting arrangement:** the user spots a mismatch with the reference. v6 replaces magnets facing across the seam with overlapping tabs that face the rear cover's inner wall.
+
+**This round delivered a colored GLB, 13 STLs, an editable project and inspection records.** All 13 parts passed watertightness and sampled assembly checks; restoring round eyes left forward vision blocked. Not printed or test-fitted.
+Stage images are not shown at the same scale. This completes a digital-draft delivery; a wearable product still requires sightline work and physical validation. [Full journey, version images and limitations →](docs/PIKACHU_HEAD_SHELL.md)
+
+**Keep editing the delivered model in the workbench:**
 
 ![Select and move the Pikachu ear, undo, then move the back shell to inspect the cavity in the workbench](docs/assets/pikachu-head-shell/workbench-edit.gif)
 
 Move the yellow and black ear pieces together → undo → move the back shell aside to inspect the cavity → restore.
-This is a keyframe replay of new operations on the v6 delivery model, using local MCP tools without a generation API.
-Designed around a 60 cm head circumference; still a structural draft with a blocked sightline, not printed or test-fitted. [See the full STL-to-parts and magnet-mount case →](docs/PIKACHU_HEAD_SHELL.md)
+This keyframe replay uses new operations on the v6 model to demonstrate editing and undoing changes to existing parts.
 
 For image-to-3D generation or specialized splitting, you can also choose an API route. The examples below show the differences in actual outputs.
 

@@ -1,10 +1,10 @@
 # Pikachu case image provenance / 图片来源
 
-These PNGs are unchanged renders from two local deliveries. They were copied
+The four v5/v6 PNGs below are unchanged renders from two local deliveries. They were copied
 byte-for-byte from the respective `delivery/previews/` folders and checked against
 each delivery's `manifest.json`. They were not generated or retouched for the README.
 
-四张 PNG 直接取自两个版本的本地交付，逐字节复制并核对各自的原交付清单；
+下列四张 v5/v6 PNG 直接取自两个版本的本地交付，逐字节复制并核对各自的原交付清单；
 没有为 README 另行生成或修饰模型效果。拆件展开、两半壳内侧和剖面是检查视图；
 剖面中的灰色磁铁是占位件。
 
@@ -29,6 +29,29 @@ All 11 accessory STLs are unchanged between those versions; the two shells diffe
 
 v5 展开图展示 13 件的布局，不能当作 v6 磁吸结构的图。两版的 11 个附件 STL 字节相同，
 两半壳不同。
+
+## Historical journey images / 历史过程图
+
+The README journey now starts with the original STL and follows the recorded
+September 22–23 revisions. Four additional PNGs were copied byte-for-byte:
+
+| File | Source and meaning / 来源与含义 |
+| --- | --- |
+| `source-stl.png` | Unmodified input, rendered during a separate source inspection; same input SHA as this workbench case. / 同一原始 STL 的只读检查渲染，未改造。 |
+| `first-shell-opened.png` | First delivery's open-shell view; 11 parts, yellow ears still attached, initial eye/mouth holes. / 首轮 11 件头壳，保留当时尚未调整的开孔。 |
+| `inner-eye-v3.png` | Historical v3 render with inner-eye extensions. / 历史 v3 内眼角观察窗。 |
+| `round-eyes-v4.png` | Historical v4 render after the user requested the original round eyes. / 按用户反馈恢复圆眼后的 v4。 |
+
+The three delivery images match their original manifests. The source image has no
+delivery manifest; its inspection script imports the raw STL whose SHA256 matches
+`219e7c127e8ea3bc4f6950b37be70c30127e89ee75c0ea1801c62d2e5240b4ab`.
+No output model from the separate inspection experiment is used. No model was
+regenerated for this documentation change. Cameras and display scales differ.
+Names, relative historical locations and hashes are in [journey provenance](journey.media.json).
+
+三张历史交付图已与原清单核对。原始 STL 图来自另一次源文件检查，输入哈希与本案一致，
+没有混入另一次实验的改造结果。本轮没有生成新模型，也没有重跑制造检查。
+阶段图不是同机位、等比例对比；完整修改过程以案例文字与各版检查记录为准。
 
 ## Workbench editing replay / 工作台编辑演示
 

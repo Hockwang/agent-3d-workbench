@@ -1,0 +1,46 @@
+{
+  "kind": "historical-design-journey-images",
+  "source_stl_sha256": "219e7c127e8ea3bc4f6950b37be70c30127e89ee75c0ea1801c62d2e5240b4ab",
+  "source_image_note": "Unmodified source STL rendered in a separate inspection run on 2026-09-22; its input hash matches the workbench case. No output of that separate experiment is used.",
+  "chronology": "source -> first shell -> v3 inner-eye extensions -> v4 restored round eyes -> v5 detached yellow ears -> v6 overlapping magnet tabs",
+  "views_are_to_show_stages_not_same_scale_comparison": true,
+  "new_model_generation": false,
+  "images": [
+    {
+      "file": "source-stl.png",
+      "stage": "source",
+      "historical_source": "pikachu-no-workbench-20260922/candidate/source_views/neg_y.png",
+      "bytes": 661140,
+      "sha256": "a0c307d31dae93a9262aa7951ba4f20e176f1da5e0c4aaf5a2cad886ffc83f4e",
+      "copy": "byte-for-byte",
+      "original_delivery_manifest_verified": false
+    },
+    {
+      "file": "first-shell-opened.png",
+      "stage": "first-shell",
+      "historical_source": "pikachu-head-shell-20260922/delivery/preview/opened-views/v00-p00-iso.png",
+      "bytes": 503877,
+      "sha256": "80709e4de70ef571de5b646bacdc8db6bf1483873cad0fd8c7f65c52cc9eb99c",
+      "copy": "byte-for-byte",
+      "original_delivery_manifest_verified": true
+    },
+    {
+      "file": "inner-eye-v3.png",
+      "stage": "v3",
+      "historical_source": "pikachu-head-shell-20260922-revision2/delivery/preview/comparison/v01-p00-front.png",
+      "bytes": 836431,
+      "sha256": "81614c3861c0ce30e0df20a66cf81fc3452e729cf7319a638b180f12fd7bda21",
+      "copy": "byte-for-byte",
+      "original_delivery_manifest_verified": true
+    },
+    {
+      "file": "round-eyes-v4.png",
+      "stage": "v4",
+      "historical_source": "pikachu-head-shell-20260922-revision3/delivery/preview/front.png",
+      "bytes": 793548,
+      "sha256": "a1414173d17b914064088718c028862ca68efa138903c476645113ecc9fdd43c",
+      "copy": "byte-for-byte",
+      "original_delivery_manifest_verified": true
+    }
+  ]
+}
