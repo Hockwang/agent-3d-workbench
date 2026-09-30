@@ -6,7 +6,7 @@
 
 This is the detailed operating guide the skill file (`skills/print-prep/SKILL.md`) points to.
 
-For the first-use tutorial, see [README](../README.md). In the current panel, selection
+For the first-use tutorial, see [Getting started](GETTING_STARTED.md). In the current panel, selection
 cards are added only by **Attach selection to chat**. Always read the live workspace
 selection before modifying a part; an old message card is not current state.
 

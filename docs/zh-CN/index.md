@@ -14,6 +14,8 @@
 [AGENT_PLAYBOOK.md](AGENT_PLAYBOOK.md)，分别是工具参考、系统架构、服务
 配置、核心 CLI，以及面向 agent 的操作手册。
 
+首次使用：[安装与第一次编辑](GETTING_STARTED.md)，包含成果查找、保存、导出与常见问题。
+
 ## 产品原则与范围
 
 - [PUBLIC_CAPABILITIES.md](PUBLIC_CAPABILITIES.md) —— 无专用 3D 服务的本地能力承诺、输入条件与验收边界。

@@ -17,6 +17,7 @@ Start here: [TOOLS.md](TOOLS.md), [ARCHITECTURE.md](ARCHITECTURE.md) ([中文](z
 
 ## Core workflows
 
+- [GETTING_STARTED.md](GETTING_STARTED.md) ([中文](zh-CN/GETTING_STARTED.md)) — installation, first edit, result discovery, export, and troubleshooting.
 - [CITY_RUNTIME.md](CITY_RUNTIME.md) ([中文](zh-CN/CITY_RUNTIME.md)) — the full city/world workbench (requires a user-supplied scene package).
 - [CODEX_V05_INTEGRATION.md](CODEX_V05_INTEGRATION.md) ([中文](zh-CN/CODEX_V05_INTEGRATION.md)) — how the v0.5 panel integrates with the Codex sidebar workspace.
 - [DIRECT_PART_CHAT.md](DIRECT_PART_CHAT.md) ([中文](zh-CN/DIRECT_PART_CHAT.md)) — creating a per-part chat branch directly (includes host support matrix).
