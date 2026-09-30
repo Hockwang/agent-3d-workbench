@@ -29,6 +29,14 @@ You and your agent share one project, model, and selection. These tools run loca
 Each tool has input requirements. Automatic semantic splitting, natural motion, and physical manufacturability need separate validation.
 [Full capabilities and conditions](docs/PUBLIC_CAPABILITIES.md) · [Your first edit](docs/GETTING_STARTED.md)
 
+## Edit together in the workbench
+
+![Select a cup part in the 3D Workbench, let the agent edit it, then undo](docs/assets/point-and-edit.gif)
+
+**Select a part → ask your agent to edit → inspect the change → undo.** This cup example shows a shared model, selection, and operation history.
+In the current interface, click **Attach selection to chat** to include it in a message; agents can also read the live selection through MCP.
+[Follow the first-edit tutorial →](docs/GETTING_STARTED.md)
+
 For image-to-3D generation or specialized splitting, you can also choose an API route. The examples below show the differences in actual outputs.
 
 ## Modeling: code or a generation model?

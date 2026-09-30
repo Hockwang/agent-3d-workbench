@@ -28,6 +28,14 @@ Codex、Claude Code 等 MCP 客户端都可以使用。本地代码路线无需 
 这些是可调用的工具，具体任务仍需满足输入条件；自动语义分件、自然动作和实物可制造性需要另行验收。
 [完整能力与条件](docs/zh-CN/PUBLIC_CAPABILITIES.md) · [第一次编辑教程](docs/zh-CN/GETTING_STARTED.md)
 
+## 在工作台里和 Agent 一起编辑
+
+![在 3D 工作台里选中杯子部件，由 Agent 修改，再撤销](docs/assets/point-and-edit.gif)
+
+**选中部件 → 让 Agent 修改 → 查看变化 → 撤销。** 杯子示例展示人和 AI 共用模型、选区和操作记录。
+当前界面中，点击 **「附加选区到对话」** 可把选区带入消息；Agent 也可以通过 MCP 读取实时选区。
+[跟着完成第一次编辑 →](docs/zh-CN/GETTING_STARTED.md)
+
 需要图片生成 3D 或专用分件服务时，也可以选择 API 路线。下面用实际结果说明区别。
 
 ## 建模：写代码，还是调用生成模型？
