@@ -10,6 +10,27 @@ Works with Codex, Claude Code, and other MCP clients. Local code needs no DiT mo
 3D service account, or 3D API key. You can also connect your own Hunyuan or Assembly service.
 Your agent account/subscription and any 3D service fees are separate.
 
+## What can you do?
+
+You and your agent share one project, model, and selection. These tools run locally; install Blender, Node.js, or slicing software when a task needs them.
+
+| Feature | What you can do |
+| --- | --- |
+| **View and edit** | Import GLB/STL, select parts, move, rotate, scale, undo/redo, and ask your agent to change only the intended objects. |
+| **Model with code** | Have your agent create models with Python/CadQuery/Blender, specify dimensions and parts, and keep the scripts editable. |
+| **Split and repair** | Use plane cuts, booleans, connected components, explicit face labels, small-hole repair, and simplification. |
+| **Materials and appearance** | Adjust color, roughness, and metalness per object or material slot; replace textures and run UV/baking tasks. |
+| **Functional geometry** | Create cavities, lids, head shells, locating pins/holes, color inserts, and joint modules from explicit dimensions and machining regions. |
+| **Rigging and motion** | Bind explicit skeletons and repair weights; edit mechanical joints, bone poses, and keyframes, then preview and export animation. |
+| **Inspect and check** | Review real renders, dimensions, and mesh reports; sample collisions at specified joint poses and record issues. |
+| **Print preparation** | Orient parts, arrange plates, export STL/3MF projects, and estimate time and material with configured slicing software. |
+| **Projects and delivery** | Save and reopen projects, find outputs and versions in Task overview, export GLB/STL, and keep editing generated models. |
+
+Each tool has input requirements. Automatic semantic splitting, natural motion, and physical manufacturability need separate validation.
+[Full capabilities and conditions](docs/PUBLIC_CAPABILITIES.md) · [Your first edit](docs/GETTING_STARTED.md)
+
+For image-to-3D generation or specialized splitting, you can also choose an API route. The examples below show the differences in actual outputs.
+
 ## Modeling: code or a generation model?
 
 The same cup reference image, processed with two different tools:
