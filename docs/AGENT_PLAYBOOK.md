@@ -419,6 +419,12 @@ connected and has actually generated something real. See
 
 ## Motion editing and local GPT rigging
 
+Natural-language requests come from the host chat. If an attached selection includes `motion.time_seconds`, use it and the snapshot object IDs to resolve the user's reference,
+then reread live state and versions. Preserve untargeted parts and motion. The cursor identifies a pose,
+not a new animation start. Keep editable parameters and inspect the resulting poses.
+If `motion.unsaved_preview` is true, ask the user to save or explicitly discard the preview before editing backend motion. Do not infer a cursor time when no attachment or explicit time is provided.
+Standalone projects may only expose `revision`; shared projects also expose object `version`.
+
 1. `studio_open({mode:"motion"})` opens the viewport shared with the editor. Read
    `studio_get_state.workbench`, and use
    `studio_motion({action:"set"|"clear"|"import"|"export",expected_revision,expected_versions,

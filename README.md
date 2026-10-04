@@ -63,6 +63,17 @@ This keyframe replay uses new operations on the v6 model to demonstrate editing 
 
 For image-to-3D generation or specialized splitting, you can also choose an API route. The examples below show the differences in actual outputs.
 
+## Create and edit motion in natural language
+
+Describe motion directly in **Codex chat**, such as “Open the drawers in order,” and preview it in **Motion Edit**.
+To reference a part or pose, select parts, scrub the timeline and click **Attach selection to chat** above. Then tell Codex “Hold here for two seconds; keep the others unchanged.”
+The workbench handles selection, playback and parameter controls; natural-language input stays in chat. Other MCP clients can specify part names and time in their own chat.
+
+The everyday UI keeps selection, playback, undo, save and export close at hand. Manual joints, formulas and keyframes stay collapsed under **Advanced editing**.
+
+You can also edit parameters and keyframes directly. Export an **editable motion ZIP** to keep editing, or an animated GLB for playback.
+[Tutorial, reproducible example and input requirements →](docs/MOTION_EDITING.md#direct-motion-with-language)
+
 ## Modeling: code or a generation model?
 
 The same cup reference image, processed with two different tools:

@@ -116,7 +116,7 @@ export function createEditor(api, options = {}) {
     onError: showError,
   });
   viewport.setMode("select");
-  const motionPanel = createMotionPanel({ api, viewport, host: document.querySelector('.ed-inspector > .studio-card-body'), stage: document.querySelector('.ed-stage'), getState: () => state, run, onError: showError });
+  const motionPanel = createMotionPanel({ api, viewport, host: document.querySelector('.ed-inspector > .studio-card-body'), stage: document.querySelector('.ed-stage'), getState: () => state, run, onError: showError, onContextChange: options.onMotionContextChange, canAttachSelection: Boolean(options.onAttachSelection) });
   const scenePanel = createScenePanel({api, viewport, browser: document.querySelector('.ed-browser > .studio-card-body'), inspector: document.querySelector('.ed-inspector > .studio-card-body'), getState: () => state, run, onMotion: options.onMotion, onError: showError});
   const cityPanel = createCityPanel({api,viewport,browser:document.querySelector('.ed-browser > .studio-card-body'),stage:document.querySelector('.ed-stage'),getState:()=>state,run,onError:showError});
   // Keep existing objects ahead of all import, city and asset-library controls.
@@ -409,7 +409,7 @@ export function createEditor(api, options = {}) {
       if (ids.length) api.collaboration({ action: 'renew', ids }).catch(showError);
     }
   }, 1000);
-  return { ready, setState, refresh, openFile, fitView: () => viewport.fit(),
+  return { ready, setState, refresh, openFile, getMotionContext: () => motionPanel.getContext(), pauseMotion: () => motionPanel.pause(), fitView: () => viewport.fit(),
     setWorkspaceMode(mode) { if(mode==='motion')cityPanel.detailMode(); $("editor-space").classList.toggle("motion-workspace",mode === "motion"); motionPanel.setActive(mode === "motion"); },
     openAction(action) {
       const tab = { inspect: "repair", repair: "repair", simplify: "repair", plane_cut: "cut", split_components: "cut", material: "material" }[action];

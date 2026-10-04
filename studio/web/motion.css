@@ -8,6 +8,13 @@
 .motion-row>input,.motion-row>label,.motion-row>select { flex:1;min-width:0; }
 .motion-panel label { font-size:12px; }
 .motion-panel input,.motion-panel select,.motion-panel textarea { min-height:30px;font-size:12px; }
+.motion-panel [hidden] { display:none!important; }
+.motion-panel [data-status]:empty { display:none; }
+.motion-panel .motion-export { display:grid;gap:10px;padding:16px 0;border-block:1px solid var(--studio-line, #33363a); }
+.motion-panel .motion-export p { margin:0; }
+.motion-advanced[open]>summary,.motion-import[open]>summary { margin-bottom:14px; }
+.motion-unsaved { display:flex;align-items:center;gap:10px;padding:10px;background:#33291b;border-radius:8px; }
+.motion-unsaved span { flex:1;font-size:12px;color:#efc58b; }
 .motion-panel button { font-size:12px;padding:7px 9px; }
 .motion-subheading { display:flex;align-items:center;justify-content:space-between;margin:18px 0 8px;font-size:12px; }
 .motion-step { border:1px solid #353941;border-radius:10px;padding:10px;margin:8px 0;display:grid;gap:8px;background:#191c21; }
@@ -29,4 +36,4 @@
 #wb .motion-workspace .plan-collapsed .v04-settings { max-height:calc(100% - 166px)!important; }
 #wb .motion-workspace .v04-cards-dock .float-card { max-height:none!important; }
 .motion-timeline { bottom:24px; }
-.motion-workspace #ed-delivery>label,.motion-workspace #ed-delivery>.ed-row,.motion-workspace .v04-plan-actions { display:none; }
+.motion-workspace #ed-delivery,.motion-workspace .v04-plan-actions { display:none; }

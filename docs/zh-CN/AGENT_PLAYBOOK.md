@@ -186,6 +186,11 @@ Assembly Workflow 是可选服务，提供 assemble / segment / rig-glb / rig / 
 
 ## 动作编辑与 GPT 本地绑骨
 
+自然语言要求来自宿主聊天；若附加选区含 `motion.time_seconds`，以它和对象 ID 确定用户所指，再读取实时状态和版本。
+若 `motion.unsaved_preview` 为 true，先让用户保存或明确放弃预览，再修改后端动作；没有附件或明确时间时，不猜测时间轴位置。
+保持未要求修改的部件及动作；时间点是用户指认的姿态，不是默认的新动画起点。
+优先保留可编辑参数，修改后观察实际姿态。未共享工程可能只有 `revision`，共享工程才附带对象 `version`。
+
 1. `studio_open({mode:"motion"})` 打开与编辑器共用的视口。读取 `studio_get_state.workbench`，使用 `studio_motion({action:"set"|"clear"|"import"|"export",expected_revision,expected_versions,params})`。动作保存在 `objects[].motion`；写入同样受零件范围、租约与版本保护。
 2. 机械 motion schema=`studio-motion/v1`，kind=`joint`，mode=`pkf` 或 `keyframes`；完整例子、轴/支点单位见 [动作契约](./MOTION_EDITING.md)。MotionForge 的 y 是 Studio −Y，旋转角度为度、滑动为米，不能把工作台 mm 直接填进去。普通 GLB 关键帧不能自动还原语义参数。
 3. 绑骨默认用当前 GPT：观察原模型与尺寸、确定骨点和父子结构，调用已有 `studio_task` 的 `rig-bind` / `skin-weights` 或本地 Blender 脚本。已合格的 rig 优先复用；检查权重归一化、未加权顶点和全段形变，不把导出成功当自然动作合格。无需另购 LLM API。

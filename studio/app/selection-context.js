@@ -1,7 +1,7 @@
 // Selection is a small reference snapshot; geometry stays in the shared backend.
 import { t } from "../web/i18n.js";
 
-export function selectionContext(mode, state) {
+export function selectionContext(mode, state, motion) {
   if (!state || !['edit', 'motion', 'print'].includes(mode)) return null;
   const editing = mode === 'edit' || mode === 'motion';
   const source = editing ? state.workbench : state;
@@ -17,20 +17,27 @@ export function selectionContext(mode, state) {
     ...(o.extents_mm ? { extents_mm: [...o.extents_mm] } : {}),
   }));
   if (!selected.length) return null;
-  const label = t('selectionContext.label', {
+  const cursor = mode === 'motion' && Number.isFinite(motion?.time_seconds) && motion.time_seconds >= 0
+    ? { time_seconds: Number(motion.time_seconds.toFixed(3)),
+      unsaved_preview: Boolean(motion.unsaved_preview), playing: Boolean(motion.playing) } : null;
+  let label = t('selectionContext.label', {
     count: selected.length,
     names: selected.map(o => String(o.name).replace(/\s+/g, ' ').trim()).join(t('common.listSeparator')),
   });
+  if (cursor) label = t('selectionContext.motionLabel', { label, time: cursor.time_seconds.toFixed(2) });
   const composerLabel = [...label].length > 72 ? [...label].slice(0, 71).join('') + '…' : label;
   const modeLabel = t(mode === 'motion' ? 'selectionContext.mode.motion' : editing ? 'selectionContext.mode.edit' : 'selectionContext.mode.print');
   return {
     content: [{ type: 'text', text: t('selectionContext.attachmentText', {
       modeLabel, names: selected.map(o => JSON.stringify(o.name)).join(t('common.listSeparator')),
-    }) }],
+    }) + (cursor ? '\n' + t('selectionContext.motionText', {
+      time: cursor.time_seconds, dirty: String(cursor.unsaved_preview),
+    }) : '') }],
     structuredContent: {
       source: editing ? '3D Workbench selection' : 'Print Prep selection',
       ...(state.workspace_id ? { workspace_id: state.workspace_id } : {}),
       job: state.job, revision: editing ? source.revision : state.rev, units: 'mm',
+      ...(cursor ? { motion: cursor } : {}),
       ...(editing ? { selectedObjects: selected } : { selectedParts: selected }),
     },
     // Codex's ui/update-model-context extension (local host schema). Other hosts
@@ -64,9 +71,9 @@ export function createSelectionContextSync(app) {
     return running || Promise.resolve();
   }
   return {
-    update({ mode, state }) {
+    update({ mode, state, motion }) {
       if (disposed) return Promise.resolve();
-      latest = selectionContext(mode, state);
+      latest = selectionContext(mode, state, motion);
       // Restored/imported selection is editor state, not an attachment request.
       // Never restore a dismissed card on a poll or from another panel instance.
       // Invalidate a snapshot when its selection, mode or model version changes.

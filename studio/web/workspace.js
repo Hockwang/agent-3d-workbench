@@ -548,7 +548,11 @@ export function createWorkspace(api, options = {}) {
     onModel: () => { show('edit'); editor.fitView(); },
     onOpenFile: () => { show('edit'); editor.openFile(); },
     onOpenResult: (id, files) => openResult(id, files),
-    onAttachSelection: options.onAttachSelection,
+    onAttachSelection: options.onAttachSelection ? async () => {
+      if (mode === 'motion') editor?.pauseMotion();
+      await publishSelection();
+      await options.onAttachSelection();
+    } : undefined,
     onOpenHistory: () => { show('tasks'); tasks.openHistory(); },
   });
   async function openResult(id, files = false) {
@@ -578,8 +582,8 @@ export function createWorkspace(api, options = {}) {
     workflow.hidden = recipeElement.hidden;
     workflowSummary.textContent = t('entry.projectWorkflow', { name: nextState?.recipe?.title || nextState?.recipe?.name || t('entry.chooseWorkflow') });
   };
-  const publishSelection = () => { if (nextState) options.onSelectionContext?.({ mode, state: nextState }); };
-  const childOptions = { ...options, onState(next) { nextState = next; renderRecipe(); options.onState?.(next); publishSelection(); } };
+  const publishSelection = () => nextState && options.onSelectionContext?.({ mode, state: nextState, motion: mode === 'motion' ? editor?.getMotionContext() : null });
+  const childOptions = { ...options, onMotionContextChange: publishSelection, onState(next) { nextState = next; renderRecipe(); options.onState?.(next); publishSelection(); } };
   async function runRecipe(fn, viewMode = null) {
     if (recipeBusy || nextState?.busy) return false;
     recipeBusy = true; renderRecipe();

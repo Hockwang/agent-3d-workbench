@@ -18,6 +18,31 @@ function host() {
   return { calls, sync: createSelectionContextSync({ updateModelContext: async p => { calls.push(p); } }) };
 }
 
+test('motion attachments carry the chosen time and unsaved-preview state without sending a request', () => {
+  const s = state(['b']); s.workspace_id = 'current-chat';
+  const p = selectionContext('motion', s, {time_seconds:2.41234,unsaved_preview:true,playing:false});
+  assert.deepEqual(p.structuredContent.motion, {time_seconds:2.412,unsaved_preview:true,playing:false});
+  assert.equal(p.structuredContent.workspace_id, 'current-chat');
+  assert.deepEqual(p.structuredContent.selectedObjects.map(o=>o.id), ['b']);
+  assert.match(p.presentation.composerLabel, /2\.41 s/);
+  assert.match(p.content[0].text, /未保存预览：true/);
+  assert.equal(selectionContext('edit', s, {time_seconds:3}).structuredContent.motion, undefined);
+  assert.equal(selectionContext('motion', s, {time_seconds:NaN}).structuredContent.motion, undefined);
+});
+
+test('moving the motion cursor invalidates a card and requires another explicit attach', async () => {
+  const {calls,sync} = host(), s = state(['a']);
+  await sync.update({mode:'motion',state:s,motion:{time_seconds:2}});
+  await sync.attach();
+  await sync.update({mode:'motion',state:s,motion:{time_seconds:3}});
+  assert.deepEqual(calls.at(-1), {content:[]});
+  assert.equal(calls.length,3);
+  await sync.attach();
+  assert.equal(calls.at(-1).structuredContent.motion.time_seconds,3);
+  await sync.update({mode:'motion',state:s,motion:{time_seconds:3,unsaved_preview:true}});
+  assert.deepEqual(calls.at(-1), {content:[]});
+});
+
 test('restoring a selection in two panels does not attach anything without a user action', async () => {
   const a = host(), b = host();
   await a.sync.update({ mode: 'edit', state: state(['a', 'b']) });

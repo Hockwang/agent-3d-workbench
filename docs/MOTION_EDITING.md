@@ -8,6 +8,7 @@ editing. There is no embedded MotionForge webpage, and no second LLM service is 
 
 ## Usage
 
+- The default UI is for selection, timeline scrubbing, preview and export. Describe modeling, rigging and motion requests in the host chat. Joints, formulas, keyframes and clearing bindings stay under collapsed **Advanced editing**. Unsaved manual edits keep a visible save prompt even when that section is closed.
 - Top bar "Motion Edit" or `studio_open(mode="motion")`. Select an object, add a mechanical joint,
   or import a skeleton GLB / motion ZIP.
 - Changing a parameter/formula previews instantly; clicking "Save Motion" writes it into the
@@ -17,7 +18,7 @@ editing. There is no embedded MotionForge webpage, and no second LLM service is 
 - Skeletal: preserves the original GLB skins, weights, inverse bind matrices, and clips; can trim
   the source clip / retime it, or edit local XYZ-rotation PKF by the original bone names. A plain
   clip does not automatically recover semantic parameters.
-- "Have GPT rig it" sends the task to the current Codex chat. GPT reads the geometry and then uses
+- Ask for rigging directly in Codex chat. GPT reads the geometry and then uses
   the existing local `rig-bind`, `skin-weights`, or a Blender script; it supports an uncompressed
   `.blend` with external resources already packed in. No extra GPT API call.
 - A project ZIP can be imported into a brand-new task to keep editing. Mechanical projects contain
@@ -28,6 +29,30 @@ editing. There is no embedded MotionForge webpage, and no second LLM service is 
 - `studio_observe` can take phases `[0,.5,1]` of an exported GLB and return real PNGs with the
   corresponding deformed-mesh snapshots, so the AI and the human can check the result in the
   observation area rather than only checking the evaluated numbers.
+
+## Direct motion with language
+
+1. Ask “Open the drawers in order” directly in **Codex chat**. The agent reads the project, creates motion and the workbench previews it in **Motion Edit**.
+2. To reference parts or a pose, select parts and scrub the timeline, then click **Attach selection to chat** above. This pauses playback and attaches object IDs, project revision and `motion.time_seconds`; it does not send a message.
+3. Back in chat, ask “Hold here for two seconds; keep the others unchanged.” Changing selection, time or project revision invalidates the old attachment; attach again. Opening a page or restoring selection never attaches automatically.
+4. A regular browser has no Codex attachment button. In the MCP client connected to the same workbench, specify part names and time, such as “Hold the middle drawer at its 2.4-second pose for two seconds.”
+5. After manual parameter or keyframe edits, click **Save Motion** so the agent sees the version you previewed. Attachments mark unsaved previews; they are not saved backend motion.
+6. Export an **editable motion ZIP** to reopen and edit parameters later. **Animated GLB** preserves sampled playback tracks, not necessarily the original semantic parameters.
+
+Use GPT-6, another Codex model, or a general-purpose agent connected through the same MCP. The plugin does not require a second model account. Results depend on the input, agent and tools.
+Mechanical motion requires identifiable, editable parts. Whole GLB instances, complex joints and characters may need structural preparation. Naturalness, contact and collisions require separate checks.
+
+### Local replay (no model or service API calls)
+
+From the repository root:
+
+```bash
+uv run python examples/motion_editing/verify_tutorial.py --out /tmp/workbench-motion-demo
+```
+
+The output directory must not already exist. The script creates a simple three-drawer fixture, uses real stdio MCP to animate it, extends only the middle drawer hold, exports ZIP and GLB, reopens in a separate workspace, and reduces its travel.
+It checks geometry and untouched objects, sampled world translations and exported animation tracks. Stage files and `report.json` remain in the output directory.
+This is a deterministic product-flow verification, **not a model leaderboard**. The host agent remains responsible for interpreting natural-language requests.
 
 ## Data and AI contract
 
@@ -71,8 +96,7 @@ existing file.
 ## Reuse and implementation
 
 - MotionForge pinned at `18a11fe175691538962b5659a4797c3d3c24ed17`; source, SHA, and patches are in
-  `studio/web/vendor/motionforge/SOURCES.json`. Internal reuse was requested by the user; the
-  upstream repo has no LICENSE, so the public-distribution license is still undetermined.
+  `studio/web/vendor/motionforge/SOURCES.json`. MotionForge is the plugin author's own project, published under this repository's MIT license; see [third-party notices](THIRD_PARTY.md).
 - jsep 1.4.0 parses formulas. Only parameters, numbers, arithmetic, and whitelisted math functions
   are allowed, with length/complexity/finiteness/limit validation.
   The original engine's `new Function` path has been disabled. The frontend and the Node worker
