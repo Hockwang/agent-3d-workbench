@@ -19,7 +19,7 @@ You and your agent share one project, model, and selection. These tools run loca
 | **View and edit** | Import GLB/STL, select parts, move, rotate, scale, undo/redo, and ask your agent to change only the intended objects. |
 | **Model with code** | Have your agent create models with Python/CadQuery/Blender, specify dimensions and parts, and keep the scripts editable. |
 | **Split and repair** | Use plane cuts, booleans, connected components, explicit face labels, small-hole repair, and simplification. |
-| **Materials and appearance** | Adjust color, roughness, and metalness per object or material slot; replace textures and run UV/baking tasks. |
+| **Materials and appearance** | Adjust colors, roughness, and metalness per object or material slot; replace textures and run UV/baking tasks. |
 | **Functional geometry** | Create cavities, lids, head shells, locating pins/holes, color inserts, and joint modules from explicit dimensions and machining regions. |
 | **Rigging and motion** | Bind explicit skeletons and repair weights; edit mechanical joints, bone poses, and keyframes, then preview and export animation. |
 | **Inspect and check** | Review real renders, dimensions, and mesh reports; sample collisions at specified joint poses and record issues. |
