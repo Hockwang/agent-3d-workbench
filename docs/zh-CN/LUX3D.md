@@ -6,7 +6,7 @@
 
 ## 配置与操作
 
-在「建模与任务 → 管理 3D 服务」选择 Lux3D 国内/国际模板，可加密填写 key，或绑定环境变量。默认国内 `LUX3D_CN_API_KEY`，国际 `LUX3D_GLOBAL_API_KEY`；也可绑定已有 `AHOLO_KEY` 等变量名。MCP 保存只接受变量名，不接受密钥值。无需配置 GPT API。
+在「工作台顶部 → API 配置」选择 Lux3D 国内/国际模板，可加密填写 key，或绑定环境变量。默认国内 `LUX3D_CN_API_KEY`，国际 `LUX3D_GLOBAL_API_KEY`；也可绑定已有 `AHOLO_KEY` 等变量名。MCP 保存只接受变量名，不接受密钥值。无需配置 GPT API。
 
 | 区域 | API 根地址 | 鉴权 |
 | --- | --- | --- |

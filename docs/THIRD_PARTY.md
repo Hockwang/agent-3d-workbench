@@ -22,7 +22,7 @@ Installation uses the already-bundled HTML and vendored modules — static editi
 
 References: [Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html), [Manifold](https://manifoldcad.org/docs/html/classmanifold_1_1_manifold.html), [Trimesh](https://trimesh.org/).
 
-This round did not bring in the P3-SAM research fork, PartCraft, or any third-party private source code from the author's research repo; the part-splitting and workflow experiments in the author's research repo are used only to identify operating boundaries and acceptance conditions.
+This round did not bring in research model forks or any third-party private source code from the author's research repo; the part-splitting and workflow experiments in the author's research repo are used only to identify operating boundaries and acceptance conditions.
 This project's own code is released under the MIT license in `LICENSE`. Dependencies retain their respective licenses and notices.
 
 ## 2026-09-22 additions

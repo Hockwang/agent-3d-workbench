@@ -457,20 +457,20 @@ register(
             "en": "Default route",
         },
         "assembly_service.choice_cut_backend_cube": {
-            "zh-CN": "Cubepart",
-            "en": "Cubepart",
+            "zh-CN": "分件方案 B",
+            "en": "Segmentation option B",
         },
         "assembly_service.choice_rig_backend_auto": {
             "zh-CN": "自动选择",
             "en": "Automatic",
         },
         "assembly_service.choice_rig_backend_puppeteer": {
-            "zh-CN": "Puppeteer",
-            "en": "Puppeteer",
+            "zh-CN": "绑骨方案 A",
+            "en": "Rigging option A",
         },
         "assembly_service.choice_rig_backend_skintokens": {
-            "zh-CN": "SkinTokens",
-            "en": "SkinTokens",
+            "zh-CN": "绑骨方案 B",
+            "en": "Rigging option B",
         },
         "assembly_service.choice_cfg_type_regular": {
             "zh-CN": "Regular",

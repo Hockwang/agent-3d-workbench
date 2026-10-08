@@ -6,7 +6,7 @@ Independently implemented from the public interface contract of [Aholo-Lux3D](ht
 
 ## Configuration and operations
 
-Under "Modeling & Tasks → Manage 3D Services," pick the Lux3D domestic (CN) / global template; you can fill in an encrypted key or bind to an environment variable. Defaults are `LUX3D_CN_API_KEY` for domestic and `LUX3D_GLOBAL_API_KEY` for global; you can also bind an existing variable name such as `AHOLO_KEY`. MCP saving only accepts variable names, never key values. No GPT API configuration needed.
+Under "Workbench top bar → API settings," pick the Lux3D domestic (CN) / global template; you can fill in an encrypted key or bind to an environment variable. Defaults are `LUX3D_CN_API_KEY` for domestic and `LUX3D_GLOBAL_API_KEY` for global; you can also bind an existing variable name such as `AHOLO_KEY`. MCP saving only accepts variable names, never key values. No GPT API configuration needed.
 
 | Region | API root | Auth |
 | --- | --- | --- |

@@ -1,8 +1,9 @@
+import { displayLabel } from './display-label.js';
 import { createStudioShell } from "./studio-shell.js";
 import { TaskPreview } from './task-preview.js';
 import { uploadFile } from './upload.js';
 import { t } from './i18n.js';
-const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
+const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=displayLabel(text);if(cls)n.className=cls;return n;};
 export function createObserve(api, root=document.getElementById('observe-space')){
   root.innerHTML=`<header class="observe-head"><div><h2>${t('observe.header.title')}</h2><small>${t('observe.header.subtitle')}</small></div><span>${t('observe.header.badge')}</span></header>
   <div class="observe-layout"><details class="observe-library studio-card" open><summary>${t('observe.section.library')}</summary><div class="studio-card-body">

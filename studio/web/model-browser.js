@@ -1,6 +1,7 @@
 import { primaryArtifact } from './result-model.js';
 import { TaskPreview } from './task-preview.js';
 import { t } from './i18n.js';
+import { displayLabel } from './display-label.js';
 
 // Keep diagnostic meshes out of the first-use model chooser.
 export function modelArtifacts(task) {
@@ -8,7 +9,7 @@ export function modelArtifacts(task) {
   return artifacts.filter(a => /\.glb$/i.test(a.name) && (!a.name.includes('/') || a === primary));
 }
 export function modelLabel(artifact, saved) {
-  return saved?.trim() || artifact.name.split('/').pop().replace(/\.glb$/i, '').replace(/[_-]+/g, ' ');
+  return displayLabel(saved?.trim() || artifact.name.split('/').pop().replace(/\.glb$/i, '').replace(/[_-]+/g, ' '));
 }
 const node = (tag, text, cls) => {
   const el = document.createElement(tag);
@@ -38,10 +39,10 @@ export function createModelBrowser(api, onSelect, onRename) {
     memory.set(key(a, source), value);
     try { localStorage.setItem(key(a, source), value); } catch { /* Names still work during this session. */ }
     for (const button of cards.children) if (source.id === task.id && button.dataset.artifactId === a.id) {
-      button.querySelector('strong').textContent = value;
-      button.setAttribute('aria-label', t('entry.openNamed', { name: value }));
+      button.querySelector('strong').textContent = displayLabel(value);
+      button.setAttribute('aria-label', t('entry.openNamed', { name: displayLabel(value) }));
     }
-    onRename?.(value); return true;
+    onRename?.(displayLabel(value)); return true;
   }
   function setTask(next) {
     task = next;

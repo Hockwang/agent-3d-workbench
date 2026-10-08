@@ -160,7 +160,7 @@ $PP prepare --job ./job /绝对路径/a.stl /绝对路径/b.stl --shape figurine
 
 ## 建模、服务和动画任务
 
-专业 API 在「建模与任务 → 管理 3D 服务」配置，可添加多个连接、启停和只读测试。AI 用 `studio_services(action="list")` 查看状态，`probe` 检查鉴权；保存只传环境变量名，密钥由用户在界面加密输入，不能放入对话或工具参数。按 `studio_capabilities.services[].id` 选择用户的连接，不硬编码默认 provider。详情见 [自助配置](./BYOK_SERVICES.md)。
+专业 API 在「工作台顶部 → API 配置」配置，可添加多个连接、启停和只读测试。AI 用 `studio_services(action="list")` 查看状态，`probe` 检查鉴权；保存只传环境变量名，密钥由用户在界面加密输入，不能放入对话或工具参数。按 `studio_capabilities.services[].id` 选择用户的连接，不硬编码默认 provider。详情见 [自助配置](./BYOK_SERVICES.md)。
 
 Lux3D 支持国内/国际独立连接、图片/多图/文字生成、材质重绘、四视图、参考图与格式转换。本机输入放 inputs，自动上传。先 `studio_services(action="balance"|"quote",id=连接ID,operation,params,inputs)`；计划报价用 items 数组。生成传原参数与 quote_id，计划项另带 quote_item；参数或账户改变须重新报价。按用户已经授权的目标与额度执行，报价是优惠前预计值。恢复已有任务用 resume，或传 params.remote_task_id 字符串收件，不重提生成。真实结果用 observe 查看后再交付；完整字段、版本限制与已验证范围见 [Lux3D](./LUX3D.md)。
 

@@ -315,7 +315,7 @@ contract, provenance, and limits.
 
 ## Build, service, and animation tasks
 
-Professional APIs are configured under "Build & tasks → Manage 3D services," where connections
+Professional APIs are configured under "Workbench top bar → API settings," where connections
 can be added, started/stopped, and read-only tested. The AI uses
 `studio_services(action="list")` to check status and `probe` to check authentication; only the
 environment-variable name is saved, and the key itself is entered encrypted by the user in the

@@ -6,13 +6,13 @@
 
 Assembly 是可选的远端处理服务。本次依据公司内部的接口文档（API 链路、Web 关节动画、Web 骨骼动作）实现。它处理已有 GLB 或生成动作，不是文/图生几何接口。
 
-| operation | 服务模板 | 收件 nodeName | 交付 |
-|---|---|---|---|
-| assemble | workflow_assembly_prod | assembly_agent_cos_upload | 可动装配资产包 |
-| segment | workflow_assembly_seg_prod | AssemblyAgentSegmentedGLBExport | 拆件 GLB / 面标签 |
-| rig-glb | workflow_rig_glb_prod | AssemblyAgentRiggedGLBOutput | 带骨架 GLB |
-| rig | workflow_rig_prod | rig_package_zip | 骨架与动作资产包 |
-| motion | workflow_motion_generate_prod | AssemblyAgentKimodoMotionGenerate | 动作 ZIP / BVH；不自动绑定模型 |
+| operation | 服务模板 | 交付 |
+|---|---|---|
+| assemble | workflow_assembly_prod | 可动装配资产包 |
+| segment | workflow_assembly_seg_prod | 拆件 GLB / 面标签 |
+| rig-glb | workflow_rig_glb_prod | 带骨架 GLB |
+| rig | workflow_rig_prod | 骨架与动作资产包 |
+| motion | workflow_motion_generate_prod | 动作 ZIP / BVH；不自动绑定模型 |
 
 ## 配置
 

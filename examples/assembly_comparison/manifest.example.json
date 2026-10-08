@@ -12,11 +12,11 @@
         "metrics_en": "11.97 min · input 1,487,807 (cached 1,390,848)· output 21,031 · API-equivalent estimate $3.41"
       },
       {
-        "title": "GPT-6 + Assembly · Puppeteer",
+        "title": "GPT-6 + Assembly · 自动绑骨",
         "file": "rig-api.glb",
         "metrics": "14.64 分钟 · 输入 2,522,276（缓存 2,451,584）· 输出 21,326 · API 等价估算 $4.22",
         "note": "35 骨；原贴图保留，共同摆姿下前肩有局部形变。",
-        "title_en": "GPT-6 + Assembly · Puppeteer",
+        "title_en": "GPT-6 + Assembly · Automatic rigging",
         "note_en": "35 bones; original textures retained. Local deformation at the front shoulder in the shared pose.",
         "metrics_en": "14.64 min · input 2,522,276 (cached 2,451,584)· output 21,326 · API-equivalent estimate $4.22"
       }
@@ -124,20 +124,20 @@
         "metrics_en": "10.44 min · input 1,736,200 (cached 1,664,256)· output 17,790 · API-equivalent estimate $3.27"
       },
       {
-        "title": "GPT-6 + Assembly · P3RW",
+        "title": "GPT-6 + Assembly · 分件方案 A",
         "file": "segment-p3.glb",
         "metrics": "14.41 分钟 · 输入 2,813,122（缓存 2,733,440）· 输出 23,616 · API 等价估算 $4.71",
         "note": "9 件，原面精确保留；前后网罩合并，机身/立柱/底座合并。",
-        "title_en": "GPT-6 + Assembly · P3RW",
+        "title_en": "GPT-6 + Assembly · Segmentation option A",
         "note_en": "9 parts, original faces retained exactly; front and rear guards are merged, as are body, pedestal, and base.",
         "metrics_en": "14.41 min · input 2,813,122 (cached 2,733,440)· output 23,616 · API-equivalent estimate $4.71"
       },
       {
-        "title": "GPT-6 + Assembly · Cubepart",
+        "title": "GPT-6 + Assembly · 分件方案 B",
         "file": "segment-cube.glb",
         "metrics": "7.66 分钟 · 输入 1,065,996（缓存 1,023,232）· 输出 12,967 · API 等价估算 $2.10",
         "note": "默认 2 件，扇叶与网罩合并；面数降至 69,384，外廓缩小约 4%。",
-        "title_en": "GPT-6 + Assembly · Cubepart",
+        "title_en": "GPT-6 + Assembly · Segmentation option B",
         "note_en": "Default 2 parts; blades and guard are merged. Face count drops to 69,384 and outer dimensions shrink by about 4%.",
         "metrics_en": "7.66 min · input 1,065,996 (cached 1,023,232)· output 12,967 · API-equivalent estimate $2.10"
       }

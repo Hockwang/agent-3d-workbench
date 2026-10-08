@@ -10,14 +10,14 @@
 
 ## 1. 狐狸绑骨：能摆姿，还不能证明自然运动
 
-| GPT-6 本地 Blender 绑骨 | Assembly API · Puppeteer |
+| GPT-6 本地 Blender 绑骨 | Assembly API · 绑骨方案 A |
 | --- | --- |
 | ![本地狐狸共同诊断动作](assets/assembly-comparison/gifs/fox-rig-local.gif) | ![API 狐狸共同诊断动作](assets/assembly-comparison/gifs/fox-rig-api.gif) |
 | 24 根骨骼、1 个 skin、50 万面 | 35 根骨骼、1 个 skin、50 万面 |
 
 **2.4 秒共同诊断动作。** 独立 GIF 不保证在网页中同步起播；比较动作时序请看[严格同步同屏版](assets/assembly-comparison/gifs/fox-comparison.gif)。同屏从左到右：GPT-6 本地、Assembly API。
 
-输入是没有骨骼或动画的 Hunyuan 狐狸。两条路线都保留原材质与贴图，全部顶点有权重，每点最多 4 个骨骼影响。API 的 `auto` 实际选中了 Puppeteer；骨骼更多本身不代表质量更高。
+输入是没有骨骼或动画的 Hunyuan 狐狸。两条路线都保留原材质与贴图，全部顶点有权重，每点最多 4 个骨骼影响。API 的 `auto` 实际选中了 绑骨方案 A；骨骼更多本身不代表质量更高。
 
 图中动作由共同诊断脚本事后施加：左前腿上段 +15°、右后腿上段 −15°、头 −8°、尾 +12°，随后反向摆姿。使用同一源模型确定相机，不修改两份结果的骨骼或权重。**原始两份交付均没有动画**；可动预览是诊断产物，不是 API 生成了行走动作。
 
@@ -41,22 +41,22 @@ API 结果在共同摆姿中，前肩与胸部附近出现明显局部形变／�
 
 ## 3. 风扇分件：件数不等于功能件正确
 
-| GPT-6 本地 | Assembly · P3RW | Assembly · Cubepart |
+| GPT-6 本地 | Assembly · 分件方案 A | Assembly · 分件方案 B |
 | --- | --- | --- |
-| ![本地七件展开收回](assets/assembly-comparison/gifs/fan-segment-local.gif) | ![P3RW 九件展开收回](assets/assembly-comparison/gifs/fan-segment-p3.gif) | ![Cubepart 两件展开收回](assets/assembly-comparison/gifs/fan-segment-cube.gif) |
+| ![本地七件展开收回](assets/assembly-comparison/gifs/fan-segment-local.gif) | ![分件方案 A 九件展开收回](assets/assembly-comparison/gifs/fan-segment-p3.gif) | ![分件方案 B 两件展开收回](assets/assembly-comparison/gifs/fan-segment-cube.gif) |
 | 7 件 / 120,000 面 | 9 件 / 120,000 面 | 2 件 / 69,384 面 |
 
-**4 秒展开收回，仅为展示动画，没有修复语义分件。** 独立 GIF 不保证在网页中同步起播；比较动作时序请看[严格同步同屏版](assets/assembly-comparison/gifs/fan-comparison.gif)。同屏从左到右：GPT-6 本地、P3RW、Cubepart。
+**4 秒展开收回，仅为展示动画，没有修复语义分件。** 独立 GIF 不保证在网页中同步起播；比较动作时序请看[严格同步同屏版](assets/assembly-comparison/gifs/fan-comparison.gif)。同屏从左到右：GPT-6 本地、分件方案 A、分件方案 B。
 
 输入是预先简化为 12 万面的 Seed3D 风扇，无材质或贴图。图中颜色只用于区分部件；同颜色不表示三条路线中的同一个语义部件。
 
-| 检查 | 本地 | P3RW | Cubepart |
+| 检查 | 本地 | 分件方案 A | 分件方案 B |
 | --- | --- | --- | --- |
 | 原几何 | 三角面、方向与坐标保持，无遗漏／重复 | 最终 GLB 保持源三角面与坐标 | 面数减少 42.18%，三个轴的总尺寸约缩小 4% |
 | 主要问题 | 后网罩误收了底座的 1,138 面；颈部边界锯齿 | 电机、转轴、支架与底座仍合并；前后网罩也合并 | 风扇头、网罩与叶片合成一件；另一件是底座＋支架 |
 | 本轮判断 | 语义分件不合格 | 部分功能件被拆出，仍欠切 | 默认两件不能满足功能件拆分 |
 
-P3RW 实际走 P3-SAM + random walker（cuDSS，无回退）；表中是 API 清理微小标签后的 **9 件最终结果**，不是内部原始标签数。Cubepart 的请求没有显式部件名，服务采用 `base,moving_part` 默认值，且启用了 0.2 的简化比例参数；**这不能代表指定部件名称后的 Cubepart 能力上限**。三条路线都未给定固定件数，也没有人工逐面真值，因此不报告 IoU 或总体胜率。输入本身含大量碎片与开放边界，本轮没有交付可打印实体。
+分件方案 A 实际走 语义分件 + random walker（cuDSS，无回退）；表中是 API 清理微小标签后的 **9 件最终结果**，不是内部原始标签数。分件方案 B 的请求没有显式部件名，服务采用 `base,moving_part` 默认值，且启用了 0.2 的简化比例参数；**这不能代表指定部件名称后的 分件方案 B 能力上限**。三条路线都未给定固定件数，也没有人工逐面真值，因此不报告 IoU 或总体胜率。输入本身含大量碎片与开放边界，本轮没有交付可打印实体。
 
 ## Token、时间与估算价格
 
@@ -69,8 +69,8 @@ P3RW 实际走 P3-SAM + random walker（cuDSS，无回退）；表中是 API 清
 | 书桌 · 本地 | 15 分 17 秒 | 2,733,414 | 2,657,920 | 24,805 | $4.65 |
 | 书桌 · API | 15 分 20 秒 | 2,363,992 | 2,301,184 | 22,056 | $4.03 |
 | 风扇 · 本地 | 10 分 27 秒 | 1,736,200 | 1,664,256 | 17,790 | $3.27 |
-| 风扇 · P3RW | 14 分 24 秒 | 2,813,122 | 2,733,440 | 23,616 | $4.71 |
-| 风扇 · Cubepart | 7 分 40 秒 | 1,065,996 | 1,023,232 | 12,967 | $2.10 |
+| 风扇 · 分件方案 A | 14 分 24 秒 | 2,813,122 | 2,733,440 | 23,616 | $4.71 |
+| 风扇 · 分件方案 B | 7 分 40 秒 | 1,065,996 | 1,023,232 | 12,967 | $2.10 |
 
 **这些价格不是订阅扣费，也不是整条 API 路线的总成本。** 按 2026-09-29 查询的 GPT-6 Astra 标准 API 单价折算，每百万 token：未缓存输入 $10、缓存读取 $1、输出 $50。本轮 cache-write 计数全部为 0；所有观测到的单次请求输入少于 272k，因此表格选用短上下文情景。会话累计输入超过 272k 不等于单次请求触发长上下文价。日志没有实际计费服务档位，不能据此认定真实账单。[官方价格](https://developers.openai.com/api/docs/pricing) · [模型与长上下文说明](https://developers.openai.com/api/docs/models/gpt-6-astra)
 
@@ -80,7 +80,7 @@ P3RW 实际走 P3-SAM + random walker（cuDSS，无回退）；表中是 API 清
 
 API 路线仍由 GPT-6 提交、收件、检查，所以也有外层 Agent 消耗。上述价格**不含**服务内部推理、GPU／基础设施、3D API 收费、输入生成，以及主会话准备与共同展示的工作；没有服务收费数值不表示免费。公司 API 内部成本记录不随本报告发布。
 
-耗时覆盖独立会话启动到最终答复，包括推理、工具等待、执行修复与该路线自己的检查。API 的节点执行时间不是这张表的分母，例如书桌约 245 秒、P3RW 约 28 秒，而会话还包含收件与验证。多条路线并行共享本机，且首次使用中处理了收件端点差异，因此这些数字是本次演示记录，不是稳定延迟基准。
+耗时覆盖独立会话启动到最终答复，包括推理、工具等待、执行修复与该路线自己的检查。API 的节点执行时间不是这张表的分母，例如书桌约 245 秒、分件方案 A 约 28 秒，而会话还包含收件与验证。多条路线并行共享本机，且首次使用中处理了收件端点差异，因此这些数字是本次演示记录，不是稳定延迟基准。
 
 ## 如何理解与复现
 
@@ -91,7 +91,7 @@ API 路线仍由 GPT-6 提交、收件、检查，所以也有外层 Agent 消�
 
 本轮实际调用的是既有 **原生 Assembly workflow 服务入口**，不是插件 OpenAPI 网关。它证明了这些后端可以处理输入并交付结果，**没有替代插件网关鉴权与端到端验证**。私有传输脚本、端点、凭据、服务账单及原始日志不进入开源仓库。
 
-要在自己的工作台接入可选服务，请先按 [Assembly 配置说明](zh-CN/ASSEMBLY_API.md) 配置有权限的部署。Agent 读取 `studio_capabilities` 后，可用 `studio_task` 的 `provider: "assembly"`，分别选择 `rig-glb`、`assemble`、`segment`；Cubepart 增加 `cutBackend: "cube"`。输入必须是该服务有权访问的模型 URL，保留真实坐标轴；本地路线仍不需要这些账号。
+要在自己的工作台接入可选服务，请先按 [Assembly 配置说明](zh-CN/ASSEMBLY_API.md) 配置有权限的部署。Agent 读取 `studio_capabilities` 后，可用 `studio_task` 的 `provider: "assembly"`，分别选择 `rig-glb`、`assemble`、`segment`；分件方案 B 增加 `cutBackend: "cube"`。输入必须是该服务有权访问的模型 URL，保留真实坐标轴；本地路线仍不需要这些账号。
 
 提交后保存任务 ID，以原 ID 轮询／恢复收件。超时不要直接重新提交。`configured`、HTTP 200 或“拿到 GLB”都不是完整成功验收。
 

@@ -465,7 +465,7 @@
           },
           "cutBackend": {
             "": "默认路线",
-            "cube": "Cubepart"
+            "cube": "分件方案 B"
           },
           "meshUpAxis": {
             "y_up": "Y 向上（标准 GLB）",
@@ -473,8 +473,8 @@
           },
           "rigBackend": {
             "auto": "自动选择",
-            "puppeteer": "Puppeteer",
-            "skintokens": "SkinTokens"
+            "puppeteer": "绑骨方案 A",
+            "skintokens": "绑骨方案 B"
           }
         },
         "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
@@ -511,7 +511,7 @@
           },
           "cutBackend": {
             "": "默认路线",
-            "cube": "Cubepart"
+            "cube": "分件方案 B"
           },
           "meshUpAxis": {
             "y_up": "Y 向上（标准 GLB）",
@@ -519,8 +519,8 @@
           },
           "rigBackend": {
             "auto": "自动选择",
-            "puppeteer": "Puppeteer",
-            "skintokens": "SkinTokens"
+            "puppeteer": "绑骨方案 A",
+            "skintokens": "绑骨方案 B"
           }
         },
         "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
@@ -556,7 +556,7 @@
           },
           "cutBackend": {
             "": "默认路线",
-            "cube": "Cubepart"
+            "cube": "分件方案 B"
           },
           "meshUpAxis": {
             "y_up": "Y 向上（标准 GLB）",
@@ -564,8 +564,8 @@
           },
           "rigBackend": {
             "auto": "自动选择",
-            "puppeteer": "Puppeteer",
-            "skintokens": "SkinTokens"
+            "puppeteer": "绑骨方案 A",
+            "skintokens": "绑骨方案 B"
           }
         },
         "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
@@ -601,7 +601,7 @@
           },
           "cutBackend": {
             "": "默认路线",
-            "cube": "Cubepart"
+            "cube": "分件方案 B"
           },
           "meshUpAxis": {
             "y_up": "Y 向上（标准 GLB）",
@@ -609,8 +609,8 @@
           },
           "rigBackend": {
             "auto": "自动选择",
-            "puppeteer": "Puppeteer",
-            "skintokens": "SkinTokens"
+            "puppeteer": "绑骨方案 A",
+            "skintokens": "绑骨方案 B"
           }
         },
         "description": "使用服务端可访问的模型链接。模型完成后可预览，静态结果可接回编辑。",
@@ -646,7 +646,7 @@
           },
           "cutBackend": {
             "": "默认路线",
-            "cube": "Cubepart"
+            "cube": "分件方案 B"
           },
           "meshUpAxis": {
             "y_up": "Y 向上（标准 GLB）",
@@ -654,8 +654,8 @@
           },
           "rigBackend": {
             "auto": "自动选择",
-            "puppeteer": "Puppeteer",
-            "skintokens": "SkinTokens"
+            "puppeteer": "绑骨方案 A",
+            "skintokens": "绑骨方案 B"
           }
         },
         "description": "只生成动作文件；不生成模型，也不自动给模型绑定动作。",

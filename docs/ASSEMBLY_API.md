@@ -6,13 +6,13 @@ By default the workbench uses GPT-written scripts in the current Codex session t
 
 Assembly is an optional remote processing service. This round was implemented from the company's internal API documentation (API flow, web joint animation, web skeletal motion). It processes existing GLBs or generates motion; it is not a text/image-to-geometry interface.
 
-| operation | service template | receiving nodeName | delivers |
-|---|---|---|---|
-| assemble | workflow_assembly_prod | assembly_agent_cos_upload | animatable assembled asset package |
-| segment | workflow_assembly_seg_prod | AssemblyAgentSegmentedGLBExport | split-part GLB / face labels |
-| rig-glb | workflow_rig_glb_prod | AssemblyAgentRiggedGLBOutput | rigged GLB |
-| rig | workflow_rig_prod | rig_package_zip | rig and motion asset package |
-| motion | workflow_motion_generate_prod | AssemblyAgentKimodoMotionGenerate | motion ZIP / BVH; does not auto-bind to a model |
+| operation | service template | delivers |
+|---|---|---|
+| assemble | workflow_assembly_prod | animatable assembled asset package |
+| segment | workflow_assembly_seg_prod | split-part GLB / face labels |
+| rig-glb | workflow_rig_glb_prod | rigged GLB |
+| rig | workflow_rig_prod | rig and motion asset package |
+| motion | workflow_motion_generate_prod | motion ZIP / BVH; does not auto-bind to a model |
 
 ## Configuration
 

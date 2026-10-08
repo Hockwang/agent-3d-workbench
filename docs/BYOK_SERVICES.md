@@ -10,7 +10,7 @@ Start with the bilingual [real API generation demo](API_GENERATION_DEMO.md).
 For Hi3D's two-part credentials, follow [Hi3D setup](HI3D.md); the current single-key
 dialog below does not configure AK/SK.
 
-1. Open "Modeling & Tasks → Manage 3D Services".
+1. Open "Workbench top bar → API settings".
 2. Pick a built-in connection, or add a new connection using the same protocol, filling in a name, API base URL, and API key; advanced settings can also reference a variable name already injected into the backend environment.
 3. Save, then click "Test Connection". It reads a model list or balance without generating; Hi3D first exchanges AK/SK for a token. A successful connection does not mean generation quality has been accepted.
 4. Back in "Execution Method", pick this connection, choose a task, and provide input. Once the model is received in the background it reuses the current viewer, and can be imported into a project for further editing or sent into the observation/evaluation flow.

@@ -1,3 +1,4 @@
+import { displayLabel } from './display-label.js';
 import { createStudioShell } from "./studio-shell.js";
 import { TaskPreview } from './task-preview.js';
 import { uploadFile } from './upload.js';
@@ -10,7 +11,7 @@ import { sandboxedHtml } from './sandboxed-html.js';
 
 const STATUS = () => ({ queued: t('tasks.status.queued'), running: t('tasks.status.running'), cancelling: t('tasks.status.cancelling'), completed: t('tasks.status.completed'), failed: t('tasks.status.failed'), cancelled: t('tasks.status.cancelled'), interrupted: t('tasks.status.interrupted') });
 const live = (task) => ['queued', 'running', 'cancelling'].includes(task.status);
-const node = (tag, text, className) => { const e = document.createElement(tag); if (text != null) e.textContent = text; if (className) e.className = className; return e; };
+const node = (tag, text, className) => { const e = document.createElement(tag); if (text != null) e.textContent = displayLabel(text); if (className) e.className = className; return e; };
 export function createTasks(api, options = {}) {
   const root = options.root || document.getElementById('task-space');
   const reviewOnly = options.reviewOnly === true;
@@ -35,9 +36,11 @@ export function createTasks(api, options = {}) {
   const shell = createStudioShell(root, { layout: '.task-layout', stage: '.task-result', library: '.task-library', settings: '.task-setup', title: reviewOnly ? t('tasks.shellTitle.review') : t('tasks.shellTitle.default'), sections: ['.task-head', '.task-files', '.task-records'] });
   const $ = (selector) => root.querySelector(selector);
   $('.task-records').open = false;
-  const settings = !reviewOnly && api.services ? createServiceSettings(api, async id => {
+  const settings = !reviewOnly && api.services ? options.serviceSettings || createServiceSettings(api, refreshServices) : null;
+  async function refreshServices(id) {
+    await ready;
     caps = await api.capabilities(); populateProviders(id);
-  }) : null;
+  }
   if (settings) {
     const button = node('button', t('tasks.button.manageServices'), 'task-service-settings'); button.type = 'button';
     button.onclick = () => settings.open($('.task-provider').value);
@@ -352,8 +355,8 @@ export function createTasks(api, options = {}) {
   async function detail(task) {
     const result = await api.tasks(task.id);
     if (disposed || selected !== task.id) return;
-    task = result.task; $('.task-log').textContent = task.log || task.error || t('tasks.log.none');
-    $('.task-head h2').textContent = task.title;
+    task = result.task; $('.task-log').textContent = displayLabel(task.log || task.error || t('tasks.log.none'));
+    $('.task-head h2').textContent = displayLabel(task.title);
     const identity = resultIdentity(task);
     $('.task-eyebrow').textContent = identity.note;
     browser.setTask(task);
@@ -467,5 +470,5 @@ export function createTasks(api, options = {}) {
       $('.task-files summary').focus();
     }
   }
-  return { ready, openRecipe, openResult, openHistory() { root.classList.add('result-history-open'); shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); browser.dispose(); preview?.dispose(); clearMedia(); } };
+  return { ready, refreshServices, openRecipe, openResult, openHistory() { root.classList.add('result-history-open'); shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; if (!options.serviceSettings) settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); browser.dispose(); preview?.dispose(); clearMedia(); } };
 }

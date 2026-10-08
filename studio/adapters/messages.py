@@ -624,8 +624,8 @@ register(
             "en": "Meshy · Official API",
         },
         "service_connections.title_seed3d": {
-            "zh-CN": "Seed3D · 公司网关",
-            "en": "Seed3D · Company gateway",
+            "zh-CN": "Seed3D · Chat Completions 兼容网关",
+            "en": "Seed3D · Chat Completions-compatible gateway",
         },
         "service_connections.title_tripo": {
             "zh-CN": "Tripo · 官方 API",

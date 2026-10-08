@@ -22,7 +22,7 @@ Three.js 的 GLTFLoader、TransformControls、BufferGeometryUtils、SkeletonUtil
 
 参考：[Three.js GLTFLoader](https://threejs.org/docs/pages/GLTFLoader.html)、[Manifold](https://manifoldcad.org/docs/html/classmanifold_1_1_manifold.html)、[Trimesh](https://trimesh.org/)。
 
-本轮未搬入作者研究仓库中的 P3-SAM 研究 fork、PartCraft 或第三方私有源码；作者研究仓库中的切割和工作流实验用于识别操作边界与验收条件。
+本轮未搬入作者研究仓库中的 模型研究 fork 或第三方私有源码；作者研究仓库中的切割和工作流实验用于识别操作边界与验收条件。
 本项目自有代码采用仓库根目录 `LICENSE` 中的 MIT 许可证。第三方依赖保留各自许可证与声明。
 
 ## 2026-09-22 新增复用

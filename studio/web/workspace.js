@@ -1,6 +1,7 @@
 // Shared workspace controller: transports supply API and optional geometry loading.
 import { Viewport } from "./viewport.js";
 import { createTasks } from "./tasks.js";
+import { createServiceSettings } from "./service-settings.js";
 import { createObserve } from './evaluation.js';
 import { icon } from './vendor/ui/icons.js';
 import { Panel } from "./panel.js";
@@ -671,6 +672,10 @@ export function createWorkspace(api, options = {}) {
       return runRecipe(() => api[method](step.args || {}));
     }, onRunOneShot: (recipe) => runRecipe(() => api.prepare(recipe.one_shot.args || {})),
   });
+  const serviceButton = document.getElementById('service-settings-open');
+  const serviceSettings = api.services ? createServiceSettings(api, id => tasks?.refreshServices(id)) : null;
+  serviceButton.hidden = !serviceSettings;
+  serviceButton.onclick = () => serviceSettings?.open();
   const buttons = [...document.querySelectorAll("[data-workspace-mode]")];
   document.querySelector('.wb-symbol').innerHTML = icon('box');
   const navIcons = {edit:'layers', motion:'clapperboard', tasks:'wand-sparkles', observe:'scan-eye', print:'printer'};
@@ -687,7 +692,7 @@ export function createWorkspace(api, options = {}) {
     buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.workspaceMode === mode)));
     if (["edit","motion"].includes(mode) && !editor) editor = createEditor(api, { ...childOptions, onPrint: () => show("print"), onMotion: () => show("motion"), onResults: () => access.openResults() });
     if (mode === "print" && !print) print = createPrintWorkspace(api, childOptions);
-    if (mode === 'tasks' && !tasks) tasks = createTasks(api, { onImport: () => { show('edit'); editor.refresh?.(); }, onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); } });
+    if (mode === 'tasks' && !tasks) tasks = createTasks(api, { serviceSettings, onImport: () => { show('edit'); editor.refresh?.(); }, onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); } });
     if (mode === 'observe' && !observe) observe = createObserve(api);
     editor?.setWorkspaceMode(mode);
     editor?.setActive(active && ["edit","motion"].includes(mode));
@@ -709,6 +714,6 @@ export function createWorkspace(api, options = {}) {
     setMode: show,
     setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); publishSelection(); },
     setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); },
-    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
+    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); serviceSettings?.dispose(); serviceButton.onclick = null; recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
   };
 }

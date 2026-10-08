@@ -1,3 +1,4 @@
+import { displayLabel } from './display-label.js';
 import { ViewportFrame } from "./viewport-frame.js";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -66,7 +67,7 @@ export class TaskPreview {
       this.selectClip(0);
     }
     this.loop.invalidate();
-    return gltf.animations.map((clip, index) => ({ index, name: clip.name || t('taskPreview.clipNameFallback', { n: index + 1 }), duration: clip.duration }));
+    return gltf.animations.map((clip, index) => ({ index, name: displayLabel(clip.name) || t('taskPreview.clipNameFallback', { n: index + 1 }), duration: clip.duration }));
   }
   fit() {
     this.userMoved = false;

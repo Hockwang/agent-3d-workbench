@@ -24,6 +24,13 @@ Open the workbench with `studio_open({"mode": ...})`, mode one of `edit` (defaul
 every step. Only pass `{"presentation":"browser"}` if the host cannot show MCP Apps or the user
 asks for a browser/file-upload flow.
 
+## Public naming
+
+Use capability names in task titles, result titles/notes, animation labels, and user-facing
+explanations: automatic rigging, motion generation, or part segmentation. Do not expose
+internal research/model implementation names in those surfaces. Keep protocol identifiers,
+asset bindings, original evidence, and required dependency license notices intact.
+
 ## Tool overview
 
 All 26 tools share `workspace_id`. Full parameter tables: [`../../docs/TOOLS.md`](../../docs/TOOLS.md).

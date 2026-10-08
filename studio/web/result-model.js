@@ -1,3 +1,4 @@
+import { displayLabel } from './display-label.js';
 import { t, getLocale } from './i18n.js';
 
 export function resultDate(created) {
@@ -40,7 +41,7 @@ export function resultGroups(tasks = []) {
       seen.add(root.id); root = byId.get(root.source_task);
     }
     const id = task.result?.work_id ? `work:${task.result.work_id}` : `task:${root.id}`;
-    if (!groups.has(id)) groups.set(id, { id, title: task.result?.work_title || root.title || t('entry.untitled'), tasks: [], latest: [], older: [] });
+    if (!groups.has(id)) groups.set(id, { id, title: displayLabel(task.result?.work_title || root.title || t('entry.untitled')), tasks: [], latest: [], older: [] });
     const group = groups.get(id), variant = task.result?.variant || '';
     group.tasks.push(task);
     if (!group.latest.some(t => (t.result?.variant || '') === variant)) group.latest.push(task);
@@ -51,8 +52,8 @@ export function resultGroups(tasks = []) {
 
 export function resultIdentity(task, artifact = primaryArtifact(task.artifacts, task.result)) {
   return {
-    title: task.result?.work_title || task.title || t('entry.untitled'),
-    detail: [task.result?.variant, task.result?.version, resultTimeLabel(task), artifact?.name].filter(Boolean).join(' · '),
-    note: task.result?.note || t('entry.unreviewed'),
+    title: displayLabel(task.result?.work_title || task.title || t('entry.untitled')),
+    detail: displayLabel([task.result?.variant, task.result?.version, resultTimeLabel(task), artifact?.name].filter(Boolean).join(' · ')),
+    note: displayLabel(task.result?.note || t('entry.unreviewed')),
   };
 }

@@ -1,10 +1,11 @@
 import { modelArtifacts } from './model-browser.js';
+import { displayLabel } from './display-label.js';
 import { t } from './i18n.js';
 import { recentResults, primaryArtifact, resultGroups, resultIdentity, resultTimeLabel, thumbnailArtifact } from './result-model.js';
 
 const node = (tag, text, className) => {
   const el = document.createElement(tag);
-  if (text != null) el.textContent = text;
+  if (text != null) el.textContent = displayLabel(text);
   if (className) el.className = className;
   return el;
 };
@@ -118,7 +119,7 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
     const info = resultIdentity(task), row = node('article', null, compact ? 'result-card' : 'quick-result');
     row.dataset.resultId = task.id;
     const view = node('button', null, 'result-open'); view.type = 'button';
-    view.setAttribute('aria-label', t('entry.openNamed', { name: [info.title, task.result?.variant, task.result?.version].filter(Boolean).join(' · ') }));
+    view.setAttribute('aria-label', t('entry.openNamed', { name: displayLabel([info.title, task.result?.variant, task.result?.version].filter(Boolean).join(' · ')) }));
     const text = node('span', null, 'quick-result-info');
     text.append(node('strong', compact ? task.result?.variant || info.title : info.title));
     const models = modelArtifacts(task).length;

@@ -8,6 +8,7 @@
 #workbench-nav .wb-brand { min-height:34px; font-size:13px; gap:8px; letter-spacing:0; }
 .wb-symbol { background:transparent; width:24px; color:var(--accent-text); }
 #workbench-nav button { border-radius:999px; padding:7px 13px; font-size:11px; }
+#workbench-nav .wb-services { background:var(--bg-selected); border:1px solid var(--accent-ring); color:var(--accent-text); white-space:nowrap; }
 #workbench-nav button[aria-pressed=true] { background:#ffffff12; color:var(--text); box-shadow:none; }
 #recipe { margin:0; padding:3px 16px; background:#080808; }
 #recipe .recipe-row1 { min-height:29px; }
