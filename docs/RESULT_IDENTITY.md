@@ -78,3 +78,21 @@ acceptance badges. The worker rejects malformed metadata or missing references.
 No manifest is required for older tasks: they still appear when they have a primary
 GLB, with rebuilds grouped by `source_task`. Successful probes and report-only tasks
 remain under **All task history** and are not presented as models.
+
+## Direct preview (2026-10-07)
+
+Opening a model result now shows the model chooser above the viewport, followed by
+playback and an **Export <current model>** action. The card count is the number of
+model artifacts, not the mesh count inside the primary GLB. Top-level GLBs plus an
+explicit nested primary are included; nested inspection meshes stay in files.
+The current selection drives the title, player and export together. Failed loads
+preserve the last valid preview, expose retry, and cannot export the pending model
+under the previous preview. Files/reports, version history and run logs start folded.
+Version history respects the existing work/variant lineage; unknown lineage is not
+inferred from similar task titles. All tasks remain reachable from history.
+
+Names can be edited without renaming model files. Names and the last selection are
+local UI preferences scoped by workspace/task/artifact (names also by SHA), not shared
+project metadata; blocked storage falls back to session memory. Thumbnail previews
+are rendered from actual GLBs, sequentially, for the first 12 cards per task; unavailable
+thumbnails remain selectable. No mesh or editing-scene state is changed by browsing.

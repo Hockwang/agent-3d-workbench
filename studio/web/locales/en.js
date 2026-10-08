@@ -2,6 +2,24 @@
 // header for the naming convention). This is developer-facing tooling copy:
 // keep translations concise and literal, no marketing tone.
 export default {
+  "models.chooseHint": "Select a card to switch models",
+  "models.choose": "Choose a model",
+  "models.count": "{count} models",
+  "models.actions": "{count} animations",
+  "models.static": "Static model",
+  "models.rename": "Rename",
+  "models.displayName": "Model display name",
+  "models.history": "Version history",
+  "models.previewReady": "Ready to preview",
+  "models.filePreview": "File preview",
+  "models.animationDraft": "Animation generated. Review playback and the validation report to assess quality.",
+  "models.noAnimation": "This model has no animation. Choose an animation service under New task.",
+  "models.download": "Export {name}",
+  "models.loading": "Loading {name}…",
+  "models.retry": "Reload {name}",
+  "models.play": "Play animation",
+  "models.files": "Files & reports · {count}",
+
   "editor.props.selectionGuide": "Select a part in Models & objects or the viewport to see dimensions, change materials or split it.",
   "editor.browser.addAssets": "Add models & assets",
   "entry.chooseWorkflow": "Choose workflow",

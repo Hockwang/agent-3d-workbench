@@ -6,7 +6,7 @@ import { RenderLoop, resizeDrawingBuffer } from './render-loop.js';
 import { t } from './i18n.js';
 
 export class TaskPreview {
-  constructor(element) {
+  constructor(element, { insets } = {}) {
     this.element = element; this.scene = new THREE.Scene(); this.playing = false;
     this.camera = new THREE.PerspectiveCamera(42, 1, .001, 10000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -30,9 +30,10 @@ export class TaskPreview {
       if (this.playing && this.mixer) this.mixer.update(Math.min((now - (this.last || now)) / 1000, .1));
       this.last = now;
       this.orbit.update(); this.renderer.render(this.scene, this.camera);
+      if (this.playing) this.onTime?.(this.action?.time || 0);
       return this.playing;
     });
-    this.frame = new ViewportFrame(element, this.camera, () => { if (!this.userMoved) this.fit(); this.loop.invalidate(); });
+    this.frame = new ViewportFrame(element, this.camera, () => { if (!this.userMoved) this.fit(); this.loop.invalidate(); }, insets);
     this.orbit.addEventListener('change', () => this.loop.invalidate());
     this.observer = new ResizeObserver(() => this.loop.resize()); this.observer.observe(element);
     this.loop.resize();
@@ -43,7 +44,7 @@ export class TaskPreview {
       this.mixer?.uncacheRoot(this.root); this.scene.remove(this.root);
       this.release(this.root);
     }
-    this.root = null; this.mixer = null; this.playing = false;
+    this.root = null; this.mixer = null; this.action = null; this.clips = []; this.playing = false;
   }
   release(root) {
       root.traverse((obj) => {
@@ -78,7 +79,12 @@ export class TaskPreview {
     this.camera.updateProjectionMatrix(); this.orbit.target.copy(center); this.orbit.update();
     this.loop.invalidate();
   }
-  selectClip(index) { this.mixer?.stopAllAction(); if (this.clips?.[index]) this.mixer.clipAction(this.clips[index]).reset().play(); this.loop.invalidate(); }
+  snapshot() {
+    resizeDrawingBuffer(this.renderer, this.camera, this.element, false);
+    this.fit(); this.renderer.render(this.scene, this.camera);
+    return this.renderer.domElement.toDataURL('image/webp', .75);
+  }
+  selectClip(index) { this.mixer?.stopAllAction(); this.action = null; if (this.clips?.[index]) this.action = this.mixer.clipAction(this.clips[index]).reset().play(); this.mixer?.update(0); this.onTime?.(0); this.loop.invalidate(); }
   play(value) { this.playing = value && !!this.mixer; this.last = performance.now(); this.loop.invalidate(); }
   setSpeed(value) { if (this.mixer && Number.isFinite(value) && value > 0 && value <= 4) this.mixer.timeScale = value; }
   seek(seconds) { if (this.mixer) { const speed = this.mixer.timeScale; this.mixer.timeScale = 1; this.mixer.setTime(seconds); this.mixer.timeScale = speed; } this.loop.invalidate(); }

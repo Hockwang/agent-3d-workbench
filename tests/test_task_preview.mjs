@@ -52,3 +52,26 @@ test('animation speed changes playback without changing the meaning of seek seco
   TaskPreview.prototype.setSpeed.call(preview, -1);
   assert.equal(mixer.timeScale, 2);
 });
+
+test('replacing an animated model with a static one clears its old playback state', async () => {
+  const root = new THREE.Group();
+  const preview = previewFixture(async () => ({ scene: root, animations: [] }));
+  preview.clips = [new THREE.AnimationClip('old', 1, [])];
+  preview.action = {}; preview.playing = true;
+  await preview.load(new ArrayBuffer(1));
+  assert.deepEqual(preview.clips, []);
+  assert.equal(preview.action, null);
+  assert.equal(preview.playing, false);
+});
+
+test('changing clips resets the displayed time and initial pose', () => {
+  const root = new THREE.Object3D(), mixer = new THREE.AnimationMixer(root), times = [];
+  const clips = [new THREE.AnimationClip('move', 10, [new THREE.NumberKeyframeTrack('.position[x]', [0, 10], [0, 10])])];
+  const preview = { mixer, clips, onTime: value => times.push(value), loop: { invalidate() {} } };
+  TaskPreview.prototype.selectClip.call(preview, 0); mixer.update(4);
+  assert.equal(root.position.x, 4);
+  TaskPreview.prototype.selectClip.call(preview, 0);
+  assert.equal(root.position.x, 0);
+  assert.equal(preview.action.time, 0);
+  assert.deepEqual(times, [0, 0]);
+});

@@ -1,3 +1,4 @@
+import { modelArtifacts } from './model-browser.js';
 import { t } from './i18n.js';
 import { recentResults, primaryArtifact, resultGroups, resultIdentity, resultTimeLabel, thumbnailArtifact } from './result-model.js';
 
@@ -120,8 +121,8 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
     view.setAttribute('aria-label', t('entry.openNamed', { name: [info.title, task.result?.variant, task.result?.version].filter(Boolean).join(' · ') }));
     const text = node('span', null, 'quick-result-info');
     text.append(node('strong', compact ? task.result?.variant || info.title : info.title));
-    const parts = primaryArtifact(task.artifacts, task.result)?.meshes;
-    text.append(node('small', [!compact && task.result?.variant, task.result?.version, parts ? t('entry.partCount', { count: parts }) : null, resultTimeLabel(task)].filter(Boolean).join(' · ')));
+    const models = modelArtifacts(task).length;
+    text.append(node('small', [!compact && task.result?.variant, task.result?.version, models ? t('models.count', { count: models }) : null, resultTimeLabel(task)].filter(Boolean).join(' · ')));
     if (!compact) text.append(node('small', info.note, 'result-note'));
     view.append(thumbnail(task), text); view.onclick = () => { if (dialog.open) dialog.close(); onOpenResult(task.id, false); };
     row.append(view);
@@ -182,12 +183,12 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
   }
   function renderIdentity() {
     const wb = state?.workbench, previewing = mode === 'tasks' && viewing;
-    shelf.hidden = mode !== 'tasks';
+    shelf.hidden = mode !== 'tasks' || Boolean(previewing);
     const count = wb?.objects?.length || 0;
     model.hidden = mode === 'edit' || mode === 'motion';
     if (previewing) {
       const info = resultIdentity(viewing.task, viewing.artifact);
-      identity.textContent = info.title;
+      identity.textContent = viewing.displayName ? `${viewing.displayName} · ${info.title}` : info.title;
       context.textContent = t(viewing.loading ? 'entry.previewLoading' : 'entry.previewMode');
       detail.textContent = info.detail;
     } else if (['edit', 'motion'].includes(mode)) {

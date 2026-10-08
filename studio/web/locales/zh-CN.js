@@ -8,6 +8,24 @@
 // - 本文件按 key 字母序排列（最终由脚本/人工维护排序，便于 diff）。
 // - 只放"用户会看到的文本"；后端返回的 state.*/error.message 不在这里管（那是后续的后端 i18n）。
 export default {
+  "models.chooseHint": "点卡片切换模型",
+  "models.choose": "选择模型",
+  "models.count": "{count} 个模型",
+  "models.actions": "{count} 段动作",
+  "models.static": "静态模型",
+  "models.rename": "修改名称",
+  "models.displayName": "模型显示名称",
+  "models.history": "历史版本",
+  "models.previewReady": "可预览",
+  "models.filePreview": "文件预览",
+  "models.animationDraft": "动作已生成，效果请以实际播放和验证报告为准。",
+  "models.noAnimation": "这个模型尚无动作。可在「新建任务」中选择动作生成服务。",
+  "models.download": "导出 {name}",
+  "models.loading": "正在加载 {name}…",
+  "models.retry": "重新加载 {name}",
+  "models.play": "播放动作",
+  "models.files": "文件与报告 · {count}",
+
   "editor.props.selectionGuide": "从「模型与对象」或画布选中部件，再查看尺寸、修改外观或拆件。",
   "editor.browser.addAssets": "添加模型与资产",
   "entry.chooseWorkflow": "选择流程",

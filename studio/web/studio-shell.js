@@ -46,12 +46,13 @@ export function createStudioShell(root, { layout, stage, library, settings, titl
     cards.push(record); return record;
   }
   const libraryCard = convert(library, 'library'), settingsCard = convert(settings, 'settings');
-  const mq = matchMedia('(max-width: 599px)'); let populated = false, embedded = false, welcome = false;
+  const mq = matchMedia('(max-width: 599px)'); let populated = false, embedded = false, welcome = false, directPreview = false;
   const defaults = () => cards.forEach(card => card.defaults(populated));
-  const dockCards = () => { for (const { card } of cards) (mq.matches || embedded || (dockSettings && card === settingsCard?.card) ? dock : view).append(card); defaults(); };
+  const dockCards = () => { for (const { card } of cards) ((!directPreview && mq.matches) || embedded || (dockSettings && card === settingsCard?.card) ? dock : view).append(card); defaults(); };
   mq.addEventListener('change', dockCards); dockCards();
   const observer = new ResizeObserver(defaults); observer.observe(view);
   return {
+    setDirectPreview(value) { if (directPreview === value) return; directPreview = value; dockCards(); },
     setPopulated(value) { populated = value; defaults(); },
     setWelcome(value) { if (welcome === value) return; welcome = value; defaults(); setRail(value); },
     setEmbedded(value) { embedded = value; root.classList.toggle('v04-embedded', value); dockCards(); setRail(value); },

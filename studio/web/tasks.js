@@ -4,7 +4,8 @@ import { uploadFile } from './upload.js';
 import { createServiceSettings } from './service-settings.js';
 import { t } from './i18n.js';
 import { primaryArtifact, orderedArtifacts } from './quick-access.js';
-import { resultIdentity } from './result-model.js';
+import { resultIdentity, resultGroups, resultTimeLabel } from './result-model.js';
+import { createModelBrowser } from './model-browser.js';
 import { sandboxedHtml } from './sandboxed-html.js';
 
 const STATUS = () => ({ queued: t('tasks.status.queued'), running: t('tasks.status.running'), cancelling: t('tasks.status.cancelling'), completed: t('tasks.status.completed'), failed: t('tasks.status.failed'), cancelled: t('tasks.status.cancelled'), interrupted: t('tasks.status.interrupted') });
@@ -67,7 +68,7 @@ export function createTasks(api, options = {}) {
   speed.value = 1; speed.onchange = () => preview?.setSpeed(Number(speed.value)); $('.task-animation').append(speed);
   const newTask = node('button', t('entry.newTask'), 'task-new-button'); newTask.type = 'button';
   $('.task-result').append(newTask);
-  newTask.onclick = () => { root.classList.remove('result-browsing'); clearRebuild(); shell.reveal($('.task-form')); };
+  newTask.onclick = () => { root.classList.remove('result-browsing', 'direct-preview'); shell.setDirectPreview(false); clearRebuild(); shell.reveal($('.task-form')); };
   const primaryActions = node('div', null, 'task-primary-actions');
   $('.task-files').before(primaryActions);
   $('.task-files').open = false; $('.task-records').open = false;
@@ -75,6 +76,62 @@ export function createTasks(api, options = {}) {
   let active = true, disposed = false, busy = false, selected = null, stamp = '', timer = null, preview = null, previewKey = '', previewType = '', mediaUrl = '', html = '', caps;
   let rebuildId = null, taskList = [], previewRequest = 0, lastPreview = null;
   let reviewTask = null;
+  const remembered = new Map();
+  const browser = createModelBrowser(api, (task, artifact) => showArtifact(task, artifact).catch(error), () => {
+    if (lastPreview) { lastPreview.displayName = browser.label(lastPreview.artifact, lastPreview.task); renderCurrent(lastPreview.task, lastPreview.artifact); options.onPreview?.(lastPreview); }
+  });
+  const current = node('div', null, 'model-current'), currentName = node('strong'), currentStatus = node('small');
+  current.setAttribute('aria-live', 'polite'); current.append(currentName, currentStatus);
+  const rename = node('button', t('models.rename')); rename.type = 'button'; current.append(rename);
+  const nameForm = node('form', null, 'model-name-form'); nameForm.hidden = true;
+  const nameInput = node('input'); nameInput.maxLength = 80; nameInput.required = true; nameInput.setAttribute('aria-label', t('models.displayName'));
+  const saveName = node('button', t('tasks.button.save')); saveName.type = 'submit';
+  const cancelName = node('button', t('common.cancel')); cancelName.type = 'button'; cancelName.onclick = () => { nameForm.hidden = true; rename.focus(); };
+  nameForm.append(nameInput, saveName, cancelName);
+  rename.onclick = () => { if (!lastPreview) return; nameInput.value = browser.label(lastPreview.artifact, lastPreview.task); nameForm.hidden = false; nameInput.focus(); nameInput.select(); };
+  nameForm.onsubmit = event => { event.preventDefault(); if (lastPreview && browser.rename(lastPreview.artifact, nameInput.value, lastPreview.task)) { nameForm.hidden = true; rename.focus(); } };
+  const stage = node('div', null, 'model-stage'); stage.append($('.task-empty'), $('.task-canvas'), media);
+  const loading = node('div', null, 'model-loading'); loading.hidden = true; loading.setAttribute('role', 'status'); stage.append(loading);
+  const status = node('p', null, 'model-status'); status.hidden = true;
+  const retry = node('button', t('entry.retry')); retry.type = 'button'; retry.hidden = true;
+  const clock = node('span', '0.00 / 0.00 s', 'model-clock'); $('.task-animation').append(clock);
+  const secondary = node('div', null, 'model-secondary');
+  const versions = node('details', null, 'model-versions'); versions.append(node('summary', t('models.history')));
+  const versionList = node('div'); versions.append(versionList);
+  const allTasks = node('button', t('entry.allTasks')); allTasks.type = 'button'; allTasks.onclick = () => { root.classList.toggle('result-history-open'); shell.openLibrary(); }; versions.append(allTasks);
+  if (!reviewOnly) secondary.append(versions, $('.task-files'), $('.task-records'));
+  $('.task-result').prepend(browser.element, current, nameForm, stage, $('.task-animation'), status, retry, primaryActions, secondary);
+  function setPending(value) {
+    root.classList.toggle('model-loading-active', value); loading.hidden = !value;
+    for (const el of [...primaryActions.querySelectorAll('button'), ...$('.task-animation').querySelectorAll('button,select,input'), rename]) el.disabled = value;
+  }
+  function renderCurrent(task, artifact) {
+    const isModel = /\.glb$/i.test(artifact.name), name = isModel ? browser.label(artifact, task) : artifact.name;
+    currentName.textContent = name; rename.hidden = !isModel; nameForm.hidden = true;
+    currentStatus.textContent = t(isModel ? (artifact.animations ? 'models.previewReady' : 'models.static') : 'models.filePreview');
+    status.hidden = !isModel; status.textContent = [!artifact.animations && t('models.noAnimation'), task.result?.note || (artifact.animations && t('models.animationDraft'))].filter(Boolean).join(' ');
+    primaryActions.replaceChildren();
+    if (isModel) {
+      const save = node('button', t('models.download', { name }), 'model-download'); save.type = 'button';
+      save.onclick = () => action(async () => {
+        const bytes = await api.taskAsset(task.id, artifact), url = URL.createObjectURL(new Blob([bytes], { type: artifact.mime }));
+        const link = node('a'); link.href = url; link.download = artifact.name.split('/').pop(); link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+      }); primaryActions.append(save);
+      if (!(artifact.animations || artifact.skins)) {
+        const add = node('button', t('entry.addToEditor')); add.type = 'button';
+        add.onclick = () => action(async () => { const state = await api.getState(); await api.task({ action: 'import', id: task.id, artifact_id: artifact.id, expected_revision: state.workbench.revision }); options.onImport?.(); });
+        primaryActions.append(add);
+      }
+    }
+    browser.select(artifact, false, task); versionList.replaceChildren();
+    const group = resultGroups(taskList).find(group => group.tasks.some(item => item.id === task.id));
+    for (const item of (group?.tasks || [task]).filter(item => (item.result?.variant || '') === (task.result?.variant || ''))) {
+      const button = node('button', [item.result?.version || item.title, resultTimeLabel(item)].filter(Boolean).join(' · ')); button.type = 'button';
+      button.setAttribute('aria-pressed', String(item.id === task.id));
+      button.onclick = () => openResult(item.id).catch(error); versionList.append(button);
+    }
+  }
+
   const saveReview = async event => {
     const frame = media.querySelector('iframe'), data = event.data;
     if (!reviewTask || !frame || event.source !== frame.contentWindow || data?.type !== 'workbench-review-export') return;
@@ -231,26 +288,36 @@ export function createTasks(api, options = {}) {
     const key = `${task.id}:${artifact.id}`;
     const request = ++previewRequest;
     const isCurrent = () => !disposed && request === previewRequest;
-    const type = artifact.name.endsWith('.glb') ? 'glb' : 'media';
+    const type = /\.glb$/i.test(artifact.name) ? 'glb' : 'media';
     // Download and parse before replacing the last valid scene or media.
     root.classList.add('result-browsing');
-    if (previewKey === key) { options.onPreview?.(lastPreview); return; }
-    options.onPreview?.({ task, artifact, loading: true });
+    root.classList.toggle('direct-preview', !reviewOnly); shell.setDirectPreview(!reviewOnly);
+    browser.setTask(task); browser.select(artifact, true); retry.hidden = true;
+    preview?.play(false);
+    if (previewKey === key) { setPending(false); renderCurrent(task, artifact); $('.task-animation button').textContent = t('models.play'); options.onPreview?.(lastPreview); return; }
+    setPending(true); loading.textContent = t('models.loading', { name: browser.label(artifact) });
+    options.onPreview?.({ task, artifact, displayName: browser.label(artifact), loading: true });
     let bytes, clips;
     try {
       bytes = await api.taskAsset(task.id, artifact, { presentation: /\.html$/i.test(artifact.name) });
       if (!isCurrent()) return;
       if (type === 'glb') {
-        preview ||= new TaskPreview($('.task-canvas'));
-        clips = await preview.load(bytes, { isCurrent, preserveCamera: previewKey.startsWith(`${task.id}:`) });
+        preview ||= new TaskPreview($('.task-canvas'), { insets: { bottom: reviewOnly ? 64 : 0 } });
+        clips = await preview.load(bytes, { isCurrent });
         if (!isCurrent()) return;
       }
     } catch (e) {
       if (!isCurrent()) return;
+      setPending(false);
+      if (lastPreview) { renderCurrent(lastPreview.task, lastPreview.artifact); $('.task-animation button').textContent = t('models.play'); }
+      else browser.select(null);
+      retry.hidden = false; retry.textContent = t('models.retry', { name: browser.label(artifact) }); retry.onclick = () => showArtifact(task, artifact).catch(error);
       options.onPreview?.(lastPreview); throw e;
     }
     previewKey = key; previewType = type;
-    lastPreview = { task, artifact, loading: false };
+    setPending(false); renderCurrent(task, artifact);
+    if (type === 'glb') remembered.set(task.id, artifact.id);
+    lastPreview = { task, artifact, displayName: browser.label(artifact), loading: false };
     options.onPreview?.(lastPreview);
     $('.task-error').hidden = true;
     reviewTask = ['merge-review', 'a8-review'].includes(task.template) && artifact.name === 'index.html' ? task.id : null;
@@ -275,10 +342,12 @@ export function createTasks(api, options = {}) {
     const select = $('.task-animation select'); select.replaceChildren();
     for (const clip of clips || []) { const option = node('option', clip.name); option.value = clip.index; select.append(option); }
     const range = $('.task-animation input'), button = $('.task-animation button');
-    range.max = clips?.[0]?.duration || 1; range.value = 0; button.textContent = t('tasks.button.play');
-    select.onchange = () => { preview.selectClip(Number(select.value)); range.max = clips[Number(select.value)].duration; };
-    button.onclick = () => { preview.play(!preview.playing); button.textContent = preview.playing ? t('tasks.button.pause') : t('tasks.button.play'); };
-    range.oninput = () => { preview.play(false); button.textContent = t('tasks.button.play'); preview.seek(Number(range.value)); };
+    range.max = clips?.[0]?.duration || 1; range.value = 0; button.textContent = t('models.play');
+    const updateTime = seconds => { range.value = seconds; clock.textContent = `${Number(seconds).toFixed(2)} / ${Number(range.max).toFixed(2)} s`; };
+    preview.onTime = updateTime; updateTime(0);
+    select.onchange = () => { preview.play(false); range.max = clips[Number(select.value)].duration; preview.selectClip(Number(select.value)); button.textContent = t('models.play'); };
+    button.onclick = () => { preview.play(!preview.playing); button.textContent = preview.playing ? t('tasks.button.pause') : t('models.play'); };
+    range.oninput = () => { preview.play(false); button.textContent = t('models.play'); preview.seek(Number(range.value)); updateTime(Number(range.value)); };
   }
   async function detail(task) {
     const result = await api.tasks(task.id);
@@ -287,24 +356,8 @@ export function createTasks(api, options = {}) {
     $('.task-head h2').textContent = task.title;
     const identity = resultIdentity(task);
     $('.task-eyebrow').textContent = identity.note;
-    primaryActions.replaceChildren();
-    const main = primaryArtifact(task.artifacts, task.result);
-    if (main?.name.endsWith('.glb')) {
-      const add = node('button', t('entry.addToEditor')); add.type = 'button';
-      add.disabled = !!(main.animations || main.skins);
-      add.onclick = () => action(async () => {
-        const state = await api.getState();
-        await api.task({ action: 'import', id: task.id, artifact_id: main.id, expected_revision: state.workbench.revision });
-        options.onImport?.();
-      });
-      const save = node('button', t('entry.downloadModel')); save.type = 'button';
-      save.onclick = () => action(async () => {
-        const bytes = await api.taskAsset(task.id, main), url = URL.createObjectURL(new Blob([bytes], { type: main.mime }));
-        const link = node('a'); link.href = url; link.download = main.name.split('/').pop(); link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
-      });
-      primaryActions.append(add, save, node('small', t('entry.additiveImport')));
-    }
-    $('.task-files summary').textContent = t('tasks.filesSummary', { count: task.artifacts?.length || 0 });
+    browser.setTask(task);
+    $('.task-files summary').textContent = t('models.files', { count: task.artifacts?.length || 0 });
     $('.task-files').hidden = !task.artifacts?.length;
     const artifacts = $('.task-artifacts'); artifacts.replaceChildren();
     for (const artifact of orderedArtifacts(task.artifacts)) {
@@ -344,10 +397,10 @@ export function createTasks(api, options = {}) {
       }); row.append(download, pathDetails); artifacts.append(row);
     }
     const review = ['merge-review', 'a8-review'].includes(task.template);
-    const first = (review && task.artifacts?.find(x => x.name === 'index.html')) || primaryArtifact(task.artifacts, task.result);
-    if (first && !previewKey.startsWith(`${task.id}:`)) await showArtifact(task, first);
-    else if (first && root.classList.contains('result-browsing')) options.onPreview?.(lastPreview);
-    else if (!first) { ++previewRequest; previewKey = ''; lastPreview = null; options.onPreview?.(null); clearMedia(); shell.setEmbedded(false); media.hidden = true; preview?.setActive(false); $('.task-empty').hidden = false; $('.task-empty').textContent = task.error || (live(task) ? t('tasks.empty.runningHint') : t('tasks.empty.noPreviewableArtifact')); $('.task-canvas').hidden = true; $('.task-animation').hidden = true; }
+    const first = (review && task.artifacts?.find(x => x.name === 'index.html')) || task.artifacts?.find(a => a.id === (remembered.get(task.id) || browser.preferred(task))) || primaryArtifact(task.artifacts, task.result);
+    if (first && (!previewKey.startsWith(`${task.id}:`) || !root.classList.contains('result-browsing'))) await showArtifact(task, first);
+    else if (first && root.classList.contains('result-browsing')) { if (lastPreview) renderCurrent(task, lastPreview.artifact); options.onPreview?.(lastPreview); }
+    else if (!first) { root.classList.remove('direct-preview'); shell.setDirectPreview(false); primaryActions.replaceChildren(); currentName.textContent = task.title; currentStatus.textContent = STATUS()[task.status]; rename.hidden = true; status.hidden = true; setPending(false); ++previewRequest; previewKey = ''; lastPreview = null; options.onPreview?.(null); clearMedia(); shell.setEmbedded(false); media.hidden = true; preview?.setActive(false); $('.task-empty').hidden = false; $('.task-empty').textContent = task.error || (live(task) ? t('tasks.empty.runningHint') : t('tasks.empty.noPreviewableArtifact')); $('.task-canvas').hidden = true; $('.task-animation').hidden = true; }
   }
   async function refresh() {
     if (disposed || !active || !api.tasks) return;
@@ -378,7 +431,7 @@ export function createTasks(api, options = {}) {
     }
   }
   function editParameters(task) {
-    root.classList.remove('result-browsing');
+    root.classList.remove('result-browsing', 'direct-preview'); shell.setDirectPreview(false);
     $('.task-provider').value = ''; templates(); $('.task-template').value = task.editable.template; fields(task.editable.params);
     rebuildId = task.id; fromSelection.checked = false; fromSelection.disabled = true; upload.disabled = true;
     $('.task-inputs').value = task.editable.inputs.join('\n'); $('.task-inputs').disabled = true;
@@ -414,5 +467,5 @@ export function createTasks(api, options = {}) {
       $('.task-files summary').focus();
     }
   }
-  return { ready, openRecipe, openResult, openHistory() { shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); preview?.dispose(); clearMedia(); } };
+  return { ready, openRecipe, openResult, openHistory() { root.classList.add('result-history-open'); shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); browser.dispose(); preview?.dispose(); clearMedia(); } };
 }
