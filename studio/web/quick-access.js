@@ -20,7 +20,7 @@ export function browserEntry(search = '') {
   const params = new URLSearchParams(search);
   const mode = params.get('mode');
   return {
-    mode: ['edit', 'motion', 'tasks', 'observe', 'print'].includes(mode) ? mode : 'edit',
+    mode: ['edit', 'assembly', 'motion', 'tasks', 'observe', 'print'].includes(mode) ? mode : 'edit',
     taskId: params.get('task') || null,
   };
 }

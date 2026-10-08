@@ -9,6 +9,12 @@
 Codex、Claude Code 等 MCP 客户端都可以使用。本地代码路线无需 DiT、3D 服务账号或 3D API key；
 也可以接入自己的 Hunyuan、Assembly 等服务。Agent 的账号／订阅与 3D 服务费用分别计算。
 
+## 万物连接件：本分支的连接设计模块
+
+`link_everything` 分支把独立连接设计原型接入 **HTTP 浏览器工作台**：手动分件与配对连接、AI 结构方案与尺寸候选、参数化几何和基于检查结果的动画预览。在“装配设计”中生成版本，再将保存的 GLB 导回模型编辑。
+
+连接后端使用独立 Python 环境；仓库不包含私有模型、密钥或私有服务地址。现有 MCP App 可继续使用，但不嵌入本地 iframe。[安装、工作流、当前边界与验证](experiments/link-everything/README.md)。
+
 ## 能做什么？
 
 人和 Agent 共用同一个工程、模型和选区。下面这些能力可在本地完成；Blender、Node.js、切片软件按任务安装。

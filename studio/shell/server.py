@@ -47,6 +47,7 @@ from studio.core.editor import Workspace, EditorError  # noqa: E402
 from studio.core import collaboration  # noqa: E402
 from studio.core.tasks import Tasks
 from studio.adapters import services  # noqa: E402  （仅用于枚举托管操作 id，不在这里调用任何一个）
+from studio.adapters import link_everything
 
 
 def _hosted_task_operations() -> set[str]:
@@ -912,6 +913,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     # -------------------------------------------------------------- GET
     _GET_EXACT_ROUTES: dict[str, str] = {
+        "/api/assembly/project": "_get_assembly_project",
         "/api/tools": "_get_tools",
         "/api/workspace-snapshot": "_get_workspace_snapshot",
         "/api/recipes": "_get_recipes",
@@ -1013,6 +1015,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             },
             extra_headers={"Set-Cookie": cookie},
         )
+
+    def _get_assembly_project(self, backend: StudioBackend, query: dict[str, list[str]]) -> None:
+        try:
+            payload = link_everything.project(query.get("source", ["legacy"])[0])
+        except link_everything.AssemblyProjectError as exc:
+            self._send_json(exc.status, {"ok": False, "error": {"code": exc.code, "message": str(exc)}})
+            return
+        self._send_json(200, payload)
 
     def _get_tools(self, backend: StudioBackend, query: dict[str, list[str]]) -> None:
         self._send_json(200, {"ok": True, "tools": tools_schema.get_tools()})

@@ -10,6 +10,12 @@ Works with Codex, Claude Code, and other MCP clients. Local code needs no DiT mo
 3D service account, or 3D API key. You can also connect your own Hunyuan or Assembly service.
 Your agent account/subscription and any 3D service fees are separate.
 
+## Link Everything · connection design (this branch)
+
+The `link_everything` branch adds an independent connection-design prototype to the **HTTP/browser workbench**: manual GLB/STL cuts with paired connectors, AI-assisted mechanism proposals, bounded parametric geometry, and checked motion previews. Open the **Assembly design** workspace, generate a revision, then import its saved GLB back into the editor.
+
+The geometry backend uses a separate Python environment; no private models, credentials or provider endpoints are included. The existing MCP App remains usable but does not embed this local iframe. [Setup, workflows, current limits and validation](experiments/link-everything/README.md).
+
 ## What can you do?
 
 You and your agent share one project, model, and selection. These tools run locally; install Blender, Node.js, or slicing software when a task needs them.

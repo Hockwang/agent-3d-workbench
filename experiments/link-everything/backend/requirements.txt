@@ -1,0 +1,4 @@
+numpy>=1.26
+trimesh==5.1.0
+networkx==3.7
+manifold3d==3.5.4

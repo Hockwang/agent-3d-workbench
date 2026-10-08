@@ -10,6 +10,7 @@ import { createEditor } from "./editor.js";
 import { Recipes } from "./recipes.js";
 import { t } from "./i18n.js";
 import { createQuickAccess } from "./quick-access.js";
+import { createAssembly, supportsAssemblyWorkspace } from './assembly-panel.js';
 
 const OP_LABELS = {
   load: t("flow.verb.model"),
@@ -537,8 +538,9 @@ export function recipeStepBaseTool(step) {
 // Each mode owns its controls and camera; they share the same transport and
 // backend. A print job is a deliberate copy of editable assets, not their state.
 export function createWorkspace(api, options = {}) {
+  const assemblySupported = supportsAssemblyWorkspace(api);
   let editor = null, print = null, mode = options.mock ? "print" : "edit", active = true, nextState = null;
-  let tasks = null, observe = null, previewResult = null;
+  let tasks = null, observe = null, assembly = null, previewResult = null;
   const workflow = document.createElement('details'); workflow.className = 'workspace-workflow';
   const workflowSummary = document.createElement('summary');
   const recipeElement = document.getElementById('recipe');
@@ -573,12 +575,12 @@ export function createWorkspace(api, options = {}) {
     } catch (error) { access.setError(error); }
     finally { updateBusy = false; }
   }
-  const child = () => mode === 'observe' ? observe : mode === 'tasks' ? tasks : ['edit','motion'].includes(mode) ? editor : print;
+  const child = () => mode === 'assembly' ? assembly : mode === 'observe' ? observe : mode === 'tasks' ? tasks : ['edit','motion'].includes(mode) ? editor : print;
   let recipes = null, recipeBusy = false;
   const renderRecipe = () => {
     access.setState(nextState);
     recipes?.render({ ...nextState, busy: recipeBusy || nextState?.busy });
-    if (mode === 'motion' || (mode === 'tasks' && previewResult)) document.getElementById('recipe').hidden = true;
+    if (mode === 'assembly' || mode === 'motion' || (mode === 'tasks' && previewResult)) document.getElementById('recipe').hidden = true;
     workflow.hidden = recipeElement.hidden;
     workflowSummary.textContent = t('entry.projectWorkflow', { name: nextState?.recipe?.title || nextState?.recipe?.name || t('entry.chooseWorkflow') });
   };
@@ -673,12 +675,14 @@ export function createWorkspace(api, options = {}) {
   });
   const buttons = [...document.querySelectorAll("[data-workspace-mode]")];
   document.querySelector('.wb-symbol').innerHTML = icon('box');
-  const navIcons = {edit:'layers', motion:'clapperboard', tasks:'wand-sparkles', observe:'scan-eye', print:'printer'};
+  const navIcons = {edit:'layers', assembly:'box', motion:'clapperboard', tasks:'wand-sparkles', observe:'scan-eye', print:'printer'};
+  buttons.filter(b => b.dataset.workspaceMode === 'assembly').forEach(b => { b.hidden = !assemblySupported; });
   buttons.forEach(b => { if (!b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', icon(navIcons[b.dataset.workspaceMode])); });
   function show(value) {
-    mode = ['edit', 'motion', 'print', 'tasks', 'observe'].includes(value) ? value : 'edit';
+    mode = (value === 'assembly' && assemblySupported) || ['edit', 'motion', 'print', 'tasks', 'observe'].includes(value) ? value : 'edit';
     workflow.open = !['edit', 'motion'].includes(mode);
     document.getElementById("editor-space").hidden = !["edit","motion"].includes(mode);
+    document.getElementById('assembly-space').hidden = mode !== 'assembly';
     document.getElementById("print-space").hidden = mode !== "print";
     document.getElementById('task-space').hidden = mode !== 'tasks';
     document.getElementById('observe-space').hidden = mode !== 'observe';
@@ -688,12 +692,14 @@ export function createWorkspace(api, options = {}) {
     if (["edit","motion"].includes(mode) && !editor) editor = createEditor(api, { ...childOptions, onPrint: () => show("print"), onMotion: () => show("motion"), onResults: () => access.openResults() });
     if (mode === "print" && !print) print = createPrintWorkspace(api, childOptions);
     if (mode === 'tasks' && !tasks) tasks = createTasks(api, { onImport: () => { show('edit'); editor.refresh?.(); }, onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); } });
+    if (mode === 'assembly' && !assembly) assembly = createAssembly(api, { onImport: () => { show('edit'); editor.refresh?.(); } });
     if (mode === 'observe' && !observe) observe = createObserve(api);
     editor?.setWorkspaceMode(mode);
     editor?.setActive(active && ["edit","motion"].includes(mode));
     print?.setActive(active && mode === "print");
     tasks?.setActive(active && mode === 'tasks');
     observe?.setActive(active && mode === 'observe');
+    assembly?.setActive(active && mode === 'assembly');
     if (nextState) child()?.setState(nextState);
     publishSelection();
   }
@@ -707,8 +713,8 @@ export function createWorkspace(api, options = {}) {
     ready,
     openResult,
     setMode: show,
-    setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); publishSelection(); },
-    setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); },
-    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
+    setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); assembly?.setState(state); publishSelection(); },
+    setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); assembly?.setActive(value && mode === 'assembly'); },
+    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); assembly?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
   };
 }

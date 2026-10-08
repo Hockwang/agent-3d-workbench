@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>构造 Assembly Design · 产品装配设计</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">{"imports":{"three":"./vendor/package/build/three.module.js","three/addons/":"./vendor/package/examples/jsm/"}}</script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="构造首页"><span class="brand-mark"><i></i><i></i></span><b>构造</b><span class="brand-en">Assembly Design</span></a>
+    <nav class="main-nav"><button class="nav-item active" data-tab="design">装配设计</button><button class="nav-item" data-tab="validation">试装验证</button><button class="nav-item" data-tab="history">设计记录</button></nav>
+    <div class="top-actions"><a href="./presets.html" class="ghost-button" style="color:#356c51;background:#edf5e9;border-color:#bdcfb7">连接预设实验室 ↗</a><span id="api-status" class="connection-status"><i></i>连接服务中</span><button id="embed-toggle" class="ghost-button">工作台嵌入预览 <span>↗</span></button></div>
+  </header>
+  <div class="embed-banner">工作台嵌入布局预览 <span>独立装配设计模块 · 尚未安装到同事工作台</span><button id="exit-embed">返回独立模块 ↗</button></div>
+  <div class="projectbar"><div><span class="breadcrumb">产品原型 / 相机外壳</span><h1>让外形，成为可以装配的产品。</h1></div><div class="project-meta"><span class="tag">工程样件</span><span class="revision-tag" id="revision-label">—</span><button id="reset-project" class="small-button">恢复初始参数</button></div></div>
+  <main class="workspace">
+    <aside class="left-panel panel">
+      <div class="panel-heading"><span class="eyebrow">DESIGN BRIEF</span><span class="tiny-dot"></span></div>
+      <h2>从使用需求开始</h2>
+      <div class="brief-card"><span class="quote-mark">“</span><p>经常打开更换相机，<br>连接可靠，外观保持不变。</p><span class="brief-note">本演示使用确认过的模板参数，未调用大模型</span></div>
+      <div class="section-label">当前设计对象 <span>02</span></div>
+      <div id="part-list" class="part-list"><div class="skeleton-card">等待模型载入…</div></div>
+      <div class="reference-card"><div class="reference-icon">◇</div><div><b>兔形摄像头原件</b><p>历史设计源文件 · 保护参考</p></div><button id="show-source" class="icon-button" title="查看原件" disabled>↗</button></div>
+      <div class="section-label">设计约束 <span>已明确</span></div>
+      <div class="constraint"><span class="constraint-icon">↔</span><div><b>内腔净宽 / 净长</b><p>25 × 25 mm</p></div><span class="lock">锁定</span></div>
+      <div class="constraint"><span class="constraint-icon">↥</span><div><b>沿开口方向装配</b><p>盖子与壳体成对设计</p></div></div>
+      <div class="constraint"><span class="constraint-icon">⌁</span><div><b>原件外观保护</b><p>兔耳与斜面未被修改</p></div><span class="lock">保留</span></div>
+      <div class="scope-note"><b>这次实际改了什么？</b><p>生成规则壳体与盖子，并同时构建配对连接。兔形原件作为参考，尚未自动改造。</p></div>
+      <div class="left-bottom"><span class="eyebrow">SOURCE → CONNECTION → VALIDATION</span><span>设计意图与几何版本一起保存</span></div>
+    </aside>
+    <section class="center-panel">
+      <div class="viewer-card">
+        <div class="viewer-top"><div class="viewer-title"><span class="live-dot"></span><b id="view-title">连接结构预览</b><span id="view-subtitle">真实后端几何 · mm</span></div><button id="fit-view" class="icon-button" title="模型居中">⤢</button></div>
+        <div class="view-controls"><div class="segmented" id="view-modes"><button class="active" data-view="assembled">装配</button><button data-view="exploded">分解</button><button data-view="section">剖面</button><button data-view="source">原件</button></div><button id="compare-toggle" class="compare-button" disabled>◫ 修改前后</button></div>
+        <div id="viewport" aria-label="可旋转缩放的三维装配模型"></div>
+        <div class="axis-corner"><span class="axis-y">Y ↑</span><span class="axis-x">X ↗</span><span class="axis-z">Z ↙</span></div>
+        <div class="viewport-caption"><span id="model-caption">载入参数化设计…</span><span>拖动旋转 · 滚轮缩放</span></div>
+        <div class="model-legend"><span><i style="background:#a4c6d0"></i>壳体 / 母件</span><span><i style="background:#e7ad69"></i>盖子 / 公件</span></div>
+        <div class="viewport-overlay" id="loading-overlay"><span class="spinner"></span><b id="loading-title">正在连接设计服务</b><p id="loading-detail">读取真实模型、参数与检查结果</p></div>
+        <div class="error-banner hidden" id="error-banner"><b>操作没有完成</b><span id="error-message"></span><button id="dismiss-error">×</button></div>
+      </div>
+      <div class="preview-card"><div class="preview-heading"><div><span class="step-circle">03</span><b>装配过程</b><span class="muted">沿指定方向查看装入路径</span></div><span id="preview-status" class="neutral-tag">几何运动预览</span></div><div class="transport"><button id="play-motion" class="play-button" title="播放装配过程">▶</button><span class="transport-label">分离</span><input id="motion-progress" type="range" min="0" max="100" value="100" aria-label="装配进度"/><span class="transport-label">闭合</span><span id="progress-value">100%</span></div><p class="preview-note" id="motion-note">可视化刚体装配路径；卡扣弹性与真实拆装手感需试打印验证。</p></div>
+      <div class="results-card" id="results-card"><div class="results-heading"><div><span class="step-circle">04</span><b>检查与交付</b><span id="check-count" class="muted">等待检查</span></div><button id="detail-toggle" class="text-button">查看详情 ↓</button></div><div id="check-summary" class="check-summary"></div><div id="check-details" class="check-details hidden"></div><div class="deliver-row"><div><b>先验证局部，再打印完整产品</b><p>导出配对试装件，记录真实配合与拆装反馈。</p></div><button id="export-button" class="primary-button" disabled>下载试装件 <span>↓</span></button></div><div id="artifact-list" class="artifact-list"></div></div>
+      <div class="history-card hidden" id="history-card"><div class="results-heading"><b>设计记录</b><span class="muted">每次生成保留参数与产物</span></div><div id="history-list"></div></div>
+    </section>
+    <aside class="right-panel panel">
+      <div class="panel-heading"><span class="eyebrow">CONNECTION DESIGN</span><span class="number-pill">01—02</span></div><h2>选择连接方式</h2><p class="panel-description">为两个部件，同时生成配套结构。</p>
+      <div class="connection-candidates"><button class="candidate selected" data-type="tongue_slot"><span class="candidate-graphic tongue-graphic"><i></i><i></i></span><span><b>插舌与槽</b><small>定位与插接 · 刚性配合</small></span><span class="radio-dot"></span></button><button class="candidate" data-type="snap_fit"><span class="candidate-graphic snap-graphic"><i></i><i></i></span><span><b>可释放卡扣</b><small>扣合与打开 · 需要弹性验证</small></span><span class="radio-dot"></span></button></div>
+      <div class="divider"></div><div class="section-label">结构参数 <span>毫米 mm</span></div>
+      <div class="parameter"><div><label for="clearance">配合间隙</label><span class="input-unit"><input id="clearance" type="number" min="0.1" max="0.8" step="0.05" value="0.3"/> mm</span></div><input id="clearance-range" type="range" min="0.1" max="0.8" step="0.05" value="0.3"/><p>调整双方的配合距离，不代表打印公差保证。</p></div>
+      <div class="parameter compact"><div><label for="engagement">插入深度</label><span class="input-unit"><input id="engagement" type="number" min="3" max="12" step="0.5" value="6"/> mm</span></div></div>
+      <div class="parameter compact"><div><label for="position">连接位置偏移</label><span class="input-unit"><input id="position" type="number" min="-7" max="7" step="0.5" value="0"/> mm</span></div></div>
+      <div class="parameter compact"><div><label for="wall">壳体壁厚</label><span class="input-unit"><input id="wall" type="number" min="1.6" max="4" step="0.2" value="2.4"/> mm</span></div></div>
+      <div class="linked-parameter"><div class="linked-title"><span>↳</span><b>随产品尺寸联动</b></div><div class="parameter compact"><div><label for="cavity-depth">内腔深度</label><span class="input-unit"><input id="cavity-depth" type="number" min="25" max="50" step="0.1" value="32.74"/> mm</span></div></div><button id="depth-demo" class="text-button">试试：内腔增加 4.3 mm ↗</button><p>盖子、接头位置跟随开口更新。</p></div>
+      <details id="snap-parameters" class="technical-details hidden"><summary>卡扣梁与扣齿尺寸</summary><div class="snap-parameter-fields"><div class="parameter compact"><div><label for="beam-thickness">悬臂厚度</label><span class="input-unit"><input id="beam-thickness" type="number" min="0.9" max="1.6" step="0.1" value="1.2"/> mm</span></div></div><div class="parameter compact"><div><label for="hook-depth">扣齿凸出</label><span class="input-unit"><input id="hook-depth" type="number" min="0.45" max="1.1" step="0.05" value="0.8"/> mm</span></div></div><p>尺寸会改变所需让位量；梁应变估计不代表材料已经通过验证。</p></div></details>
+      <button id="generate-design" class="primary-button full"><span>生成配对连接</span><span>↗</span></button><div id="change-state" class="change-state">参数由后端保存，生成后更新三维模型。</div>
+      <div class="divider"></div><div class="section-label">制造条件 <span>待试装</span></div><div class="manufacturing-note"><b>几何验证 ≠ 实物验证</b><p>尚未绑定打印机、材料及层方向。当前不预测卡扣寿命、保持力或装配手感。</p></div>
+      <details class="technical-details"><summary>版本与执行信息</summary><pre id="execution-info">等待服务响应</pre></details>
+    </aside>
+  </main>
+  <footer class="statusbar"><span><i class="live-dot"></i>独立装配设计模块</span><span id="status-message">本地几何服务 · 所有检查状态来自后端</span><span>探索原型 · 非生产工程认证</span></footer>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

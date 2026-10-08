@@ -1,0 +1,2 @@
+* -text
+frontend/vendor/** -whitespace linguist-vendored=true

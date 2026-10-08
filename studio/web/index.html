@@ -17,16 +17,18 @@
 <link rel="stylesheet" href="./studio-layout.css">
 <link rel="stylesheet" href="./evaluation.css">
 <link rel="stylesheet" href="./motion.css">
+<link rel="stylesheet" href="./assembly.css">
 <script type="importmap">
 {"imports": {"three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/"}}
 </script>
 </head>
 <body>
 <div id="wb">
-  <nav id="workbench-nav" aria-label="工作区" data-i18n-attr="aria-label=nav.ariaLabel"><strong class="wb-brand"><span class="wb-symbol" aria-hidden="true"></span><span data-i18n="app.title">3D 工作台</span></strong><button data-workspace-mode="edit" aria-pressed="true"><span data-i18n="nav.mode.edit">模型编辑</span></button><button data-workspace-mode="motion" aria-pressed="false"><span data-i18n="nav.mode.motion">动作编辑</span></button><button data-workspace-mode="tasks" aria-pressed="false"><span data-i18n="nav.mode.tasks">建模与任务</span></button><button data-workspace-mode="observe" aria-pressed="false"><span data-i18n="nav.mode.observe">观察与测评</span></button><button data-workspace-mode="print" aria-pressed="false"><span data-i18n="nav.mode.print">打印准备</span></button><button type="button" class="wb-locale" data-locale-toggle data-i18n="nav.localeToggle" data-i18n-attr="title=nav.localeToggleTitle">EN</button></nav>
+  <nav id="workbench-nav" aria-label="工作区" data-i18n-attr="aria-label=nav.ariaLabel"><strong class="wb-brand"><span class="wb-symbol" aria-hidden="true"></span><span data-i18n="app.title">3D 工作台</span></strong><button data-workspace-mode="edit" aria-pressed="true"><span data-i18n="nav.mode.edit">模型编辑</span></button><button data-workspace-mode="assembly" aria-pressed="false" hidden><span data-i18n="nav.mode.assembly">装配设计</span></button><button data-workspace-mode="motion" aria-pressed="false"><span data-i18n="nav.mode.motion">动作编辑</span></button><button data-workspace-mode="tasks" aria-pressed="false"><span data-i18n="nav.mode.tasks">建模与任务</span></button><button data-workspace-mode="observe" aria-pressed="false"><span data-i18n="nav.mode.observe">观察与测评</span></button><button data-workspace-mode="print" aria-pressed="false"><span data-i18n="nav.mode.print">打印准备</span></button><button type="button" class="wb-locale" data-locale-toggle data-i18n="nav.localeToggle" data-i18n-attr="title=nav.localeToggleTitle">EN</button></nav>
   <section id="recipe" class="recipe" aria-label="任务配方" data-i18n-attr="aria-label=recipes.sectionAriaLabel" hidden></section>
   <p id="recipe-error" role="alert" hidden></p>
   <div id="editor-space"></div>
+  <div id="assembly-space" hidden></div>
   <div id="task-space" hidden></div>
   <div id="observe-space" hidden></div>
   <div id="print-space" hidden>

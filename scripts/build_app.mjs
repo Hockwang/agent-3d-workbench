@@ -17,7 +17,7 @@ const result = await build({
     three: path.join(root, "studio/web/vendor/three.module.js"),
   },
 });
-let css = (await Promise.all(["studio/web/vendor/ui/pico.css", "studio/web/style.css", "studio/web/flow.css", "studio/web/editor.css", "studio/web/recipes.css", "studio/web/tasks.css", "studio/web/observe.css", "studio/app/style.css", "studio/web/theme.css", "studio/web/workbench.css", "studio/web/studio-layout.css", "studio/web/evaluation.css", "studio/web/motion.css"]
+let css = (await Promise.all(["studio/web/vendor/ui/pico.css", "studio/web/style.css", "studio/web/flow.css", "studio/web/editor.css", "studio/web/recipes.css", "studio/web/tasks.css", "studio/web/observe.css", "studio/app/style.css", "studio/web/theme.css", "studio/web/workbench.css", "studio/web/studio-layout.css", "studio/web/evaluation.css", "studio/web/motion.css", "studio/web/assembly.css"]
   .map((file) => readFile(path.join(root, file), "utf8")))).join("\n");
 for (const weight of [400, 500, 600]) {
   const font = await readFile(path.join(root, `studio/web/vendor/ui/plex-${weight}.woff2`));

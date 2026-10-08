@@ -9,6 +9,7 @@ test('attach button counts only existing selections in the active editing or pri
   assert.equal(selectionCount('print', state), 1);
   assert.equal(selectionCount('tasks', state), 0);
   assert.equal(selectionCount('observe', state), 0);
+  assert.equal(selectionCount('assembly', state), 0);
   assert.equal(selectionCount('edit', null), 0);
   state.workbench.selection = [];
   assert.equal(selectionCount('edit', state), 0);
@@ -33,6 +34,7 @@ test('delivery HTML wins over nested inspection meshes, assembled scene wins ove
 
 test('browser entry preserves exact task identity and validates workspace mode', () => {
   assert.deepEqual(browserEntry('?workspace=test&mode=tasks&task=abc123'), { mode: 'tasks', taskId: 'abc123' });
+  assert.deepEqual(browserEntry('?mode=assembly&task=result-a'), { mode: 'assembly', taskId: 'result-a' });
   assert.deepEqual(browserEntry('?mode=print'), { mode: 'print', taskId: null });
   assert.deepEqual(browserEntry('?mode=invalid'), { mode: 'edit', taskId: null });
   assert.deepEqual(browserEntry(), { mode: 'edit', taskId: null });

@@ -102,6 +102,12 @@ export function createApi() {
     getRecipe: (id) => raw("GET", "/api/recipe?id=" + encodeURIComponent(id)),
     useRecipe: (id) => raw("POST", "/api/recipe/use", { json: { id } }),
     edit: (body) => raw("POST", "/api/edit", { json: body }),
+    async assemblyProject(source = 'manual') {
+      if (!['manual', 'presets', 'legacy'].includes(source)) {
+        throw new ApiError('invalid_source', t('assembly.error.invalidWorkflow'));
+      }
+      return raw('GET', '/api/assembly/project?source=' + encodeURIComponent(source));
+    },
     capabilities: () => raw("GET", "/api/capabilities"),
     services: (body) => raw("POST", "/api/services", { json: body }),
     tasks: (id) => raw("GET", "/api/tasks" + (id ? "?id=" + encodeURIComponent(id) : "")),

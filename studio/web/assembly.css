@@ -1,0 +1,50 @@
+#assembly-space {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-app);
+  color: var(--text);
+}
+#assembly-space[hidden] { display: none !important; }
+.assembly-bridge {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-column);
+}
+.assembly-bridge strong { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.assembly-bridge select, .assembly-bridge button {
+  margin: 0;
+  min-height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--bg-control);
+  color: var(--text);
+  font: inherit;
+}
+.assembly-bridge select { margin-right: auto; padding: 5px 9px; min-width: 185px; width: auto; }
+.assembly-bridge button { padding: 5px 11px; width: auto; background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.assembly-bridge button:hover:not(:disabled) { filter: brightness(1.12); }
+.assembly-bridge a { color: var(--accent-text); text-decoration: none; white-space: nowrap; }
+.assembly-bridge a:hover { text-decoration: underline; }
+#assembly-bridge-status, .assembly-service-hint {
+  flex: none;
+  margin: 0;
+  padding: 4px 14px;
+  background: var(--bg-column);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.assembly-service-hint { border-bottom: 1px solid var(--line); color: var(--text-faint); }
+#assembly-frame { flex: 1; width: 100%; border: 0; min-height: 0; background: var(--bg-app); }
+@media (max-width: 760px) {
+  .assembly-bridge { flex-wrap: wrap; gap: 7px; padding: 7px 9px; }
+  .assembly-bridge strong { width: 100%; }
+  .assembly-bridge select { margin-right: 0; flex: 1; min-width: 160px; }
+}
