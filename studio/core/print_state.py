@@ -149,6 +149,7 @@ def api_export(job_dir: Path, body: dict[str, Any]) -> dict[str, Any]:
         shape=shape,
         set=set_list,
         no_project=bool(body.get("no_project", False)),
+        part_color=dict_to_kv_list(body.get("part_colors") or {}),
     )
     return cli.cmd_export(ns)
 
@@ -198,6 +199,7 @@ def api_prepare(job_dir: Path, body: dict[str, Any]) -> dict[str, Any]:
         filament=body.get("filament"),
         export_set=dict_to_kv_list(body.get("export_set") or {}),
         no_project=bool(body.get("no_project", False)),
+        part_color=dict_to_kv_list(body.get("part_colors") or {}),
         check=bool(body.get("check", False)),
         open=bool(body.get("send", False)),
     )
