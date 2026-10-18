@@ -115,6 +115,7 @@ Write the geometry 3MF and invoke the Bambu Studio CLI to generate a project fil
 | `process` | string | no | Directly name a process preset, overriding the shape lookup |
 | `filament` | string | no | Directly name a filament preset; defaults to the machine's default filament |
 | `set` | object | no | Overrides for process preset fields, shaped like {field_name: value} |
+| `part_colors` | object | no | Explicit part-name to opaque #RRGGBB color intent; overrides source colors. Verified against project filament assignments, not physical printing. |
 | `no_project` | boolean | no | Only write the geometry 3MF; do not invoke Bambu Studio to generate a project file |
 
 ### studio_check

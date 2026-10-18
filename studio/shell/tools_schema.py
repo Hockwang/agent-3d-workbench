@@ -174,6 +174,11 @@ TOOLS: list[dict[str, Any]] = [
                     "type": "object",
                     "description": "Overrides for process preset fields, shaped like {field_name: value}",
                 },
+                "part_colors": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"},
+                    "description": "Explicit part-name to opaque #RRGGBB color intent; overrides source colors. Verified against project filament assignments, not physical printing.",
+                },
                 "no_project": {
                     "type": "boolean",
                     "description": "Only write the geometry 3MF; do not invoke Bambu Studio to generate a project file",

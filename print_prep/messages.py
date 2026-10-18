@@ -252,6 +252,10 @@ register(
             "zh-CN": "没有第 {plate} 盘",
             "en": "There is no plate {plate}",
         },
+        "cli.project_color_changed": {
+            "en": "Project filament assignment does not match part color intent",
+            "zh-CN": "工程耗材分配与零件颜色意图不一致",
+        },
         "cli.project_geometry_changed": {
             "zh-CN": "plate {plate} Bambu 工程写出后拓扑改变；原始 geometry.3mf 已保留，请勿将该工程视为保真交付",
             "en": (

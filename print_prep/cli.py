@@ -28,6 +28,7 @@ from . import orient
 from . import profiles
 from . import shape_table
 from .messages import render
+from . import color_intent
 
 DEFAULT_PRINTER = "Bambu Lab P1S 0.4 nozzle"
 DEFAULT_STRATEGY = "auto"
@@ -195,6 +196,14 @@ def cmd_inspect(args: argparse.Namespace) -> dict[str, Any]:
         fits, suggested = mesh_io.fits_any_axis(mesh, avail_w, avail_h, avail_z)
         stl_path = parts_dir / f"{p['name']}.stl"
         mesh_io.save_part_stl(mesh, stl_path)
+        try:
+            color = (
+                color_intent.read_stl_color(Path(p["source"]))
+                if Path(p["source"]).suffix.lower() == ".stl"
+                else color_intent.uniform_mesh_color(mesh)
+            )
+        except (ValueError, KeyError) as exc:
+            raise UserError(str(exc), code="bad_part_color") from exc
         part_warnings = mesh_io.warnings_for_part(p["name"], measured)
         warnings.extend(part_warnings)
         parts_out.append(
@@ -211,6 +220,7 @@ def cmd_inspect(args: argparse.Namespace) -> dict[str, Any]:
                 "fits_bed": fits,
                 "suggested_scale": suggested,
                 "stl_path": str(stl_path),
+                "color": color,
             }
         )
 
@@ -463,6 +473,15 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
     (profiles_dir / "provenance.json").write_text(json.dumps(provenance, indent=1, ensure_ascii=False))
 
     parts_by_name = {p["name"]: p for p in inspect_data["parts"]}
+    part_colors = {n: p["color"] for n, p in parts_by_name.items() if p.get("color")}
+    try:
+        for entry in getattr(args, "part_color", None) or []:
+            name, color = entry.rsplit("=", 1)
+            if name not in parts_by_name:
+                raise ValueError(f"Unknown color part: {name}")
+            part_colors[name] = color_intent.normalize_color(color)
+    except ValueError as exc:
+        raise UserError(str(exc), code="bad_part_color") from exc
     # Output paths are reused. Once writing starts, an earlier successful export
     # cannot remain marked ready if this attempt fails its readback gate.
     job.invalidate_from(data, "export")
@@ -479,7 +498,25 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
         for pl in plate["placements"]:
             name = pl["part"]
             meshes_by_name[name] = mesh_io.load_part_stl(parts_by_name[name]["stl_path"])
-        export3mf.write_geometry_3mf(geom_path, meshes_by_name, plate["placements"])
+        colors = {n: part_colors[n] for n in meshes_by_name if n in part_colors}
+        palette = []
+        if colors:
+            if set(colors) != set(meshes_by_name):
+                default = filament.get("filament_colour", ["#00AE42"])[0]
+                palette.append(color_intent.normalize_color(default))
+            for color in colors.values():
+                if color not in palette:
+                    palette.append(color)
+        filament_paths = [filament_path]
+        if palette:
+            filament_paths = []
+            for slot, color in enumerate(palette, start=1):
+                colored = _strip_internal_keys(filament)
+                colored["filament_colour"] = [color]
+                target = profiles_dir / f"plate_{idx_plate:02d}.filament-{slot}.json"
+                target.write_text(json.dumps(colored, indent=1, ensure_ascii=False))
+                filament_paths.append(target)
+        export3mf.write_geometry_3mf(geom_path, meshes_by_name, plate["placements"], colors, palette)
         readback = export3mf.read_back_geometry_3mf(geom_path, meshes_by_name, plate["placements"], tol_mm=0.01)
         if not readback["pass"]:
             raise CliError(
@@ -488,6 +525,10 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
             )
 
         plate_record: dict[str, Any] = {"index": idx_plate, "geometry_3mf": str(geom_path), "readback": readback}
+        plate_record["color_mapping"] = {
+            n: {"color": c, "filament_slot": palette.index(c) + 1} for n, c in colors.items()
+        }
+        plate_record["filament_paths"] = [str(p) for p in filament_paths]
         if not args.no_project:
             print(f"calling Bambu Studio CLI for plate {idx_plate}...", file=sys.stderr)
             try:
@@ -496,7 +537,7 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
                     plate_dir,
                     machine_path,
                     process_path,
-                    [filament_path],
+                    filament_paths,
                     project_name=f"plate_{idx_plate:02d}",
                 )
             except bambu.BambuCliError as exc:
@@ -525,6 +566,14 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
                     render("cli.project_geometry_changed", plate=idx_plate),
                     code="project_geometry_changed",
                     payload={"geometry_readback": topology, "geometry_3mf": str(geom_path)},
+                )
+            color_readback = export3mf.compare_project_colors(Path(project_info["project_3mf"]), colors)
+            plate_record["color_readback"] = color_readback
+            if not color_readback["pass"]:
+                raise CliError(
+                    render("cli.project_color_changed"),
+                    code="project_color_changed",
+                    payload={"color_readback": color_readback, "geometry_3mf": str(geom_path)},
                 )
         plates_out.append(plate_record)
 
@@ -586,7 +635,7 @@ def cmd_check(args: argparse.Namespace) -> dict[str, Any]:
                 out_dir,
                 machine_path,
                 process_path,
-                [filament_path],
+                [Path(p) for p in plate.get("filament_paths", [str(filament_path)])],
                 name=f"plate_{idx_plate:02d}",
             )
         except bambu.BambuCliError as exc:
@@ -711,6 +760,7 @@ def cmd_prepare(args: argparse.Namespace) -> dict[str, Any]:
         shape=args.shape,
         set=args.export_set,
         no_project=args.no_project,
+        part_color=getattr(args, "part_color", []),
     )
     run_step("export", cmd_export, export_ns)
 
@@ -809,6 +859,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.add_argument("--filament", default=None)
     p_export.add_argument("--shape", choices=shape_table.VALID_LABELS, default=None)
     p_export.add_argument("--set", action="append", default=[])
+    p_export.add_argument("--part-color", action="append", default=[], metavar="PART=#RRGGBB")
     p_export.add_argument("--no-project", action="store_true", dest="no_project")
     p_export.set_defaults(func=cmd_export, _command_name="export")
 
@@ -844,6 +895,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_prepare.add_argument("--process", default=None)
     p_prepare.add_argument("--filament", default=None)
     p_prepare.add_argument("--export-set", action="append", default=[], dest="export_set")
+    p_prepare.add_argument("--part-color", action="append", default=[], metavar="PART=#RRGGBB")
     p_prepare.add_argument("--no-project", action="store_true", dest="no_project")
     p_prepare.add_argument("--check", action="store_true")
     p_prepare.add_argument("--open", action="store_true")

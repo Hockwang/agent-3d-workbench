@@ -289,3 +289,96 @@ def test_write_geometry_3mf_million_face_performance(tmp_path):
 
     result = export3mf.read_back_geometry_3mf(path, {"sphere": mesh}, placements, tol_mm=0.01)
     assert result["pass"] is True
+
+
+@pytest.mark.parametrize(
+    "palette,slots,ok",
+    [
+        (["#0000FF", "#FF0000"], [1, 2], True),
+        (["#00AE42"], [1, 1], False),
+        (["#0000FF", "#FF0000"], [1, 1], False),
+        (["#0000FF", "#FF0000"], [1, 3], False),
+        (["#FF0000", "#0000FF"], [2, 1], True),
+    ],
+)
+def test_badge_actual_project_materials(tmp_path, palette, slots, ok):
+    """Independent Bambu-style serialization, not the writer's own color manifest."""
+    import json
+
+    path = tmp_path / "badge.project.3mf"
+    _write_synthetic_bambu_project(
+        path,
+        [
+            {"object_id": 4, "stored_name": "cross.stl", "source_offset": [0, 0, 0], "T_file": np.eye(4)},
+            {"object_id": 2, "stored_name": "body.stl", "source_offset": [0, 0, 0], "T_file": np.eye(4)},
+        ],
+    )
+    with ZipFile(path) as archive:
+        entries = {n: archive.read(n) for n in archive.namelist()}
+    config = ET.fromstring(entries["Metadata/model_settings.config"])
+    for obj, slot in zip(config.findall("object"), reversed(slots)):
+        ET.SubElement(obj, "metadata", {"key": "extruder", "value": "1"})
+        # Volume overrides object extruder, as in actual Bambu projects.
+        ET.SubElement(obj.find("part"), "metadata", {"key": "extruder", "value": str(slot)})
+    entries["Metadata/model_settings.config"] = ET.tostring(config)
+    entries["Metadata/project_settings.config"] = json.dumps({"filament_colour": palette}).encode()
+    with ZipFile(path, "w", ZIP_DEFLATED) as archive:
+        for name, raw in entries.items():
+            archive.writestr(name, raw)
+    result = export3mf.compare_project_colors(path, {"body": "#0000ff", "cross": "#ff0000"})
+    assert result["pass"] is ok
+    assert result["parts"]["cross"]["filament_slots"] == [slots[1]]
+
+
+def test_badge_geometry_colors_and_transforms(tmp_path):
+    body = trimesh.creation.box([40, 40, 4])
+    cross = trimesh.util.concatenate([trimesh.creation.box([24, 8, 2.2]), trimesh.creation.box([8, 24, 2.2])])
+    meshes = {"body": body, "cross": cross}
+    placements = [
+        {"part": n, "T": _make_transform(_rotation_z(0.4), [30 + i * 50, 40, 2])} for i, n in enumerate(meshes)
+    ]
+    path = tmp_path / "badge.geometry.3mf"
+    export3mf.write_geometry_3mf(
+        path, meshes, placements, {"body": "#0000FF", "cross": "#FF0000"}, ["#0000FF", "#FF0000"]
+    )
+    assert export3mf.read_back_geometry_3mf(path, meshes, placements)["pass"]
+    with ZipFile(path) as archive:
+        model = ET.fromstring(archive.read("3D/3dmodel.model"))
+        objects = model.findall(f"{{{CORE_NS}}}resources/{{{CORE_NS}}}object")
+        bases = model.findall(
+            f"{{{CORE_NS}}}resources/{{{export3mf.MATERIAL_NS}}}colorgroup/{{{export3mf.MATERIAL_NS}}}color"
+        )
+    assert [b.get("color") for b in bases] == ["#0000FFFF", "#FF0000FF"]
+    assert [o.get("pindex") for o in objects] == ["0", "1"]
+
+
+@pytest.mark.parametrize("damage", ["missing", "ambiguous", "painted", "missing_settings"])
+def test_project_colors_never_fall_back_to_position_or_intent(tmp_path, damage):
+    import json
+
+    path = tmp_path / "binding.project.3mf"
+    _write_synthetic_bambu_project(
+        path,
+        [
+            {"object_id": 2, "stored_name": "body", "source_offset": [0, 0, 0], "T_file": np.eye(4)},
+        ],
+    )
+    with ZipFile(path) as archive:
+        entries = {n: archive.read(n) for n in archive.namelist()}
+    entries["Metadata/project_settings.config"] = json.dumps({"filament_colour": ["#0000FF"]}).encode()
+    config = ET.fromstring(entries["Metadata/model_settings.config"])
+    if damage == "missing":
+        config.find("object/metadata[@key='name']").set("value", "unrelated")
+    elif damage == "ambiguous":
+        import copy
+
+        config.append(copy.deepcopy(config.find("object")))
+    elif damage == "painted":
+        entries["3D/Objects/object_2.model"] = b'<triangle paint_color="1"/>'
+    elif damage == "missing_settings":
+        del entries["Metadata/project_settings.config"]
+    entries["Metadata/model_settings.config"] = ET.tostring(config)
+    with ZipFile(path, "w", ZIP_DEFLATED) as archive:
+        for name, raw in entries.items():
+            archive.writestr(name, raw)
+    assert not export3mf.compare_project_colors(path, {"body": "#0000FF"})["pass"]
