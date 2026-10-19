@@ -538,15 +538,28 @@ def test_tools_schema_has_print_and_editor_operations():
     assert "studio_observe" in names
     assert "studio_evaluation" in names
     assert "studio_services" in names
-    assert len(tools) == 22
+    assert {"studio_list_slicers", "studio_send_to_slicer"}.issubset(names)
+    assert {"studio_manufacture", "studio_laser"}.issubset(names)
+    assert len(tools) == len(names) == 26
 
 
 def test_api_tools_endpoint_reports_print_and_editor_tools(studio_env):
     client: Client = studio_env["client"]
     status, resp = client.get("/api/tools")
     assert status == 200
-    assert len(resp["tools"]) == 22
+    assert resp["tools"] == tools_schema.get_tools()
     names = {t["name"] for t in resp["tools"]}
     assert "studio_evaluation" in names
     assert "studio_observe" in names
     assert {"studio_select", "studio_undo"}.issubset(names)
+    assert {"studio_list_slicers", "studio_send_to_slicer"}.issubset(names)
+    assert {"studio_manufacture", "studio_laser"}.issubset(names)
+
+
+def test_laser_http_route_uses_shell_connector(studio_env, monkeypatch):
+    from studio.adapters.lightburn import LightBurn
+
+    monkeypatch.setattr(LightBurn, "status", lambda self: {"paired": True, "test": "shell-connector"})
+    status, resp = studio_env["client"].post("/api/laser", {"action": "connection"})
+    assert status == 200 and resp["ok"] is True
+    assert resp["connection"]["test"] == "shell-connector"

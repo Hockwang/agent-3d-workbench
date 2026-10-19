@@ -5,7 +5,7 @@ const target = new URL('studio/web/vendor/ui/', root);
 await mkdir(target, { recursive: true });
 const pico = await readFile(new URL('node_modules/@picocss/pico/css/pico.min.css', root), 'utf8');
 await writeFile(new URL('pico.css', target), `@layer pico {\n${pico}\n}`);
-const names = ['clapperboard', 'box', 'layers', 'sliders-horizontal', 'wand-sparkles', 'scan-eye', 'printer', 'mouse-pointer-2', 'move', 'rotate-3d', 'scaling', 'maximize', 'undo-2', 'redo-2', 'save'];
+const names = ['package-check', 'clapperboard', 'box', 'layers', 'sliders-horizontal', 'wand-sparkles', 'scan-eye', 'printer', 'mouse-pointer-2', 'move', 'rotate-3d', 'scaling', 'maximize', 'undo-2', 'redo-2', 'save'];
 const icons = {};
 for (const name of names) {
   icons[name] = (await readFile(new URL(`node_modules/lucide-static/icons/${name}.svg`, root), 'utf8'))

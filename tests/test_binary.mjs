@@ -1,6 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { decodeBase64 } from "../studio/app/binary.js";
+import { decodeBase64, encodeBase64 } from "../studio/app/binary.js";
+
+test('download encoder preserves large binary payloads and yields between chunks', async () => {
+  for (const extra of [0, 1, 2]) {
+    const original = Buffer.alloc(2 * 768 * 1024 + extra);
+    for (let i = 0; i < original.length; i++) original[i] = i % 251;
+    let yields = 0;
+    assert.equal(await encodeBase64(original, async () => { yields++; }), original.toString('base64'));
+    assert.ok(yields >= 1);
+  }
+  assert.equal(await encodeBase64('中文报告'), Buffer.from('中文报告').toString('base64'));
+});
 
 test("large binary resources yield between chunks without corrupting bytes or padding", async () => {
   for (const extra of [0, 1, 2]) {

@@ -1,4 +1,4 @@
-"""Assembly Workflow OpenAPI adapter; CF 81502019948 version 39.
+"""Assembly Workflow OpenAPI adapter; protocol revision 39.
 
 The API processes existing remote models, or generates motion. It is not a
 text/image-to-mesh API. Auth is deployment-specific and configured by reference.
@@ -522,7 +522,7 @@ def run(workbench):
                 "cost_note": render("assembly_service.cost_note_billing_unknown"),
                 "received_at": time.time(),
                 "files": received,
-                "contract": "CF 81502019948 v39",
+                "contract": "assembly-workflow/v39",
                 "adapter": ledger.get("adapter"),
                 "model": ledger.get("model"),
                 "request_params": ledger.get("request_params"),

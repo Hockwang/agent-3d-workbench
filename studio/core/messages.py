@@ -725,3 +725,41 @@ register(
         },
     }
 )
+
+register({
+    'editor.new_scene_replace_conflict': {
+        'zh-CN': '打开新场景和替换选中部件不能同时使用。',
+        'en': 'Opening a new scene cannot be combined with replacing selected parts.'},
+    'editor.new_scene_shared': {
+        'zh-CN': '共享编辑场景不能由单个成员替换。请继续当前编辑，或在独立工作区打开模型。',
+        'en': 'A shared scene cannot be replaced by one member. Continue editing or open the model in a separate workspace.'},
+    'auto_cut.closed': {
+        'zh-CN': '需要切割的零件不是水密且朝向一致的实体，请先修复模型或使用手动切割。当前打印副本已保留。',
+        'en': 'The oversized part is not a closed, consistently oriented solid. Repair it or cut manually. The current print copy is preserved.'},
+    'auto_cut.limit': {
+        'zh-CN': '自动切割达到搜索或件数上限（{limit}），请改用手动切割。当前打印副本已保留。',
+        'en': 'Automatic cutting reached its search or part limit ({limit}). Use manual cutting. The current copy is preserved.'},
+    'auto_cut.no_plan': {
+        'zh-CN': '未找到能安全切开 {name} 的方案，请手动选切面。当前打印副本已保留。',
+        'en': 'No valid cut plan was found for {name}. Select a plane manually. The current copy is preserved.'},
+    'auto_cut.verification': {
+        'zh-CN': '切割后的封口、体积或尺寸检查未通过，未替换当前打印副本。',
+        'en': 'Cut closure, volume or size verification failed. The current print copy was not replaced.'},
+    'auto_cut.missing': {
+        'zh-CN': '请先载入要打印的模型。', 'en': 'Load a print model first.'},
+    'auto_cut.arguments': {
+        'zh-CN': '自动切割只处理当前打印副本；请先完成更换模型、打印机或尺寸。间距须为有限的非负数。',
+        'en': 'Automatic cutting uses the current print copy. Load any model, printer or size change first. Gap must be finite and non-negative.'},
+    'auto_cut.changed': {
+        'zh-CN': '打印副本或源文件已改变，请刷新后从当前模型重新开始自动切割。',
+        'en': 'The print copy or source files changed. Refresh and restart automatic cutting from the current model.'},
+    'auto_cut.searching': {
+        'zh-CN': '正在比较朝向和切面：{name} · 当前 {count} 件',
+        'en': 'Comparing orientations and cut planes: {name} · {count} pieces'},
+    'auto_cut.arranging': {
+        'zh-CN': '切割检查通过，正在按打印机尺寸分盘', 'en': 'Cuts verified. Arranging for the selected printer'},
+    'auto_cut.exporting': {
+        'zh-CN': '摆盘完成，正在导出切片工程', 'en': 'Arrangement complete. Exporting slicer projects'},
+    'auto_cut.checking': {
+        'zh-CN': '正在逐盘试切', 'en': 'Test-slicing all plates'},
+})

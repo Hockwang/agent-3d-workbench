@@ -164,7 +164,7 @@ $PP prepare --job ./job /绝对路径/a.stl /绝对路径/b.stl --shape figurine
 
 Lux3D 支持国内/国际独立连接、图片/多图/文字生成、材质重绘、四视图、参考图与格式转换。本机输入放 inputs，自动上传。先 `studio_services(action="balance"|"quote",id=连接ID,operation,params,inputs)`；计划报价用 items 数组。生成传原参数与 quote_id，计划项另带 quote_item；参数或账户改变须重新报价。按用户已经授权的目标与额度执行，报价是优惠前预计值。恢复已有任务用 resume，或传 params.remote_task_id 字符串收件，不重提生成。真实结果用 observe 查看后再交付；完整字段、版本限制与已验证范围见 [Lux3D](./LUX3D.md)。
 
-Seed3D 使用 `provider:"seed3d"`、`operation:"image-to-3d"`，一张参考图放 inputs，返回 GLB。当前适配公司网关的 Seed3D 2.0 专业模型，虽然传输使用 chat/completions，但不会调用通用 LLM。此同步接口没有可靠轮询契约；仅收到结果后的下载失败可以 resume，模糊提交不能自动重试。
+Seed3D 使用 `provider:"seed3d"`、`operation:"image-to-3d"`，一张参考图放 inputs，返回 GLB。当前适配兼容网关的 Seed3D 2.0 专业模型，虽然传输使用 chat/completions，但不会调用通用 LLM。此同步接口没有可靠轮询契约；仅收到结果后的下载失败可以 resume，模糊提交不能自动重试。
 
 默认优先使用当前 GPT + 本机 Blender/CAD，无需另购生成 API，但仍消耗 GPT 额度和本机算力。先读选区、尺寸与约束，执行后查看真实产物；开放式建模不受模板数量限制。
 

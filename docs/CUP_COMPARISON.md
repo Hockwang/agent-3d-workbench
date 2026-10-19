@@ -73,7 +73,7 @@ Use **Current model** to return to the editor; newly run task outputs are under
 First install the repository dependencies. The local route needs no 3D-service key.
 The API route needs a gateway implementing the [Hunyuan 3D Responses protocol](HUNYUAN_API.md),
 your own authorized credentials in the launching process's environment and a private
-`services.json`. The author's company endpoint/key is not a shared public service.
+`services.json`. Private endpoints and keys are not supplied as a shared public service.
 [Connection setup](API_GENERATION_DEMO.md#1-choose-a-service).
 
 ```bash

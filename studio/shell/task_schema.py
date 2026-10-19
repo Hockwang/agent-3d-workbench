@@ -64,6 +64,7 @@ TOOLS = [
                 "title": {"type": "string"},
                 "base_url": {"type": "string"},
                 "enabled": {"type": "boolean"},
+                "allow_insecure_http": {"type": "boolean", "description": "Explicit HTTP opt-in only for the recorded internal P3 segmentation connection; never changes TLS verification."},
                 "clear_key": {"type": "boolean"},
                 "key_env": {"type": "string"},
                 "sealed_key": {
@@ -186,6 +187,7 @@ TOOLS = [
                 "id": {"type": "string"},
                 "artifact_id": {"type": "string"},
                 "expected_revision": {"type": "integer"},
+                "new_scene": {"type": "boolean", "description": "Static import only: archive the previous editor scene and open this model in a fresh scene; mutually exclusive with replace_ids."},
                 "title": {"type": "string"},
                 "replace_ids": {
                     "type": "array",

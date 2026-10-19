@@ -114,6 +114,7 @@ TOOLS = [
                         "limit": {"type": "integer", "minimum": 1, "maximum": 100},
                         "instances": {"type": "array", "items": {"type": "object"}},
                         "files": {"type": "array", "items": {"type": "string"}},
+                        "new_scene": {"type": "boolean", "description": "import only: open files as a new scene after archiving the previous scene; undoable. Not supported in shared scenes."},
                         "units": {"type": "string", "enum": ["auto", "mm", "cm", "m"]},
                         "name": {"type": "string"},
                         "visible": {"type": "boolean"},

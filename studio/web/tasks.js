@@ -1,4 +1,6 @@
+import { downloadFile } from './download.js';
 import { displayLabel } from './display-label.js';
+import { captureCamera, restoreCamera } from './session-view.js';
 import { createStudioShell } from "./studio-shell.js";
 import { TaskPreview } from './task-preview.js';
 import { uploadFile } from './upload.js';
@@ -12,10 +14,11 @@ import { sandboxedHtml } from './sandboxed-html.js';
 const STATUS = () => ({ queued: t('tasks.status.queued'), running: t('tasks.status.running'), cancelling: t('tasks.status.cancelling'), completed: t('tasks.status.completed'), failed: t('tasks.status.failed'), cancelled: t('tasks.status.cancelled'), interrupted: t('tasks.status.interrupted') });
 const live = (task) => ['queued', 'running', 'cancelling'].includes(task.status);
 const node = (tag, text, className) => { const e = document.createElement(tag); if (text != null) e.textContent = displayLabel(text); if (className) e.className = className; return e; };
+export const isReviewTask = task => ['merge-review', 'a8-review'].includes(task.template || task.id);
 export function createTasks(api, options = {}) {
   const root = options.root || document.getElementById('task-space');
   const reviewOnly = options.reviewOnly === true;
-  const isReview = task => ['merge-review', 'a8-review'].includes(task.template || task.id);
+  const isReview = isReviewTask;
   const inScope = task => reviewOnly ? isReview(task) : task.category !== 'observation' && !isReview(task);
   root.innerHTML = `<div class="task-head"><div><h2>${t('tasks.header.title')}</h2><span class="task-eyebrow">${t('tasks.header.eyebrow')}</span></div><span class="task-runtime"></span></div>
     <div class="task-layout"><aside class="task-controls">
@@ -71,13 +74,21 @@ export function createTasks(api, options = {}) {
   speed.value = 1; speed.onchange = () => preview?.setSpeed(Number(speed.value)); $('.task-animation').append(speed);
   const newTask = node('button', t('entry.newTask'), 'task-new-button'); newTask.type = 'button';
   $('.task-result').append(newTask);
-  newTask.onclick = () => { root.classList.remove('result-browsing', 'direct-preview'); shell.setDirectPreview(false); clearRebuild(); shell.reveal($('.task-form')); };
+  newTask.onclick = async () => { await ready; beginForm(); clearRebuild(); shell.reveal($('.task-form')); };
   const primaryActions = node('div', null, 'task-primary-actions');
   $('.task-files').before(primaryActions);
   $('.task-files').open = false; $('.task-records').open = false;
   const media = node('div', null, 'task-media'); media.hidden = true; $('.task-canvas').after(media);
   let active = true, disposed = false, busy = false, selected = null, stamp = '', timer = null, preview = null, previewKey = '', previewType = '', mediaUrl = '', html = '', caps;
   let rebuildId = null, taskList = [], previewRequest = 0, lastPreview = null;
+  let composing = false;
+  function beginForm() {
+    if (!reviewOnly) recordsHome.append(records);
+    composing = true; root.classList.add('task-form-open'); ++previewRequest; setPending(false);
+    $('.task-head h2').textContent=t('tasks.header.title'); $('.task-eyebrow').textContent=t('tasks.header.eyebrow');
+    root.classList.remove('result-browsing', 'direct-preview'); shell.setDirectPreview(false);
+  }
+  function endForm() { composing=false; root.classList.remove('task-form-open'); }
   let reviewTask = null;
   const remembered = new Map();
   const browser = createModelBrowser(api, (task, artifact) => showArtifact(task, artifact).catch(error), () => {
@@ -99,11 +110,12 @@ export function createTasks(api, options = {}) {
   const retry = node('button', t('entry.retry')); retry.type = 'button'; retry.hidden = true;
   const clock = node('span', '0.00 / 0.00 s', 'model-clock'); $('.task-animation').append(clock);
   const secondary = node('div', null, 'model-secondary');
+  const records = $('.task-records'), recordsHome = records.parentElement;
   const versions = node('details', null, 'model-versions'); versions.append(node('summary', t('models.history')));
   const versionList = node('div'); versions.append(versionList);
   const allTasks = node('button', t('entry.allTasks')); allTasks.type = 'button'; allTasks.onclick = () => { root.classList.toggle('result-history-open'); shell.openLibrary(); }; versions.append(allTasks);
   if (!reviewOnly) secondary.append(versions, $('.task-files'), $('.task-records'));
-  $('.task-result').prepend(browser.element, current, nameForm, stage, $('.task-animation'), status, retry, primaryActions, secondary);
+  $('.task-result').prepend(browser.element, current, nameForm, primaryActions, stage, $('.task-animation'), status, retry, secondary);
   function setPending(value) {
     root.classList.toggle('model-loading-active', value); loading.hidden = !value;
     for (const el of [...primaryActions.querySelectorAll('button'), ...$('.task-animation').querySelectorAll('button,select,input'), rename]) el.disabled = value;
@@ -112,17 +124,30 @@ export function createTasks(api, options = {}) {
     const isModel = /\.glb$/i.test(artifact.name), name = isModel ? browser.label(artifact, task) : artifact.name;
     currentName.textContent = name; rename.hidden = !isModel; nameForm.hidden = true;
     currentStatus.textContent = t(isModel ? (artifact.animations ? 'models.previewReady' : 'models.static') : 'models.filePreview');
-    status.hidden = !isModel; status.textContent = [!artifact.animations && t('models.noAnimation'), task.result?.note || (artifact.animations && t('models.animationDraft'))].filter(Boolean).join(' ');
+    status.hidden = !isModel; status.textContent = displayLabel([!artifact.animations && t('models.noAnimation'), task.result?.note || (artifact.animations && t('models.animationDraft'))].filter(Boolean).join(' '));
     primaryActions.replaceChildren();
     if (isModel) {
+      if (options.onPrintTask) {
+        const animated = Boolean(artifact.animations || artifact.skins);
+        const print = node('button', t(animated ? 'entry.loadPrintPose' : 'entry.loadForPrint'), 'model-print-load btn-white-primary');
+        print.type = 'button';
+        print.onclick = () => action(async () => {
+          print.disabled = true;
+          try {
+            if (animated) await options.onPrintPose(preview.printPose());
+            else await options.onPrintTask(task.id, artifact.id);
+          } finally { print.disabled = false; }
+        });
+        primaryActions.append(print);
+        if (animated) primaryActions.append(node('small', t('entry.printPoseHint')));
+      }
       const save = node('button', t('models.download', { name }), 'model-download'); save.type = 'button';
       save.onclick = () => action(async () => {
-        const bytes = await api.taskAsset(task.id, artifact), url = URL.createObjectURL(new Blob([bytes], { type: artifact.mime }));
-        const link = node('a'); link.href = url; link.download = artifact.name.split('/').pop(); link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+        await downloadFile(api, await api.taskAsset(task.id, artifact), artifact.name, artifact.mime, {kind:'task',id:task.id,artifact:artifact.id});
       }); primaryActions.append(save);
       if (!(artifact.animations || artifact.skins)) {
-        const add = node('button', t('entry.addToEditor')); add.type = 'button';
-        add.onclick = () => action(async () => { const state = await api.getState(); await api.task({ action: 'import', id: task.id, artifact_id: artifact.id, expected_revision: state.workbench.revision }); options.onImport?.(); });
+        const add = node('button', t(options.importIntoNewScene?.() ? 'start.openInEditor' : 'entry.addToEditor')); add.type = 'button';
+        add.onclick = () => action(async () => { const state = await api.getState(); await api.task({ action: 'import', id: task.id, artifact_id: artifact.id, expected_revision: state.workbench.revision, new_scene: Boolean(options.importIntoNewScene?.()) && !state.workbench.collaboration }); await options.onImport?.(); });
         primaryActions.append(add);
       }
     }
@@ -204,16 +229,20 @@ export function createTasks(api, options = {}) {
     description.textContent = [template.description || '', remote ? remote.configured ? t('tasks.description.remoteConfigured') : remote.setup_message || t('tasks.description.remoteNotConfigured', { name: remote.key_env || t('tasks.fallback.service') }) : t('tasks.description.localTool')].filter(Boolean).join(' ');
     $('.task-params').replaceChildren();
     const labels = { diameter_mm: t('tasks.paramLabel.diameterMm'), height_mm: t('tasks.paramLabel.heightMm'), wall_mm: t('tasks.paramLabel.wallMm'), clearance_mm: t('tasks.paramLabel.clearanceMm'), width_mm: t('tasks.paramLabel.widthMm'), pin_mm: t('tasks.paramLabel.pinMm'), ratio: t('tasks.paramLabel.ratio'), thickness_mm: t('tasks.paramLabel.thicknessMm'), voxel_mm: t('tasks.paramLabel.voxelMm'), iterations: t('tasks.paramLabel.iterations'), spacing_mm: t('tasks.paramLabel.spacingMm'), operation: t('tasks.paramLabel.operation'), angle_deg: t('tasks.paramLabel.angleDeg'), frames: t('tasks.paramLabel.frames') };
+    Object.assign(labels, Object.fromEntries(['parts','connectors','palette_rgb','pull_direction','center_mm','axis','x_hint','anchors_mm','machining_box_mm','mount_radius_mm','min_patch_area_mm2','sampling','steps'].map(key => [key,t('tasks.paramLabel.'+key)])));
     for (const [key, value] of Object.entries(template.params)) {
       const choices = key === 'source_task' && remote?.adapter === 'hunyuan-responses'
         ? sourceChoices(remote)
         : template.choices?.[key] || (key === 'operation' && op === 'mesh-process' ? { smooth: t('tasks.meshOp.smooth'), decimate: t('tasks.meshOp.decimate'), solidify: t('tasks.meshOp.solidify'), remesh: t('tasks.meshOp.remesh'), uv: t('tasks.meshOp.uv') } : null);
-      const label = node('label', { prompt: t('tasks.paramLabel.prompt'), version: t('tasks.paramLabel.version'), faceCount: t('tasks.paramLabel.faceCount'), outputFormat: t('tasks.paramLabel.outputFormat'), name: t('tasks.paramLabel.name'), family: t('tasks.paramLabel.family'), rig_task_id: t('tasks.paramLabel.rigTaskId'), action_id: t('tasks.paramLabel.actionId'), layer_mm: t('tasks.paramLabel.layerMm'), margin_mm: t('tasks.paramLabel.marginMm'), depth_mm: t('tasks.paramLabel.depthMm'), inner_width_mm: t('tasks.paramLabel.innerWidthMm'), inner_depth_mm: t('tasks.paramLabel.innerDepthMm'), inner_height_mm: t('tasks.paramLabel.innerHeightMm'), floor_z_mm: t('tasks.paramLabel.floorZMm'), center_x_mm: t('tasks.paramLabel.centerXMm'), center_y_mm: t('tasks.paramLabel.centerYMm'), lip_height_mm: t('tasks.paramLabel.lipHeightMm'), opening_width_mm: t('tasks.paramLabel.openingWidthMm'), opening_depth_mm: t('tasks.paramLabel.openingDepthMm'), allow_material_loss: t('tasks.paramLabel.allowMaterialLoss'), axis: t('tasks.paramLabel.axis'), start_mm: t('tasks.paramLabel.startMm'), end_mm: t('tasks.paramLabel.endMm'), delta_mm: t('tasks.paramLabel.deltaMm'), ...labels, ...template.labels }[key] || key), input = node(choices ? 'select' : 'input');
+      const complex = value !== null && typeof value === 'object';
+      const label = node('label', { prompt: t('tasks.paramLabel.prompt'), version: t('tasks.paramLabel.version'), faceCount: t('tasks.paramLabel.faceCount'), outputFormat: t('tasks.paramLabel.outputFormat'), name: t('tasks.paramLabel.name'), family: t('tasks.paramLabel.family'), rig_task_id: t('tasks.paramLabel.rigTaskId'), action_id: t('tasks.paramLabel.actionId'), layer_mm: t('tasks.paramLabel.layerMm'), margin_mm: t('tasks.paramLabel.marginMm'), depth_mm: t('tasks.paramLabel.depthMm'), inner_width_mm: t('tasks.paramLabel.innerWidthMm'), inner_depth_mm: t('tasks.paramLabel.innerDepthMm'), inner_height_mm: t('tasks.paramLabel.innerHeightMm'), floor_z_mm: t('tasks.paramLabel.floorZMm'), center_x_mm: t('tasks.paramLabel.centerXMm'), center_y_mm: t('tasks.paramLabel.centerYMm'), lip_height_mm: t('tasks.paramLabel.lipHeightMm'), opening_width_mm: t('tasks.paramLabel.openingWidthMm'), opening_depth_mm: t('tasks.paramLabel.openingDepthMm'), allow_material_loss: t('tasks.paramLabel.allowMaterialLoss'), axis: t('tasks.paramLabel.axis'), start_mm: t('tasks.paramLabel.startMm'), end_mm: t('tasks.paramLabel.endMm'), delta_mm: t('tasks.paramLabel.deltaMm'), ...labels, ...template.labels }[key] || key), input = node(choices ? 'select' : complex ? 'textarea' : 'input');
       input.name = key;
+      if (complex) { input.dataset.json = 'true'; input.rows = 3; input.spellcheck = false; label.classList.add('task-json-field'); }
       if (choices) for (const [id, title] of Object.entries(choices)) { const option = node('option', title); option.value = id; input.append(option); }
-      else { input.type = typeof value === 'boolean' ? 'checkbox' : typeof value === 'number' ? 'number' : 'text'; input.step = 'any'; input.required = input.type !== 'checkbox' && !template.optional_params?.includes(key); }
+      else if (!complex) { input.type = typeof value === 'boolean' ? 'checkbox' : typeof value === 'number' ? 'number' : 'text'; input.step = 'any'; input.required = input.type !== 'checkbox' && !template.optional_params?.includes(key); }
+      else input.required = !template.optional_params?.includes(key);
       if (input.type === 'checkbox') { input.checked = values?.[key] ?? value; label.classList.add('task-check'); }
-      else input.value = values?.[key] ?? value;
+      else input.value = complex ? JSON.stringify(values?.[key] ?? value, null, 2) : values?.[key] ?? value;
       label.append(input); $('.task-params').append(label);
     }
     if (values) $('.task-extra').value = JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => !(key in template.params))), null, 2);
@@ -236,7 +265,7 @@ export function createTasks(api, options = {}) {
   function formParams() {
     const extra = JSON.parse($('.task-extra').value || '{}');
     if (!extra || typeof extra !== 'object' || Array.isArray(extra)) throw new Error(t('tasks.error.extraParamsMustBeJsonObject'));
-    return { ...Object.fromEntries([...$('.task-params').querySelectorAll('[name]')].map((e) => [e.name, e.type === 'checkbox' ? e.checked : e.type === 'number' ? Number(e.value) : e.value])), ...extra };
+    return { ...Object.fromEntries([...$('.task-params').querySelectorAll('[name]')].map((e) => [e.name, e.dataset.json ? JSON.parse(e.value) : e.type === 'checkbox' ? e.checked : e.type === 'number' ? Number(e.value) : e.value])), ...extra };
   }
   const filePaths = () => $('.task-inputs').value.split('\n').map(x => x.trim()).filter(Boolean);
   balanceButton.onclick = () => action(async () => {
@@ -262,7 +291,7 @@ export function createTasks(api, options = {}) {
     if (!/^[1-9][0-9]{0,19}$/.test(recovery.value.trim())) throw new Error(t('tasks.error.invalidRemoteTaskId'));
     const result = await api.task({ action: 'start', provider: service().id, operation: $('.task-template').value,
       timeout_seconds: 1800, params: { ...formParams(), remote_task_id: recovery.value.trim() } });
-    selected = result.task.id; stamp = '';
+    endForm(); selected = result.task.id; stamp = '';
   });
   historyButton.onclick = () => action(async () => {
     const result = await api.services({ action: 'remote_tasks', id: service().id });
@@ -283,11 +312,13 @@ export function createTasks(api, options = {}) {
       }
       const result = await api.task(rebuildId ? { action: 'rebuild', id: rebuildId, params } : { action: 'start', ...(remote ? { provider: remote.id, operation: $('.task-template').value, ...(remote.timeout_seconds ? { timeout_seconds: remote.timeout_seconds } : {}) } : { template: $('.task-template').value }), params, ...input });
       clearRebuild();
-      selected = result.task.id; stamp = '';
+      endForm(); selected = result.task.id; stamp = '';
       clearQuote();
     });
   };
   async function showArtifact(task, artifact) {
+    endForm();
+    if (!reviewOnly) secondary.append(records);
     const key = `${task.id}:${artifact.id}`;
     const request = ++previewRequest;
     const isCurrent = () => !disposed && request === previewRequest;
@@ -320,7 +351,7 @@ export function createTasks(api, options = {}) {
     previewKey = key; previewType = type;
     setPending(false); renderCurrent(task, artifact);
     if (type === 'glb') remembered.set(task.id, artifact.id);
-    lastPreview = { task, artifact, displayName: browser.label(artifact), loading: false };
+    lastPreview = { task, artifact, type, displayName: browser.label(artifact), loading: false };
     options.onPreview?.(lastPreview);
     $('.task-error').hidden = true;
     reviewTask = ['merge-review', 'a8-review'].includes(task.template) && artifact.name === 'index.html' ? task.id : null;
@@ -354,7 +385,7 @@ export function createTasks(api, options = {}) {
   }
   async function detail(task) {
     const result = await api.tasks(task.id);
-    if (disposed || selected !== task.id) return;
+    if (disposed || selected !== task.id || composing) return;
     task = result.task; $('.task-log').textContent = displayLabel(task.log || task.error || t('tasks.log.none'));
     $('.task-head h2').textContent = displayLabel(task.title);
     const identity = resultIdentity(task);
@@ -365,27 +396,28 @@ export function createTasks(api, options = {}) {
     const artifacts = $('.task-artifacts'); artifacts.replaceChildren();
     for (const artifact of orderedArtifacts(task.artifacts)) {
       const row = node('div', null, 'task-artifact'), label = node('span', artifact.name);
+      row.dataset.artifactId = artifact.id;
       label.title = artifact.path; row.append(label, node('small', `${(artifact.bytes / 1024 / 1024).toFixed(1)} MB`));
       if (/\.(blend|step|stp|png|jpg|html|svg)$/.test(artifact.name)) {
         const open = node('button', t('tasks.button.openFile')); open.onclick = () => action(() => api.task({ action: 'open', id: task.id, artifact_id: artifact.id })); row.append(open);
       }
-      if (/\.(glb|png|jpe?g|webp|svg|html|json)$/i.test(artifact.name)) {
-        const view = node('button', t('common.view')); view.onclick = () => showArtifact(task, artifact).catch(error); row.append(view);
+      if (/\.(glb|png|jpe?g|webp|svg|html|json|md|txt|csv)$/i.test(artifact.name)) {
+        const view = node('button', t('common.view')); view.onclick = () => openResult(task.id, false, artifact.id).catch(error); row.append(view);
       }
       if (artifact.name.endsWith('.glb')) {
         const take = node('button', artifact.animations || artifact.skins ? t('tasks.button.animationProject') : t('tasks.button.importBackToEdit'));
         take.disabled = !!(artifact.animations || artifact.skins);
-        take.onclick = () => action(async () => { const state = await api.getState(); await api.task({ action: 'import', id: task.id, artifact_id: artifact.id, expected_revision: state.workbench.revision }); options.onImport?.(); });
+        take.onclick = () => action(async () => { const state = await api.getState(); await api.task({ action: 'import', id: task.id, artifact_id: artifact.id, expected_revision: state.workbench.revision, new_scene: Boolean(options.importIntoNewScene?.()) }); await options.onImport?.(); });
         row.append(take);
         const replace = node('button', t('tasks.button.replaceSelectedPart'));
-        replace.disabled = take.disabled;
+        replace.disabled = take.disabled || Boolean(options.importIntoNewScene?.());
         replace.onclick = () => action(async () => {
           const { workbench } = await api.getState();
           if (workbench.selection.length !== 1) throw new Error(t('tasks.error.selectOnePartToReplace'));
           await api.task({ action: 'import', id: task.id, artifact_id: artifact.id,
             replace_ids: workbench.selection, expected_revision: workbench.revision,
             ...(workbench.collaboration ? { expected_versions: Object.fromEntries(workbench.objects.map(o => [o.id, o.version])) } : {}) });
-          options.onImport?.();
+          await options.onImport?.();
         });
         row.append(replace);
       }
@@ -395,12 +427,15 @@ export function createTasks(api, options = {}) {
       pathInput.setAttribute('aria-label', t('entry.pathFor', { name: artifact.name }));
       pathInput.onclick = () => pathInput.select(); pathDetails.append(pathSummary, pathInput);
       const download = node('button', t('tasks.button.save')); download.onclick = () => action(async () => {
-        const data = await api.taskAsset(task.id, artifact), url = URL.createObjectURL(new Blob([data], { type: artifact.mime }));
-        const link = node('a'); link.href = url; link.download = artifact.name.split('/').pop(); link.click(); setTimeout(() => URL.revokeObjectURL(url), 10000);
+        await downloadFile(api, await api.taskAsset(task.id, artifact), artifact.name, artifact.mime, {kind:'task',id:task.id,artifact:artifact.id});
       }); row.append(download, pathDetails); artifacts.append(row);
     }
     const review = ['merge-review', 'a8-review'].includes(task.template);
     const first = (review && task.artifacts?.find(x => x.name === 'index.html')) || task.artifacts?.find(a => a.id === (remembered.get(task.id) || browser.preferred(task))) || primaryArtifact(task.artifacts, task.result);
+    // A failed/running task can have no preview. Keep its log in the task rail
+    // instead of the secondary area, which is visible only in direct preview.
+    if (!first && !reviewOnly) recordsHome.append(records);
+    if (composing) return; // Poll receipts without replacing the form the user is editing.
     if (first && (!previewKey.startsWith(`${task.id}:`) || !root.classList.contains('result-browsing'))) await showArtifact(task, first);
     else if (first && root.classList.contains('result-browsing')) { if (lastPreview) renderCurrent(task, lastPreview.artifact); options.onPreview?.(lastPreview); }
     else if (!first) { root.classList.remove('direct-preview'); shell.setDirectPreview(false); primaryActions.replaceChildren(); currentName.textContent = task.title; currentStatus.textContent = STATUS()[task.status]; rename.hidden = true; status.hidden = true; setPending(false); ++previewRequest; previewKey = ''; lastPreview = null; options.onPreview?.(null); clearMedia(); shell.setEmbedded(false); media.hidden = true; preview?.setActive(false); $('.task-empty').hidden = false; $('.task-empty').textContent = task.error || (live(task) ? t('tasks.empty.runningHint') : t('tasks.empty.noPreviewableArtifact')); $('.task-canvas').hidden = true; $('.task-animation').hidden = true; }
@@ -414,13 +449,14 @@ export function createTasks(api, options = {}) {
     root.classList.toggle('task-has-history', data.tasks.length > 0);
     shell.setPopulated(data.tasks.length > 0);
     if (!selected && data.tasks.length) selected = data.tasks[0].id;
-    const next = JSON.stringify(data.tasks.map((t) => [t.id, t.status, t.service?.progress, t.artifacts?.map(a => a.id), Math.floor(t.elapsed_seconds || 0)])) + selected;
+    const selectedTask = raw.tasks.find((task) => task.id === selected);
+    const next = JSON.stringify([...data.tasks, selectedTask].filter(Boolean).map((t) => [t.id, t.status, t.service?.progress, t.artifacts?.map(a => a.id), Math.floor(t.elapsed_seconds || 0)])) + selected;
     if (next !== stamp) {
       stamp = next; $('.task-list').replaceChildren();
       for (const task of data.tasks) {
         const row = node('div', null, 'task-item'), button = node('button', null, selected === task.id ? 'selected' : '');
         button.append(node('strong', task.title), node('span', `${STATUS()[task.status] || task.status} · ${Math.round(task.elapsed_seconds || 0)}s`));
-        button.onclick = async () => { selected = task.id; stamp = ''; try { await refresh(); $('.task-result').scrollTop = 0; if (matchMedia('(max-width:720px)').matches) root.scrollTop = 0; } catch (e) { error(e); } }; row.append(button);
+        button.onclick = async () => { endForm(); selected = task.id; stamp = ''; try { await refresh(); $('.task-result').scrollTop = 0; if (matchMedia('(max-width:720px)').matches) root.scrollTop = 0; } catch (e) { error(e); } }; row.append(button);
         if (live(task)) { const cancel = node('button', task.service ? t('tasks.button.stopWaiting') : t('common.cancel')); cancel.title = task.service ? t('tasks.title.remoteCancelNote') : t('tasks.title.stopLocalTask'); cancel.onclick = () => action(() => api.task({ action: 'cancel', id: task.id })); row.append(cancel); }
         if (task.can_resume) { const resume = node('button', t('tasks.button.continueRetrieval')); resume.onclick = () => action(() => api.task({ action: 'resume', id: task.id })); row.append(resume); }
         if (task.editable && !live(task)) {
@@ -430,11 +466,13 @@ export function createTasks(api, options = {}) {
         }
         $('.task-list').append(row);
       }
-      const task = data.tasks.find((x) => x.id === selected); if (task) await detail(task);
+      // An explicit chat/result link may select an observation or review that
+      // is hidden from this library. Its preview must still load and refresh.
+      if (selectedTask) await detail(selectedTask);
     }
   }
   function editParameters(task) {
-    root.classList.remove('result-browsing', 'direct-preview'); shell.setDirectPreview(false);
+    beginForm();
     $('.task-provider').value = ''; templates(); $('.task-template').value = task.editable.template; fields(task.editable.params);
     rebuildId = task.id; fromSelection.checked = false; fromSelection.disabled = true; upload.disabled = true;
     $('.task-inputs').value = task.editable.inputs.join('\n'); $('.task-inputs').disabled = true;
@@ -452,7 +490,7 @@ export function createTasks(api, options = {}) {
         if (artifact) await showArtifact(task, artifact);
       }
     }
-    else { clearRebuild(); $('.task-provider').value = ''; templates(); $('.task-template').value = template; fields(); shell.reveal($('.task-form')); }
+    else { beginForm(); clearRebuild(); $('.task-provider').value = ''; templates(); $('.task-template').value = template; fields(); shell.reveal($('.task-form')); }
   }
   const ready = (async () => {
     caps = await api.capabilities();
@@ -460,15 +498,45 @@ export function createTasks(api, options = {}) {
     populateProviders(); await refresh();
     timer = setInterval(() => refresh().catch(error), 2000);
   })().catch(error);
-  async function openResult(id, files = false) {
+  async function openResult(id, files = false, artifactId = null, artifactName = null) {
+    endForm();
     selected = id;
     root.classList.add('result-browsing');
     await openRecipe(null, id);
+    let selectedArtifact;
+    if (artifactId || artifactName) {
+      const { task } = await api.tasks(id);
+      const artifact = task.artifacts.find(a => artifactId ? a.id === artifactId : a.name === artifactName);
+      if (!artifact) throw new Error(t('api.error.artifactReadFailed'));
+      selectedArtifact = artifact;
+      if (!files) await showArtifact(task, artifact);
+    }
     if (files) {
       shell.reveal($('.task-files'));
       $('.task-files').scrollIntoView({ block: 'nearest' });
       $('.task-files summary').focus();
+      if (selectedArtifact) {
+        const row = [...$('.task-artifacts').children].find(e => e.dataset.artifactId === selectedArtifact.id);
+        row?.scrollIntoView({ block: 'center' });
+      }
+    } else if (selectedArtifact) {
+      $('.task-files').open = false;
+      $('.task-result').scrollTop = 0;
     }
   }
-  return { ready, refreshServices, openRecipe, openResult, openHistory() { root.classList.add('result-history-open'); shell.openLibrary(); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; if (!options.serviceSettings) settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); browser.dispose(); preview?.dispose(); clearMedia(); } };
+  async function openService(provider, operation) {
+    await ready; clearRebuild();
+    beginForm();
+    const match = caps.services?.find(s => s.configured && (s.id === provider || s.connection_template === provider || s.adapter === provider));
+    provider = match?.id || provider;
+    const available = [...$('.task-provider').options].find(o => o.value === provider);
+    if (!available) throw new Error(t('manufacture.serviceUnavailable'));
+    $('.task-provider').value = provider; templates();
+    $('.task-template').value = operation; fields(); shell.reveal($('.task-form'));
+  }
+  return { ready, openService, refreshServices, openRecipe, openResult,
+    getPresentation:()=>({task_id:selected,artifact_id:lastPreview?.artifact.id,camera:previewType==='glb'?captureCamera(preview):null}),
+    async waitForPresentation(){await preview?.loop.waitForFrame();},
+    async restorePresentation(value) {if(value?.task_id){await ready;await openResult(value.task_id,false,value.artifact_id);restoreCamera(preview,value.camera);}},
+    openHistory() { root.classList.add('result-history-open'); root.classList.remove('direct-preview'); shell.setDirectPreview(false); shell.reveal($('.task-list')); }, setState(state) { if (state?.focus_task_id && selected !== state.focus_task_id) { selected = state.focus_task_id; stamp = ''; refresh().catch(error); } }, setActive(value) { if (active === value) return; active = value; preview?.setActive(value && previewType === 'glb'); if (html) { media.replaceChildren(); if (value) mountHtml(); } if (value) refresh().catch(error); }, dispose() { disposed = true; if (!options.serviceSettings) settings?.dispose(); window.removeEventListener('message', saveReview); clearInterval(timer); shell.dispose(); browser.dispose(); preview?.dispose(); clearMedia(); } };
 }

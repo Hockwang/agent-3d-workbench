@@ -1,5 +1,5 @@
 // MCP transport for the shared workspace. No localhost fetches from the iframe.
-import { decodeBase64 } from "./binary.js";
+import { decodeBase64, encodeBase64 } from "./binary.js";
 import { uploadFile } from '../web/upload.js';
 import { t } from "../web/i18n.js";
 export function payload(result) {
@@ -7,6 +7,7 @@ export function payload(result) {
   if (result.isError || value.ok === false) {
     const error = new Error(value.error?.message || t("mcpApi.error.operationFailed"));
     error.code = value.error?.code || "tool_error";
+    error.payload = value;
     throw error;
   }
   return value;
@@ -69,6 +70,27 @@ export function createMcpApi(app, initialWorkspace = '') {
     refreshNonce,
     resourceUri: scopedUri,
     init: async () => {},
+    async downloadFile(data, name, mimeType, reference) {
+      try {
+        if (typeof app.downloadFile !== 'function') throw Object.assign(new Error('Method not found'), {code:-32601});
+        const result = await app.downloadFile({ contents: [{ type: 'resource', resource: {
+          uri: `file:///${encodeURIComponent(name)}`, mimeType, blob: await encodeBase64(data),
+        } }] });
+        if (result?.isError) throw new Error(t('mcpApi.error.downloadDenied'));
+      } catch (error) {
+        // Older hosts have openLink but no ui/download-file. Keep cancellation
+        // and real transport failures visible; only unsupported methods fall back.
+        if (error.code !== -32601 && error.message !== 'Method not found') throw error;
+        if (!reference || !workspaceId) throw new Error(t('mcpApi.error.downloadUnsupported'));
+        const {url} = await call('studio_open', {presentation:'browser'});
+        const target = new URL('/download.html', url);
+        if (target.protocol !== 'http:' || !['127.0.0.1','localhost','[::1]'].includes(target.hostname)) throw new Error(t('mcpApi.error.downloadUnsupported'));
+        target.search = new URLSearchParams({workspace:workspaceId,kind:reference.kind,id:reference.id,...(reference.artifact?{artifact:reference.artifact}:{})});
+        const result = await app.openLink({url:target.href});
+        if (result?.isError) throw new Error(t('mcpApi.error.downloadDenied'));
+        return {url:target.href};
+      }
+    },
     getState: () => call("studio_get_state"),
     getRecipes: () => call("studio_list_recipes"),
     getRecipe: (id) => call("studio_get_recipe", { id }),
@@ -86,6 +108,8 @@ export function createMcpApi(app, initialWorkspace = '') {
       if (result.isError) throw new Error(t('mcpApi.error.codexRigRejected'));
       return t('mcpApi.status.rigRequestSent');
     },
+    laser: (body) => write("studio_laser", body),
+    manufacture: (body) => write("studio_manufacture", body),
     capabilities: () => call("studio_capabilities"),
     services: (body) => write("studio_services", body),
     tasks: (id) => call("studio_tasks", id ? { id } : {}),
@@ -115,7 +139,7 @@ export function createMcpApi(app, initialWorkspace = '') {
     arrange: (body) => write("studio_arrange", body),
     exportProject: (body) => write("studio_export", body),
     check: (body) => write("studio_check", body),
-    send: (body) => write("studio_send_to_bambu", body),
+    send: (body) => write("studio_send_to_slicer", body),
     prepare: (body) => write("studio_prepare", body),
     select: (parts) => write("studio_select", { parts }),
     undo: (id) => write("studio_undo", id == null ? {} : { id }),

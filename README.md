@@ -10,6 +10,8 @@ Works with Codex, Claude Code, and other MCP clients. Local code needs no DiT mo
 3D service account, or 3D API key. You can also connect your own Hunyuan or Assembly service.
 Your agent account/subscription and any 3D service fees are separate.
 
+**Plugin developer preview · 0.9.0:** manufacturing checkpoints, safer print preparation, slicer handoff and verified part-color export. [Scope, setup and limits](docs/PLUGIN_PREVIEW.md). The standalone Agent application is not included.
+
 ## What can you do?
 
 You and your agent share one project, model, and selection. These tools run locally; install Blender, Node.js, or slicing software when a task needs them.

@@ -46,6 +46,7 @@ from studio.adapters.lux3d_service import ROUTES as LUX3D_OPERATIONS
 from studio.adapters.meshy import OPERATIONS as MESHY_OPERATIONS
 from studio.adapters.tripo import OPERATIONS as TRIPO_OPERATIONS
 from studio.adapters.tripo import upload as tripo_upload  # noqa: F401 - re-exported facade API
+from studio.adapters import p3sam_service  # noqa: F401 - register the segmentation adapter
 
 # `title` values below are message-catalog codes, not literal display text (the
 # `lux3d_service.TITLE_CODES` pattern): a spec's title is only ever turned into
@@ -65,6 +66,16 @@ BUILTINS = {
         "operations": {"image-to-3d": "/open-api/v1/submit-task"},
         "poll_interval": 10,
         "default_timeout_seconds": 1800,
+    },
+    "p3sam": {
+        "title": "services.title_segmentation",
+        "base_url": "",
+        "requires_base_url": True,
+        "adapter": "p3sam",
+        "requires_key": False,
+        "operations": {"segment": "/segment"},
+        "default_timeout_seconds": 600,
+        "local_inputs_allowed": True,
     },
     "lux3d": {
         "title": "services.title_lux3d",
@@ -142,6 +153,7 @@ BUILTINS = {
 
 # Hints shown when a `requires_base_url` provider (below) has none configured yet.
 _BASE_URL_HINTS = {
+    "p3sam": "a compatible model-segmentation service",
     "hunyuan-responses": "any OpenAI-compatible gateway that serves the Hunyuan 3D models",
     "seed3d-chat": "any OpenAI-compatible gateway that serves the Seed3D image-to-3D model",
 }

@@ -102,7 +102,30 @@ def file_version(path: Optional[str]) -> int:
 # `StudioBackend` 里——这些函数本身不持有、也不修改任何实例状态。
 
 
-def api_load(job_dir: Path, body: dict[str, Any]) -> dict[str, Any]:
+def api_load(job_dir: Path, body: dict[str, Any], *, task_artifact=None) -> dict[str, Any]:
+    if "task_id" in body or "artifact_id" in body:
+        from studio.core.editor import EditorError, Workspace
+        import shutil
+        import tempfile
+
+        if "files" in body or not body.get("task_id") or not body.get("artifact_id") or task_artifact is None:
+            raise EditorError.coded("print_state.task_source_invalid")
+        # Resolve only an artifact owned by this project's task store, including
+        # its size/hash check. Reuse editor import's units, axes and static guard
+        # in a separate workspace; never import into the user's editing scene.
+        path, _ = task_artifact(body["task_id"], body["artifact_id"])
+        root = job_dir / "print-inputs"
+        root.mkdir(exist_ok=True)
+        copy_root = Path(tempfile.mkdtemp(prefix="task-", dir=root))
+        try:
+            copy = Workspace(copy_root)
+            imported = copy.execute({"action": "import", "expected_revision": 0, "params": {"files": [str(path)]}})
+            exported = copy.execute({"action": "print_copy", "expected_revision": imported["revision"]})
+            request = {k: v for k, v in body.items() if k not in ("task_id", "artifact_id")}
+            return api_load(job_dir, {**request, "files": exported["files"]})
+        except Exception:
+            shutil.rmtree(copy_root)
+            raise
     files = body.get("files") or []
     ns = argparse.Namespace(
         job=str(job_dir),
@@ -149,6 +172,7 @@ def api_export(job_dir: Path, body: dict[str, Any]) -> dict[str, Any]:
         shape=shape,
         set=set_list,
         no_project=bool(body.get("no_project", False)),
+        part_color=dict_to_kv_list(body.get("part_colors") or {}),
     )
     return cli.cmd_export(ns)
 
@@ -169,6 +193,8 @@ def api_send(job_dir: Path, body: dict[str, Any]) -> tuple[dict[str, Any], bool]
         plate=to_int(plate, "plate") if plate is not None else None,
         all=bool(body.get("all", False)),
         dry_run=dry_run,
+        slicer=body.get("slicer"),
+        geometry_only=bool(body.get("geometry_only", False)),
     )
     return cli.cmd_open(ns), dry_run
 
@@ -198,6 +224,7 @@ def api_prepare(job_dir: Path, body: dict[str, Any]) -> dict[str, Any]:
         filament=body.get("filament"),
         export_set=dict_to_kv_list(body.get("export_set") or {}),
         no_project=bool(body.get("no_project", False)),
+        part_color=dict_to_kv_list(body.get("part_colors") or {}),
         check=bool(body.get("check", False)),
         open=bool(body.get("send", False)),
     )
@@ -223,7 +250,10 @@ def resolve_printer_info(printer_name: Optional[str]) -> Optional[dict[str, Any]
         return {"name": printer_name, "bed_mm": None, "exclude_areas": None, "margin_mm": cli.DEFAULT_MARGIN_MM}
     return {
         "name": resolved["name"],
+        "display_name": resolved.get("display_name", resolved["name"]),
+        "slicer": resolved.get("slicer", "bambu"),
         "bed_mm": resolved["bed_mm"],
+        "bed_origin_mm": resolved.get("bed_origin_mm", [0.0, 0.0]),
         "exclude_areas": resolved["exclude_areas"],
         "margin_mm": cli.DEFAULT_MARGIN_MM,
     }
@@ -246,7 +276,7 @@ def compute_source_centers(inspect_parts: list[dict[str, Any]]) -> dict[str, Opt
 
 def build_export_out(job_dir: Path, export_data: dict[str, Any]) -> dict[str, Any]:
     overrides: dict[str, Any] = {}
-    provenance_path = job_dir / "profiles" / "provenance.json"
+    provenance_path = Path(export_data.get("profiles_dir") or job_dir / "profiles") / "provenance.json"
     if provenance_path.is_file():
         try:
             overrides = json.loads(provenance_path.read_text()).get("process_overrides", {})
@@ -265,6 +295,8 @@ def build_export_out(job_dir: Path, export_data: dict[str, Any]) -> dict[str, An
             }
         )
     return {
+        "slicer": export_data.get("slicer", "bambu"),
+        "manual_setup_required": export_data.get("manual_setup_required", False),
         "process_preset": export_data.get("process_preset"),
         "filament_preset": export_data.get("filament_preset"),
         "overrides": overrides,
@@ -398,6 +430,7 @@ def build_state(
         "recipe": recipe,
         "evaluation_focus": evaluation_focus,
         "print_sources": [p["stl_path"] for p in (inspect_data or {}).get("parts", [])],
+        "auto_cut": (inspect_data or {}).get("auto_cut"),
         # Additive: the job revision at which the model currently loaded into
         # `inspect_data` was last (re)loaded — see `StudioBackend.mark_inspect_rev`.
         "inspect_rev": inspect_rev,

@@ -9,6 +9,8 @@
 Codex、Claude Code 等 MCP 客户端都可以使用。本地代码路线无需 DiT、3D 服务账号或 3D API key；
 也可以接入自己的 Hunyuan、Assembly 等服务。Agent 的账号／订阅与 3D 服务费用分别计算。
 
+**Plugin 开发者预览版 · 0.9.0：**新增制造步骤、打印准备改进、切片器交付和部件颜色回读。[范围、安装与限制](docs/zh-CN/PLUGIN_PREVIEW.md)。本次不包含独立 Agent 应用。
+
 ## 能做什么？
 
 人和 Agent 共用同一个工程、模型和选区。下面这些能力可在本地完成；Blender、Node.js、切片软件按任务安装。

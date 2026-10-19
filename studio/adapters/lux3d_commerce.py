@@ -122,7 +122,11 @@ def quote_plan(spec, items):
         records[sequence] = {"fingerprint": signature, "payload": normalized, "operation": operation}
         requests[sequence] = {
             "endpoint": {"method": "POST", "path": ROUTES[operation]},
-            "parameters": {"body": json.dumps(normalized, ensure_ascii=False)},
+            "parameters": {
+                "pathParameters": "{}",
+                "queryParameters": "{}",
+                "body": json.dumps(normalized, ensure_ascii=False),
+            },
         }
     account = balance(spec)
     body = {"source": 1, "uniqueId": account["uniqueId"], "items": requests}

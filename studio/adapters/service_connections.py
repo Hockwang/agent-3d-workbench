@@ -31,6 +31,7 @@ _KEY_ID = uuid.uuid4().hex
 # for the same pattern), rendered by `render()` where they are displayed
 # (`listing()`), never at module-import time.
 TEMPLATES = {
+    "p3sam": "services.title_segmentation",
     "lux3d": "service_connections.title_lux3d",
     "lux3d-global": "service_connections.title_lux3d_global",
     "hunyuan": "service_connections.title_hunyuan",
@@ -201,6 +202,8 @@ def save(body):
     template = body.get("template")
     if template not in TEMPLATES:
         raise EditorError.coded("service_connections.unsupported_protocol")
+    if template == "p3sam" and (body.get("sealed_key") or body.get("key_env")):
+        raise EditorError("当前分区协议不需要密钥 / This segmentation protocol needs no key")
     title = body.get("title", "")
     if not isinstance(title, str) or not 1 <= len(title.strip()) <= 100:
         raise EditorError.coded("service_connections.title_length_range")
@@ -250,7 +253,7 @@ def save(body):
         if ref:
             spec["credential_ref"] = ref
         # Missing credential is distinct from an intentionally unauthenticated generic API.
-        spec["requires_key"] = True
+        spec["requires_key"] = template != "p3sam"
         data["profiles"][name] = spec
         data["revision"] = uuid.uuid4().hex
         write_store(data)

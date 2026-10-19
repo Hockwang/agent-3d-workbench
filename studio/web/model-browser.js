@@ -1,12 +1,10 @@
-import { primaryArtifact } from './result-model.js';
 import { TaskPreview } from './task-preview.js';
 import { t } from './i18n.js';
 import { displayLabel } from './display-label.js';
 
-// Keep diagnostic meshes out of the first-use model chooser.
+// Reports stay in the file list; every model variant remains reachable.
 export function modelArtifacts(task) {
-  const artifacts = task.artifacts || [], primary = primaryArtifact(artifacts, task.result);
-  return artifacts.filter(a => /\.glb$/i.test(a.name) && (!a.name.includes('/') || a === primary));
+  return (task.artifacts || []).filter(a => /\.glb$/i.test(a.name));
 }
 export function modelLabel(artifact, saved) {
   return displayLabel(saved?.trim() || artifact.name.split('/').pop().replace(/\.glb$/i, '').replace(/[_-]+/g, ' '));

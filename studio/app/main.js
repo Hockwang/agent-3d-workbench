@@ -6,15 +6,17 @@ import { createMcpApi, payload } from "./api.js";
 import { decodeBase64 } from "./binary.js";
 import { createSelectionContextSync } from "./selection-context.js";
 import { t } from "../web/i18n.js";
+import { browserEntry } from "../web/quick-access.js";
 
 const $ = (id) => document.getElementById(id);
 // The host owns the workspace dimensions. SDK autoResize measures max-content
 // on every resize and reports it back, creating a resize feedback path.
-const app = new App({ name: "3D Workbench", version: "0.8.6" }, {}, { autoResize: false });
+const app = new App({ name: "3D Workbench", version: "0.9.0" }, {}, { autoResize: false });
 const api = createMcpApi(app, $("print-prep-app").dataset.workspaceId);
 const selectionContext = createSelectionContextSync(app);
 let connected = false, closed = false, connection = null, poll = null, state = null;
 let workspace = null, presentation = "card", geometryQueue = Promise.resolve();
+let requestedEntry = browserEntry();
 let presentationKey = "", cardFrame = null, cardSize = "";
 function reportCardSize() {
   if (!connected || closed || presentation !== "card" || cardFrame !== null) return;
@@ -108,7 +110,10 @@ function bindWorkspace(id) {
 // Global/thread entrypoints can send tool input before a result is available.
 // Bind only host-supplied identity; never guess a workspace from global state.
 app.ontoolinput = ({ arguments: args }) => {
-  try { bindWorkspace(args?.workspace_id); }
+  try {
+    requestedEntry = browserEntry(new URLSearchParams({ mode: args?.mode || '', task: args?.task_id || '' }).toString());
+    bindWorkspace(args?.workspace_id);
+  }
   catch (error) { status(error.message, true); }
 };
 app.ontoolresult = (result) => {
@@ -126,6 +131,9 @@ app.ontoolresult = (result) => {
     const nonce = result._meta?.["studio/uiNonce"];
     if (typeof nonce === "string") api.setUiNonce(nonce);
     const next = payload(result);
+    // A long-lived MCP process may still return the former implicit "edit"
+    // default. Only an explicit launch destination should bypass the chooser.
+    if (next.workspace_mode) next.workspace_mode = requestedEntry.taskId ? 'tasks' : requestedEntry.mode;
     bindWorkspace(next.workspace_id);
     if (Array.isArray(next.parts)) { updateSummary(next); workspace?.setState(next); status(t("main.status.workspaceSynced")); }
   } catch (error) { status(error.message, true); }

@@ -10,10 +10,13 @@ slice_geometry_3mf`（自有代码）：`--datadir` 隔离一份干净的 CLI �
 from __future__ import annotations
 
 import json
+import math
 import os
 import subprocess
 import sys
 import time
+import xml.etree.ElementTree as ET
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, Sequence
@@ -77,6 +80,7 @@ def export_project_3mf(
     out_dir.mkdir(parents=True, exist_ok=True)
     datadir = datadir or (out_dir / "bambu-cli-data")
     project_path = out_dir / f"{project_name}.project.3mf"
+    project_path.unlink(missing_ok=True)
     settings_path = out_dir / f"{project_name}.effective_settings.json"
 
     def build_cmd(with_slice: bool) -> list[str]:
@@ -134,6 +138,7 @@ def check_slice(
     timeout_s: float = DEFAULT_TIMEOUT_S,
     binary: Optional[Path] = None,
     datadir: Optional[Path] = None,
+    statistics_format: str = "bambu",
 ) -> dict[str, Any]:
     """无头 `--slice 0` 试切，读 `result.json` 拿克重/时间/警告；失败不抛异常，
     如实把 `grams`/`seconds` 留 `None`、`error` 填错误串，由调用方决定退出码。"""
@@ -144,6 +149,8 @@ def check_slice(
     out_dir.mkdir(parents=True, exist_ok=True)
     datadir = datadir or (out_dir / "bambu-cli-data")
     sliced_name = f"{name}.sliced.3mf"
+    sliced_path = out_dir / sliced_name
+    sliced_path.unlink(missing_ok=True)
     result_json = out_dir / "result.json"
     # `check` 的输出目录按盘固定（`DIR/check/plate_NN/`），重跑时如果这一轮的
     # 子进程在写 result.json 之前就失败/超时，读到的会是上一轮遗留的旧
@@ -192,6 +199,22 @@ def check_slice(
             grams = round(sum(f.get("total_used_g", 0) for f in plates[0].get("filaments", [])), 2)
             seconds = plates[0].get("total_predication")
             slice_warnings = plates[0].get("warnings") or []
+    elif statistics_format == "orca" and record["returncode"] == 0:
+        try:
+            with zipfile.ZipFile(sliced_path) as archive:
+                plate = ET.fromstring(archive.read("Metadata/slice_info.config")).find("plate")
+                if plate is None:
+                    raise ValueError("missing plate statistics")
+                metadata = {m.get("key"): m.get("value") for m in plate.findall("metadata")}
+                grams = float(metadata["weight"])
+                seconds = float(metadata["prediction"])
+                gcode = archive.read("Metadata/plate_1.gcode")
+                if not gcode or not all(math.isfinite(v) and v > 0 for v in (grams, seconds)):
+                    raise ValueError("missing G-code or invalid statistics")
+                slice_warnings = [w.get("msg", "") for w in plate.findall("warning")]
+        except (OSError, ValueError, KeyError, zipfile.BadZipFile, ET.ParseError) as exc:
+            grams = seconds = None
+            error_string = render("slicer.stats_failed", error=str(exc))
     elif record["timed_out"]:
         error_string = render("bambu.slice_timeout", timeout_s=timeout_s)
     else:

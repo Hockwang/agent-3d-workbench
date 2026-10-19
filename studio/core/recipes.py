@@ -284,7 +284,7 @@ def _validate_args(
     # 工具还没接进来（"缺能力"）时没有 schema 可查键名，只能跳过这一条；上面的
     # 形状/路径键/大小校验对任何工具都照跑。
 
-    if tool_name == "studio_send_to_bambu" and "all" in args:
+    if tool_name in {"studio_send_to_bambu", "studio_send_to_slicer"} and "all" in args:
         # 只要出现就必须是字面 false；`1`/`"yes"` 这类非布尔真值以前能靠
         # `is not True` 蒙混过去，消费端却是 `bool(...)`，等价于真的打开了全部盘。
         _require(_is_false_literal(args["all"]), render("recipes.args_all_must_be_false", field=field))

@@ -244,6 +244,10 @@ register(
             "zh-CN": "orient 的 set 向量分量不是合法数字: {entry}",
             "en": "orient's set vector has a component that is not a valid number: {entry}",
         },
+        "print_state.task_source_invalid": {
+            "zh-CN": "请选择同一工程中的任务和模型文件，不能同时指定本地文件。",
+            "en": "Choose a task and model artifact from this project; do not also supply local files.",
+        },
         "print_state.unknown_choice": {
             "zh-CN": "未知的 {field_name}: {value}",
             "en": "Unknown {field_name}: {value}",

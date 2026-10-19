@@ -2,13 +2,13 @@
 
 ## 结果
 
-Assembly 五项操作的适配器、UI 和收件流程已验证；首轮真实域名连接未建立，后续通过方案 0 已到达网关，仍缺可用鉴权，因此不能声称远端生成已跑通。CF 查询来源、配置、范围和联网诊断见 [接入文档](../ASSEMBLY_API.md)。当前工作台默认使用 GPT 和本机工具，不要求生成 API。
+Assembly 五项操作的适配器、UI 和收件流程已验证；真实服务仍需按部署完成鉴权和生成验收；协议、配置与边界见 [接入文档](../ASSEMBLY_API.md)。当前工作台默认使用 GPT 和本机工具，不要求生成 API。
 
 ## 改动文件与原因
 
 | 文件 | 改动与原因 |
 |---|---|
-| `studio/assembly_service.py`、`studio/services.py` | 按 CF 契约处理模板、参数、外层状态码、一次提交、按 ID 收件与 ZIP；凭据使用环境变量引用，兼容独立的 OneAPI 推理 appkey |
+| `studio/assembly_service.py`、`studio/services.py` | 按工作流协议处理模板、参数、外层状态码、一次提交、按 ID 收件与 ZIP；凭据使用环境变量引用，兼容独立的 OneAPI 推理 appkey |
 | `studio/tasks.py`、`studio/task_schema.py` | 公开本机路线和可选服务能力；拒绝误传本机模型给远端，设置合适的异步等待时间 |
 | `studio/web/tasks.js`、`studio/web/tasks.css`、`studio/app/dist/studio.html` | 默认本机方式，增加 GPT 使用说明与五项服务参数；远端方式隐藏本机输入，修正 hidden 标签被 display 覆盖的问题 |
 | `skills/print-prep/SKILL.md`、`README.md`、`docs/ASSEMBLY_API.md` | 说明默认路线、远端契约、计费与能力边界，不把动作生成说成模型生成 |
@@ -29,21 +29,6 @@ Assembly 五项操作的适配器、UI 和收件流程已验证；首轮真实�
 
 本机证据目录：`~/test/claude-blender/runs/workbench-assembly-api-20260922/`，包括 `pytest.log`、`node-tests.log`、`build.log`、`local-first-v2/results.json`、`local-first-v2/editor-import.json`、`installed-source-match.json`、`installed-capabilities.json`、`installed-protocol.json` 和用户工程重启前后快照。证据与测试产物不随源码提交。
 
-## 方案 0 跟进
+## 公共发布说明
 
-依据用户提供的历史会话记录，独立验证并接入固定的 prod-test 内网路由。系统解析 `api-beta.aholo3d.cn` 为代理虚拟 IP，而已配置公司域的内网入口解析到 `<internal-ip>`。保持原逻辑 Host、只对当前请求直接连接，可取得真实 HTTP 200 / `appKey missing`。保留原域名 SNI 的 HTTPS 连接也收到 ingress 默认证书，故未采用关闭 TLS 校验的做法。
-
-| 文件 | 本次改动与原因 |
-|---|---|
-| `studio/services.py` | 增加固定域名/路径的 Assembly 内网连接模式；显式允许前禁止明文凭据或任务提交；其他服务和下载保留原策略 |
-| `studio/service_diagnostics.py` | 无凭据优先的只读 history 诊断，区分网络、鉴权和生成状态；不输出响应正文、密钥或资产链接 |
-| `scripts/diagnose_assembly.py` | 提供复现方案 0 的 CLI，不更改系统网络、服务配置或工作区 |
-| `tests/test_service_transport.py` | 18 项回归，包含真实本机 HTTP、代理隔离、Host、明文 opt-in、重定向拒绝、凭据隔离与诊断状态 |
-| `README.md`、`docs/ASSEMBLY_API.md`、本记录 | 更正首轮入口不通的结论，说明网络已通但真实生成未验证；补配置与鉴权来源 |
-| `.codex-plugin/plugin.json` | 安装版本 `0.6.0+codex.20260922172137` |
-
-验证：先运行回归测试，确认旧实现忽略新路由并失败，再实现修复。独立路由测试最终 18 passed；全量 `uv run --frozen pytest -m 'not bambu' -q` 为 **357 passed, 2 deselected，119.54 秒**。未改 UI 或构建资源，本轮未重复 UI 性能/Node 验证。新增证据：`transport-pytest.log`、`transport-probe.json`。
-
-真实探测只发送 GET，结果 `network_reachable=true`、`authentication=required`、`generation=not_tested`、`credentials_sent=false`。没有发送网关凭据或 OneAPI 推理 key，没有提交计费任务。网关 token/权限仍需在实际测试环境验证，不能由上述通过项推出五条生成路线已成功。
-
-安装更新后，新 stdio MCP 连接返回 22 个工具且 capabilities 可读；重启前确认无活动任务，重启后 `job.json`、`workbench/project.json`、`studio_meta.json` 三份文件 SHA 一致，保留 1 个编辑对象和 5 个打印零件。安装缓存首测出现一次 HTTP 502，随后同版本复测恢复为 `appKey missing`；源码与 curl 同样得到该鉴权响应，curl 实际连接同一内网入口，用时 0.069 秒。未证明上游稳定性。安装证据为 `transport-installed-files.json`、`transport-installed-runtime.json`。
+历史部署诊断与私人运行标识不随插件分发。上述为当时的本地协议验证，当前预览版验证见 [PLUGIN_PREVIEW](../PLUGIN_PREVIEW.md)。

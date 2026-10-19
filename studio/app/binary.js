@@ -18,3 +18,16 @@ export async function decodeBase64(text, yieldControl = () => new Promise(resolv
   }
   return bytes.buffer;
 }
+
+export async function encodeBase64(data, yieldControl = () => new Promise(resolve => setTimeout(resolve, 0))) {
+  const bytes = new Uint8Array(await new Blob([data]).arrayBuffer()), chunks = [];
+  const chunkSize = 768 * 1024; // divisible by 3: padding only appears in the final chunk
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    let binary = '';
+    for (let start = 0; start < chunk.length; start += 8192) binary += String.fromCharCode(...chunk.subarray(start, start + 8192));
+    chunks.push(btoa(binary));
+    if (offset + chunkSize < bytes.length) await yieldControl();
+  }
+  return chunks.join('');
+}

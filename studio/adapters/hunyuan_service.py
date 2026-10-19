@@ -1,6 +1,6 @@
-"""Hunyuan 3D/Part through the company's Responses gateway, without an LLM call.
+"""Hunyuan 3D/Part through a configured Responses-compatible gateway, without an LLM call.
 
-Protocol: CF 81467106899 qunhe-image3d-pipeline and CF 81494192346.
+Protocol: configured image-to-3D and part-generation HTTP endpoints.
 Reuse the task runner, HTTP transport, bounded ZIP extraction and shared viewer.
 Only one paid POST; every recovery polls the persisted response ID. Registers
 itself as the `hunyuan-responses` adapter.

@@ -6,6 +6,9 @@ import { EditorViewport } from "./editor-viewport.js";
 import { icon } from './vendor/ui/icons.js';
 import { createPartChatUI } from './part-chat.js';
 import { t } from './i18n.js';
+import { cutSource, cutIds, cutView, trackCut, replacementFiles, printCopyStamp } from './print-cut.js';
+import { createRefreshQueue } from './refresh-queue.js';
+import { captureCamera, restoreCamera } from './session-view.js';
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (x) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[x]));
 const vector = (id, value = 0) => `<div class="ed-vector">${["X", "Y", "Z"].map((axis) => `<label><span class="axis-${axis.toLowerCase()}">${axis}</span><input aria-label="${({"ed-translate":t('editor.tool.translate'),"ed-rotate":t('editor.tool.rotate'),"ed-scale":t('editor.tool.scale')})[id]} ${axis}" id="${id}-${axis}" type="number" step="any" value="${value}"></label>`).join("")}</div>`;
@@ -13,9 +16,18 @@ const actionIcons = {undo:'undo-2', redo:'redo-2', save:'save'};
 const button = (action, text, extra = "") => `<button type="button" data-edit="${action}" aria-label="${text}" title="${text}" ${extra}>${icon(actionIcons[action])}<span>${text}</span></button>`;
 
 export function createEditor(api, options = {}) {
-  let state = null, busy = false, active = true, disposed = false, timer = null, refreshPromise = null, module = "edit", selectionStamp = "";
+  let state = null, busy = false, active = true, disposed = false, timer = null, module = "edit", selectionStamp = "";
+  const refresh = createRefreshQueue(readState);
   let firstState = true, printSources = [], renderStamp = "";
   let region = null, nameDirty = false;
+  const cutStorageKey = `studio-print-cut:${api.workspaceId || api.job || globalThis.location?.search || 'local'}`;
+  let printCut = null;
+  try { printCut = JSON.parse(sessionStorage.getItem(cutStorageKey)); } catch (_) { /* Storage may be unavailable. */ }
+  if (!Array.isArray(printCut?.knownIds) || !Array.isArray(printCut?.files)) printCut = null;
+  function savePrintCut() {
+    try { if (printCut) sessionStorage.setItem(cutStorageKey, JSON.stringify(printCut)); else sessionStorage.removeItem(cutStorageKey); } catch (_) { /* In-memory recovery still works. */ }
+    renderStamp = ''; render();
+  }
   $("editor-space").innerHTML = `
     <div class="ed-toolbar"><div><strong id="ed-name">${t('editor.toolbar.title')}</strong><span id="ed-stats">${t('editor.toolbar.stats')}</span><small id="ed-folder" hidden></small></div>
       <div class="ed-actions">${button("undo", t('editor.toolbar.undo'))}${button("redo", t('editor.toolbar.redo'))}${button("save", t('editor.toolbar.save'))}</div></div>
@@ -43,6 +55,7 @@ export function createEditor(api, options = {}) {
       </div></details>
       <details class="ed-inspector studio-card" open><summary>${icon('sliders-horizontal')}<span>${t('editor.props.title')}</span></summary><div class="studio-card-body">
         <div id="ed-error" role="alert" hidden></div>
+        <div id="ed-print-recovery" class="ed-print-recovery" hidden><p></p><button type="button" id="ed-end-print-recovery"></button></div>
         <p class="ed-inspector-empty" hidden>${t('editor.props.selectionGuide')}</p>
         <nav class="ed-tabs" aria-label="${t('editor.props.tabsAriaLabel')}">${[["edit",t('editor.props.tab.edit')],["cut",t('editor.props.tab.cut')],["repair",t('editor.props.tab.repair')],["material",t('editor.props.tab.material')]].map(([id,label]) => `<button data-module="${id}" aria-pressed="${id === "edit"}">${label}</button>`).join("")}</nav>
         <section class="ed-section" data-ed-panel="edit">
@@ -174,7 +187,8 @@ export function createEditor(api, options = {}) {
     $("ed-error").append(retry);
   }
   function getVector(id) { return ["X", "Y", "Z"].map((axis) => Number($(id + "-" + axis).value)); }
-  function selection() { return state?.objects.filter((o) => state.selection.includes(o.id)) || []; }
+  function editorView() { return cutView(printCut, state); }
+  function selection() { const view = editorView(); return view?.objects.filter((o) => view.selection.includes(o.id)) || []; }
   let materialStamp = '', materialChanges = {};
   function materialValues() {
     materialChanges = {}; $('ed-texture-status').textContent = '';
@@ -225,11 +239,20 @@ export function createEditor(api, options = {}) {
     render();
   }
   function render() {
+    const state = editorView();
     if (!state) return;
+    shell.setWelcome(!printCut && state.objects.length === 0);
+    shell.setPopulated(!!printCut || state.objects.length > 0);
     const nextStamp = JSON.stringify([state.revision, state.view_revision, state.selection, state.objects.map(o => o.lease), busy, printSources]);
     if (renderStamp === nextStamp) return;
     renderStamp = nextStamp;
-    const sceneName = state.name && state.name !== 'scene' ? state.name : t('entry.editScene');
+    $('ed-print-recovery').hidden = !printCut;
+    if (printCut) $('ed-print-recovery').querySelector('p').textContent = t('printFit.editing', { name: printCut.name });
+    const printButton = $('editor-space').querySelector('[data-edit="print_copy"]');
+    const printLabel = t(printCut ? 'printFit.returnToPrint' : 'editor.delivery.printCopyButton');
+    printButton.querySelector('span').textContent = printLabel;
+    printButton.title = printLabel; printButton.setAttribute('aria-label', printLabel);
+    const sceneName = printCut ? printCut.name : state.name && state.name !== 'scene' ? state.name : t('entry.editScene');
     $("ed-name").textContent = sceneName;
     $("ed-scene-name").textContent = sceneName;
     $('ed-folder').hidden = !state.project_folder;
@@ -240,7 +263,8 @@ export function createEditor(api, options = {}) {
         : state.collaboration.scope ? t('editor.status.statsCollabScope', { count, faces, members: state.collaboration.members })
         : t('editor.status.statsCollab', { count, faces, members: state.collaboration.members }); }
     $("ed-object-count").textContent = state.objects.length;
-    $("ed-empty").hidden = state.objects.length > 0;
+    $("ed-empty").hidden = !!printCut || state.objects.length > 0;
+    imports.hidden = !!printCut;
     $("ed-import").open = state.objects.length === 0 ? true : $("ed-import").open;
     $("ed-working").hidden = !busy;
     const signature = JSON.stringify([state.objects.map((o) => [o.id, o.name, o.visible]), state.selection]);
@@ -262,23 +286,39 @@ export function createEditor(api, options = {}) {
     for (const btn of $("editor-space").querySelectorAll("[data-edit]")) {
       const action = btn.dataset.edit;
       const global = ["box","sphere","import","from_print","open","save","all","show_all","undo","redo","export_glb","export_stl","print_copy"].includes(action);
-      btn.disabled = busy || (!global && !selected.length) || (action === "undo" && !state.can_undo) || (action === "redo" && !state.can_redo) || (action === "from_print" && !printSources.length);
+      btn.disabled = busy || (!global && !selected.length) || (action === "undo" && !state.can_undo) || (action === "redo" && !state.can_redo) || (action === "from_print" && !printSources.length) || (!!printCut && ['box', 'sphere', 'import', 'from_print', 'open', 'isolate'].includes(action));
     }
     $("ed-history-count").textContent = state.history.length;
     $("ed-history").innerHTML = [...state.history].reverse().map((h) => `<li><span>${h.actor === "human" ? t('editor.history.human') : "AI"}</span>${esc(h.summary)}</li>`).join("");
     viewport.update(state); motionPanel.update(state); scenePanel.update(state); cityPanel.update(state); previewPlane();
   }
   let working = false;
-  async function refresh() {
+  async function readState() {
     if (disposed) return;
-    if (refreshPromise) return refreshPromise;
-    refreshPromise = api.getState().then(setState).catch(showError).finally(() => { refreshPromise = null; });
-    return refreshPromise;
+    try { setState(await api.getState()); } catch (error) { showError(error); }
   }
   async function run(action, params = {}, revision, versions) {
     if (!state || working || busy) return null;
+    const before = state, context = printCut;
+    if (context) {
+      if (action === 'show_all') { action = 'visibility'; params = { ids: cutIds(context, state), visible: true }; }
+      else if (action === 'select') params = { ...params, ids: (params.ids || []).filter(id => context.knownIds.includes(id)) };
+      else if (action === 'export') params = { ...params, ids: params.ids || cutIds(context, state) };
+      else if (!params.ids && !['import', 'undo', 'redo', 'save', 'print_copy'].includes(action)) params = { ...params, ids: editorView().selection };
+    }
+    const selected = params.ids || state.selection;
+    if (context && ['merge', 'boolean'].includes(action) && selected.some(id => context.knownIds.includes(id)) && !selected.every(id => context.knownIds.includes(id))) {
+      showError(new Error(t('printFit.mixedSelection'))); return null;
+    }
+    let succeeded = false;
     working = true; busy = true; $("ed-error").hidden = true; render();
     try {
+      if (action === 'print_copy' && context) {
+        const ids = cutIds(context, state);
+        if (!ids.length) throw new Error(t('printFit.noPieces'));
+        replacementFiles(context, await api.getState(), ['validation']);
+        params = { ...params, ids };
+      }
       const result = await api.edit({ action, params, expected_revision: revision ?? state.revision,
         ...(state.collaboration ? { expected_versions: versions || Object.fromEntries(state.objects.map(o => [o.id, o.version])) } : {}) });
       if (action !== "select") {
@@ -289,10 +329,22 @@ export function createEditor(api, options = {}) {
       }
       if (result.reports) $("ed-reports").innerHTML = result.reports.map((r) => `<div class="ed-report"><strong>${esc(r.name)}</strong><p>${t('editor.repair.componentsLine', { state: t(r.watertight ? 'editor.repair.watertight' : 'editor.repair.open'), components: r.components })}</p><p>${t('editor.repair.edgesLine', { boundary: r.boundary_edges, nonmanifold: r.nonmanifold_edges })}</p></div>`).join("");
       if (["import", "primitive", "open"].includes(action)) $("ed-import").open = false;
-      if (action === "print_copy") { await api.load({ files: result.files }); options.onPrint?.(); }
+      if (action === "print_copy") {
+        const files = context ? replacementFiles(context, await api.getState(), result.files) : result.files;
+        await api.load({ files, ...(context?.printer ? { printer: context.printer } : {}) });
+        if (context) { printCut = null; savePrintCut(); }
+        await options.onPrint?.();
+      }
+      succeeded = true;
       return result;
     } catch (error) { showError(error); return null; }
-    finally { working = false; busy = false; await refresh(); }
+    finally {
+      // A poll started before the edit may still be in flight. Read the final
+      // revision before assigning new cut pieces to this recovery session.
+      await refresh(true);
+      working = false; busy = false; renderStamp = ''; render();
+      if (succeeded && context && context === printCut) { trackCut(context, before, state, action, params); savePrintCut(); }
+    }
   }
   async function dispatch(action) {
     const geometry = { allow_material_loss: $("ed-plain").checked };
@@ -301,7 +353,7 @@ export function createEditor(api, options = {}) {
     if (action === "from_print") return run("import", { files: printSources, units: "mm" });
     if (action === "open") return run("open", { path: $("ed-project-path").value.trim() });
     if (action === "save") return run("save", $("ed-project-path").value.trim() ? { path: $("ed-project-path").value.trim() } : {});
-    if (action === "all") return run("select", { ids: state.objects.map((o) => o.id) });
+    if (action === "all") return run("select", { ids: editorView().objects.map((o) => o.id) });
     if (action === "rename") { const result = await run(action, { name: $("ed-object-name").value }); if (result) nameDirty = false; return result; }
     if (action === "transform") {
       const result = await run(action, { translate_mm: getVector("ed-translate"), rotate_deg: getVector("ed-rotate"), scale: getVector("ed-scale") });
@@ -398,6 +450,8 @@ export function createEditor(api, options = {}) {
   };
   document.addEventListener("keydown", keydown);
   const ready = (async () => { await api.init(); await refresh(); })();
+  $('ed-end-print-recovery').textContent = t('printFit.endEditing');
+  $('ed-end-print-recovery').onclick = () => { if (!working) { printCut = null; savePrintCut(); } };
   let lastRefresh = 0, lastRenew = 0;
   timer = setInterval(() => {
     if (!active || document.hidden || working || viewport.dragging) return;
@@ -409,7 +463,31 @@ export function createEditor(api, options = {}) {
       if (ids.length) api.collaboration({ action: 'renew', ids }).catch(showError);
     }
   }, 1000);
-  return { ready, setState, refresh, openFile, getMotionContext: () => motionPanel.getContext(), pauseMotion: () => motionPanel.pause(), fitView: () => viewport.fit(),
+  return { ready, setState, refresh, openFile, endPrintCut() { printCut = null; savePrintCut(); }, getMotionContext: () => motionPanel.getContext(), pauseMotion: () => motionPanel.pause(), fitView: () => viewport.fit(),
+    getPresentation:()=>({camera:captureCamera(viewport),motion:motionPanel.getContext()}),
+    async waitForPresentation(){await viewport.assetQueue;await viewport.loop.waitForFrame();},
+    async restorePresentation(value) {await ready;await refresh();await viewport.assetQueue;restoreCamera(viewport,value?.camera);motionPanel.restoreContext(value?.motion);},
+    async openPrintCut(source, name) {
+      await ready;
+      const fresh = await api.getState(); setState(fresh);
+      if (printCopyStamp(source) !== printCopyStamp(fresh)) throw new Error(t('printFit.sourceChanged'));
+      const context = cutSource(fresh, name);
+      if (printCut?.stamp === context.stamp && printCut.name === name && cutIds(printCut, state).length) {
+        if (!await run('select', { ids: [cutIds(printCut, state)[0]] })) throw new Error(t('printFit.openFailed'));
+      } else {
+        printCut = context; savePrintCut();
+        const result = await run('import', { files: [context.files[context.index]], units: 'mm' });
+        if (!result?.created?.length) { printCut = null; savePrintCut(); throw new Error($('ed-error').textContent || t('printFit.openFailed')); }
+        context.knownIds = result.created;
+        printCut = context; savePrintCut();
+      }
+      const selected = selection()[0];
+      if (selected) $('ed-cut-axis').value = String(selected.extents_mm.indexOf(Math.max(...selected.extents_mm)));
+      $('ed-cut-offset').value = '0'; $('ed-region-pick').checked = false;
+      this.openAction('plane_cut');
+      await viewport.assetQueue;
+      viewport.fit(editorView().selection);
+    },
     setWorkspaceMode(mode) { if(mode==='motion')cityPanel.detailMode(); $("editor-space").classList.toggle("motion-workspace",mode === "motion"); motionPanel.setActive(mode === "motion"); },
     openAction(action) {
       const tab = { inspect: "repair", repair: "repair", simplify: "repair", plane_cut: "cut", split_components: "cut", material: "material" }[action];

@@ -1,5 +1,5 @@
-import { modelArtifacts } from './model-browser.js';
 import { displayLabel } from './display-label.js';
+import { modelArtifacts } from './model-browser.js';
 import { t } from './i18n.js';
 import { recentResults, primaryArtifact, resultGroups, resultIdentity, resultTimeLabel, thumbnailArtifact } from './result-model.js';
 
@@ -21,7 +21,7 @@ export function browserEntry(search = '') {
   const params = new URLSearchParams(search);
   const mode = params.get('mode');
   return {
-    mode: ['edit', 'motion', 'tasks', 'observe', 'print'].includes(mode) ? mode : 'edit',
+    mode: ['home', 'edit', 'motion', 'tasks', 'observe', 'print', 'manufacture', 'laser'].includes(mode) ? mode : 'home',
     taskId: params.get('task') || null,
   };
 }
@@ -34,9 +34,13 @@ export function selectionCount(mode, state) {
   return (objects || []).filter(o => ids.has(editing ? o.id : o.name)).length;
 }
 
-export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOpenHistory, onAttachSelection }) {
+export function canPrintArtifact(artifact) {
+  return /\.glb$/i.test(artifact?.name || '') && !artifact.animations && !artifact.skins;
+}
+
+export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOpenHistory, onAttachSelection, onPrintTask }) {
   let state = null, results = [], groups = [], loaded = false, loadError = '', stamp = '', disposed = false;
-  let mode = 'edit', viewing = null;
+  let mode = 'edit', viewing = null, printLoading = false;
   const thumbnails = new Map();
   const bar = node('section', null, 'quick-access');
   bar.setAttribute('aria-label', t('entry.ariaLabel'));
@@ -66,8 +70,24 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
   const shelfHead = node('div', null, 'result-shelf-head');
   const shelfTitle = node('strong', t('entry.latestDelivery'));
   const shelfStatus = node('small'); shelfStatus.setAttribute('role', 'status');
-  shelfHead.append(shelfTitle, shelfStatus);
+  const shelfToggle = node('button', t('entry.collapseModels'), 'result-shelf-toggle');
+  shelfToggle.type = 'button'; shelfToggle.setAttribute('aria-controls', 'result-shelf-cards');
+  shelfHead.append(shelfTitle, shelfStatus, shelfToggle);
   const shelfCards = node('div', null, 'result-shelf-cards');
+  shelfCards.id = 'result-shelf-cards';
+  let shelfCollapsed = false;
+  try { shelfCollapsed = localStorage.getItem('studio.models.collapsed') === 'true'; } catch { /* Optional layout preference. */ }
+  function renderShelfToggle() {
+    shelfCards.hidden = shelfCollapsed;
+    shelfToggle.textContent = t(shelfCollapsed ? 'entry.expandModels' : 'entry.collapseModels');
+    shelfToggle.setAttribute('aria-expanded', String(!shelfCollapsed));
+  }
+  shelfToggle.onclick = () => {
+    shelfCollapsed = !shelfCollapsed;
+    try { localStorage.setItem('studio.models.collapsed', String(shelfCollapsed)); } catch { /* Keep the in-memory preference. */ }
+    renderShelfToggle();
+  };
+  renderShelfToggle();
   shelf.append(shelfHead, shelfCards); bar.after(shelf);
 
   const dialog = node('dialog', null, 'quick-results');
@@ -127,6 +147,42 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
     if (!compact) text.append(node('small', info.note, 'result-note'));
     view.append(thumbnail(task), text); view.onclick = () => { if (dialog.open) dialog.close(); onOpenResult(task.id, false); };
     row.append(view);
+    // The overview is a shared entry point: loading a print copy must also be
+    // available when opened from editing, tasks or observation.
+    if (onPrintTask && (!compact || mode === 'print')) {
+      const choices = modelArtifacts(task), controls = node('div', null, 'result-print-controls');
+      const picker = node('select'); picker.setAttribute('aria-label', t('entry.printModelChoice', { name: info.title }));
+      for (const artifact of choices) {
+        const option = node('option', artifact.name); option.value = artifact.id; picker.append(option);
+      }
+      picker.value = (choices.find(a => a === primaryArtifact(task.artifacts, task.result)) || choices.find(canPrintArtifact) || choices[0])?.id || '';
+      picker.hidden = choices.length < 2;
+      const load = node('button', t('entry.loadForPrint'), 'result-print-load'); load.type = 'button';
+      const note = node('small'); note.setAttribute('role', 'status');
+      const selected = () => choices.find(a => a.id === picker.value);
+      const update = () => {
+        load.dataset.printable = String(Boolean(selected()));
+        load.textContent = t(canPrintArtifact(selected()) ? 'entry.loadForPrint' : 'entry.choosePrintPose');
+        load.disabled = printLoading || Boolean(state?.busy) || !selected();
+        note.textContent = canPrintArtifact(selected()) ? '' : t('entry.printPoseHint');
+      };
+      picker.onchange = update;
+      load.onclick = async () => {
+        if (load.disabled || printLoading) return;
+        if (!canPrintArtifact(selected())) {
+          if (dialog.open) dialog.close();
+          await onOpenResult(task.id, false, picker.value);
+          return;
+        }
+        printLoading = true; updatePrintButtons(); load.textContent = t('entry.printLoading'); note.textContent = '';
+        try { await onPrintTask(task.id, picker.value); if (dialog.open) dialog.close(); }
+        catch (error) { note.textContent = error.message; }
+        finally { printLoading = false; load.textContent = t('entry.loadForPrint'); updatePrintButtons(); }
+      };
+      // In printing, the model card and its load button enter the same workflow.
+      if (mode === 'print') view.onclick = () => load.click();
+      controls.append(picker, load, note); row.append(controls); update();
+    }
     if (!compact) {
       const files = node('button', t('entry.files')); files.type = 'button';
       files.onclick = () => { dialog.close(); onOpenResult(task.id, true); };
@@ -141,12 +197,18 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
       row.querySelector('.result-open')?.setAttribute('aria-pressed', String(selected));
     }
   }
+  function updatePrintButtons() {
+    for (const button of [...shelfCards.querySelectorAll('.result-print-load'), ...list.querySelectorAll('.result-print-load')]) {
+      button.disabled = printLoading || Boolean(state?.busy) || button.dataset.printable !== 'true';
+    }
+  }
   function renderShelf() {
     shelfCards.replaceChildren();
     const latest = groups[0];
-    shelfTitle.textContent = latest ? `${t('entry.latestDelivery')} · ${latest.title}` : t('entry.latestDelivery');
-    shelfStatus.textContent = loadError ? t('entry.loadFailed', { detail: loadError }) : !loaded ? t('entry.loading') : !latest ? t('entry.emptyResults') : t('entry.previewKeepsEditor');
-    if (latest) for (const task of latest.latest) shelfCards.append(card(task, true));
+    shelfTitle.textContent = mode === 'print' ? t('entry.printModels', { count: results.length }) : latest ? `${t('entry.latestDelivery')} · ${latest.title}` : t('entry.latestDelivery');
+    shelf.setAttribute('aria-label', mode === 'print' ? t('entry.printModels', { count: results.length }) : t('entry.latestDelivery'));
+    shelfStatus.textContent = loadError ? t('entry.loadFailed', { detail: loadError }) : !loaded ? t('entry.loading') : !latest ? t('entry.emptyResults') : t(mode === 'print' ? 'entry.printModelsHint' : 'entry.previewKeepsEditor');
+    for (const task of (mode === 'print' ? results : latest?.latest || [])) shelfCards.append(card(task, true));
     markViewing();
   }
   function renderList() {
@@ -155,7 +217,7 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
     if (loadError) { status.textContent = t('entry.loadFailed', { detail: loadError }); return; }
     const query = search.value.trim().toLocaleLowerCase();
     const matches = results.filter(task => `${task.title} ${Object.values(task.result || {}).join(' ')} ${(task.artifacts || []).map(a => a.name).join(' ')}`.toLocaleLowerCase().includes(query));
-    status.textContent = !loaded ? t('entry.loading') : !results.length ? t('entry.emptyResults') : !matches.length ? t('entry.noMatches') : t('entry.resultCount', { count: matches.length });
+    status.textContent = !loaded ? t('entry.loading') : !results.length ? t('entry.emptyResults') : !matches.length ? t('entry.noMatches') : t(onPrintTask ? 'entry.printResultCount' : 'entry.resultCount', { count: matches.length });
     for (const group of resultGroups(matches)) {
       const section = node('section', null, 'result-group');
       section.append(node('h3', group.title));
@@ -184,14 +246,16 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
   }
   function renderIdentity() {
     const wb = state?.workbench, previewing = mode === 'tasks' && viewing;
-    shelf.hidden = mode !== 'tasks' || Boolean(previewing);
+    shelf.hidden = !['tasks', 'print'].includes(mode) || Boolean(previewing);
     const count = wb?.objects?.length || 0;
-    model.hidden = mode === 'edit' || mode === 'motion';
+    model.hidden = ['home', 'edit', 'motion'].includes(mode);
     if (previewing) {
       const info = resultIdentity(viewing.task, viewing.artifact);
       identity.textContent = viewing.displayName ? `${viewing.displayName} · ${info.title}` : info.title;
       context.textContent = t(viewing.loading ? 'entry.previewLoading' : 'entry.previewMode');
       detail.textContent = info.detail;
+    } else if (mode === 'home') {
+      identity.textContent = t('start.workspace'); context.textContent = ''; detail.textContent = '';
     } else if (['edit', 'motion'].includes(mode)) {
       identity.textContent = wb?.name && wb.name !== 'scene' ? wb.name : t('entry.editScene');
       context.textContent = t('entry.editingCount', { count, revision: wb?.revision || 0 });
@@ -204,6 +268,7 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
   }
   function renderSelection() {
     const count = selectionCount(mode, state);
+    attach.hidden = mode === 'home';
     attach.disabled = !count || Boolean(state?.busy);
     attach.textContent = count ? t('entry.attachSelectionCount', { count }) : t('entry.attachSelection');
     attach.title = t(count ? 'entry.attachSelectionHelp' : 'entry.selectBeforeAttach');
@@ -215,12 +280,22 @@ export function createQuickAccess({ api, onModel, onOpenFile, onOpenResult, onOp
     setState(next) {
       state = next;
       const folder = state?.workbench?.project_folder;
-      project.textContent = folder ? t('entry.project', { name: folder.replace(/[\\/]+$/, '').split(/[\\/]/).pop() }) : t('entry.thisChat');
+      project.textContent = folder ? t('entry.project', { name: folder.replace(/[\\/]+$/, '').split(/[\\/]/).pop() }) : t(api.workspaceId ? 'entry.thisChat' : 'entry.localWorkspace');
       project.title = folder || api.workspaceId || '';
       scope.textContent = folder ? t('entry.resultsInProject', { folder }) : t('entry.resultsInChat');
       open.disabled = Boolean(state?.busy); renderIdentity(); renderSelection();
+      updatePrintButtons();
     },
-    setMode(nextMode) { mode = nextMode; renderIdentity(); renderSelection(); },
+    setMode(nextMode) {
+      const changed = mode !== nextMode;
+      mode = nextMode; renderIdentity(); renderSelection();
+      if (changed) {
+        renderShelf();
+        // Keep the in-flight action's controls attached so a load failure is
+        // still visible when its callback switches into the print workspace.
+        if (dialog.open && !printLoading) renderList();
+      }
+    },
     openResults() { recent.click(); },
     dispose() {
       disposed = true; dialog.remove(); shelf.remove(); bar.remove();

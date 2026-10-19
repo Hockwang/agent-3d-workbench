@@ -41,7 +41,7 @@ yourdfpy 0.0.60 (MIT) is used for URDF parsing, the link graph, and forward kine
 ## Unified workbench UI
 
 - [Pico CSS](https://github.com/picocss/pico) 2.1.1, MIT: reuses native HTML form, select, details, and focus styles. Placed in a low-priority CSS layer; the workbench's unified skin owns density, color, and the model-viewport layout.
-- [Lucide](https://github.com/lucide-icons/lucide) / lucide-static 1.47.0, ISC (the package also keeps its own derived-icon notice): only the 15 SVGs actually bundled are used; no icon runtime is introduced.
+- [Lucide](https://github.com/lucide-icons/lucide) / lucide-static 1.47.0, ISC (the package also keeps its own derived-icon notice): only the 16 SVGs actually bundled are used; no icon runtime is introduced.
 - IBM Plex Sans (@fontsource/ibm-plex-sans 5.3.0), SIL OFL 1.1: locally bundles the Latin WOFF2 for the 400/500/600 weights; Chinese text uses the system's existing Chinese font.
 
 Build entry point: `scripts/build_ui_assets.mjs`; the distributed assets and full licenses are in `studio/web/vendor/ui/`. The MCP App embeds fonts as data URIs and icons as static SVGs; there is no font CDN, no external icon requests, and no added continuous JavaScript animation.

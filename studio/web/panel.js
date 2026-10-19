@@ -176,17 +176,79 @@ export class Panel {
 
   setPrinters(printers) {
     this._printers = printers || [];
+    this._filterPrinters();
+    // A server snapshot may arrive before the asynchronous catalog.
+    if (this._synced) delete this._synced["printer-select"];
+    this._syncControl("printer-select", this._lastState?.printer?.name);
+  }
+
+  setSlicers(slicers) {
+    this._slicers = slicers || [];
+    const sel = el("slicer-select");
+    sel.replaceChildren();
+    const auto = document.createElement("option");
+    auto.value = "";
+    auto.textContent = t("panel.slicer.auto");
+    sel.appendChild(auto);
+    for (const slicer of this._slicers) {
+      const opt = document.createElement("option");
+      opt.value = slicer.id;
+      opt.textContent = `${slicer.name} · ${t(slicer.installed ? "panel.slicer.installed" : "panel.slicer.notInstalled")}`;
+      opt.disabled = !slicer.installed;
+      sel.appendChild(opt);
+    }
+    if (!this._slicers.length) {
+      this._renderSlicerHint();
+      return;
+    }
+    const source = el("printer-source");
+    const prevSource = source.value;
+    source.replaceChildren();
+    for (const slicer of this._slicers) {
+      const opt = document.createElement("option");
+      opt.value = slicer.id;
+      opt.textContent = slicer.name + (slicer.headless_slice ? "" : ` · ${t("panel.slicer.manualSlice")}`);
+      opt.disabled = !slicer.automated_profiles || !this._printers.some((p) => p.slicer === slicer.id);
+      source.appendChild(opt);
+    }
+    if ([...source.options].some((o) => o.value === prevSource && !o.disabled)) source.value = prevSource;
+    else source.value = [...source.options].find((o) => !o.disabled)?.value || "";
+    this._filterPrinters();
+    // A new source may not have existed when the job snapshot first arrived.
+    if (this._synced) delete this._synced["printer-select"];
+    this._syncControl("printer-select", this._lastState?.printer?.name);
+    this._renderSlicerHint();
+  }
+
+  _filterPrinters() {
     const sel = el("printer-select");
     const prev = sel.value;
     sel.innerHTML = "";
-    for (const p of this._printers) {
+    const source = el("printer-source").value;
+    const allPrinters = this._printers.filter((p) => (p.slicer || "bambu") === source);
+    const brands = [...new Set(allPrinters.map((p) => p.vendor || "BBL"))].sort();
+    const vendorSelect = el("printer-vendor");
+    const prevVendor = vendorSelect.value;
+    vendorSelect.replaceChildren();
+    for (const brand of ["", ...brands]) {
+      const opt = document.createElement("option");
+      opt.value = brand;
+      opt.textContent = brand || t("panel.slicer.allBrands");
+      vendorSelect.appendChild(opt);
+    }
+    vendorSelect.value = brands.includes(prevVendor) ? prevVendor : "";
+    const printers = allPrinters.filter((p) => !vendorSelect.value || (p.vendor || "BBL") === vendorSelect.value);
+    const sourceInfo = (this._slicers || []).find((s) => s.id === source);
+    el("printer-catalog-summary").textContent = t("panel.slicer.catalog", { count: printers.length, brands: brands.length })
+      + (sourceInfo && !sourceInfo.headless_slice ? ` ${t("panel.slicer.crealityManual")}` : "");
+    for (const p of printers) {
       const opt = document.createElement("option");
       opt.value = p.name;
-      opt.textContent = p.name;
+      opt.textContent = p.display_name || p.name;
       sel.appendChild(opt);
     }
-    if (prev && this._printers.some((p) => p.name === prev)) sel.value = prev;
-    else if (this._printers.some((p) => p.name === DEFAULT_PRINTER)) sel.value = DEFAULT_PRINTER;
+    if (prev && printers.some((p) => p.name === prev)) sel.value = prev;
+    else if (printers.some((p) => p.name === DEFAULT_PRINTER)) sel.value = DEFAULT_PRINTER;
     this._renderPrinterRow();
   }
 
@@ -199,6 +261,18 @@ export class Panel {
     if (value === null || value === undefined || value === "") return;
     if (!this._synced) this._synced = {};
     if (this._synced[id] === value) return;
+    if (id === "printer-select") {
+      const printer = this._printers.find((p) => p.name === value);
+      if (printer && el("printer-source").value !== (printer.slicer || "bambu")) {
+        el("printer-source").value = printer.slicer || "bambu";
+        el("printer-vendor").value = "";
+        this._filterPrinters();
+      }
+      if (printer && el("printer-vendor").value && el("printer-vendor").value !== printer.vendor) {
+        el("printer-vendor").value = printer.vendor;
+        this._filterPrinters();
+      }
+    }
     const node = el(id);
     if (node.tagName === "SELECT" && ![...node.options].some((o) => o.value === value)) return;
     node.value = value;
@@ -216,6 +290,8 @@ export class Panel {
 
   render(state) {
     this._lastState = state;
+    this.syncModelInputs(state);
+    this._renderSlicerHint();
     const busy = !state || !!state.busy;
     this._setButtonsDisabled(busy);
 
@@ -293,6 +369,12 @@ export class Panel {
     this._strategyChoice = bindChoice("strategy-select", "strategy-choice", { variant: "cards" });
     this._modeChoice = bindChoice("mode-select", "mode-choice", { variant: "segment" });
 
+    el("printer-source").addEventListener("change", () => {
+      el("printer-vendor").value = "";
+      this._filterPrinters();
+    });
+    el("printer-vendor").addEventListener("change", () => this._filterPrinters());
+    el("slicer-select").addEventListener("change", () => this._renderSlicerHint());
     el("printer-select").addEventListener("change", () => this._renderPrinterRow());
     el("shape-select").addEventListener("change", () => this._renderShapeEnhance());
 
@@ -328,6 +410,7 @@ export class Panel {
     el("send-plate-select").addEventListener("change", () => {
       this._syncSendAllFromSelect();
       const v = el("send-plate-select").value;
+      this._sendAllExplicit = v === "all";
       if (v !== "all") {
         this._viewPlateIndex = Number(v);
         if (this.opts.onPlateChange) this.opts.onPlateChange(Number(v));
@@ -339,6 +422,10 @@ export class Panel {
   _setButtonsDisabled(disabled) {
     const ids = ["btn-load", "btn-orient", "btn-arrange", "btn-export", "btn-check", "btn-send", "btn-prepare", "btn-override-add"];
     for (const id of ids) el(id).disabled = disabled;
+    if (this._lastState?.printer?.slicer === "creality") {
+      el("btn-check").disabled = true;
+      el("btn-check").title = t("panel.slicer.crealityManual");
+    } else el("btn-check").title = "";
     el("file-input").disabled = disabled;
   }
 
@@ -415,11 +502,28 @@ export class Panel {
     if (!bed && this._lastState && this._lastState.printer && this._lastState.printer.name === name) {
       bed = this._lastState.printer.bed_mm;
     }
-    el("printer-row-name").textContent = name || t("panel.printer.none");
+    el("printer-row-name").textContent = fromList?.display_name || name || t("panel.printer.none");
     el("printer-row-bed").textContent = bed ? `${fmtNum(bed[0], 0)}×${fmtNum(bed[1], 0)} mm` : "—";
   }
 
   // ---------------------------------------------------------------- 1. 模型
+  syncModelInputs(state, { force = false } = {}) {
+    if (!Array.isArray(state?.print_sources)) return;
+    const stamp = JSON.stringify([state.job, state.inspect_rev, state.print_sources]);
+    if (!force && stamp === this._modelInputStamp) return;
+    const initial = this._modelInputStamp === undefined;
+    this._modelInputStamp = stamp;
+    // A first response may arrive after the user has typed/uploaded a new file.
+    // Otherwise restore the loaded copy on reopen, or when the model changes.
+    if (!force && initial && this._readModelPaths().length) return;
+    el("model-paths").value = state.print_sources.join("\n");
+    // print_sources are already scaled/merged STL copies. Do not apply the
+    // previous load's transforms again when preparing or reloading them.
+    el("model-scale").value = "";
+    el("model-target-max").value = "";
+    el("model-merge").checked = false;
+  }
+
   _readModelPaths() {
     return el("model-paths")
       .value.split("\n")
@@ -730,6 +834,14 @@ export class Panel {
   }
 
   // ---------------------------------------------------------------- 3. 分盘
+  useAutomaticArrangement() {
+    // An explicit recovery choice must also replace the unsent local selection,
+    // even when the backend already last reported mode=auto.
+    el("mode-select").value = "auto";
+    this._modeChoice.refresh();
+    return this.bodyFor("arrange");
+  }
+
   _handleArrange() {
     const body = this.bodyFor("arrange");
     if (body) this.opts.onArrange(body);
@@ -738,6 +850,13 @@ export class Panel {
   _renderPlatesSummary(state) {
     const box = el("plates-summary");
     const plates = state && state.plates;
+    const summary = el('auto-cut-summary');
+    if (summary) {
+      summary.hidden = !state?.auto_cut;
+      summary.textContent = state?.auto_cut ? t('printFit.completed', {
+        parts: state.auto_cut.output_parts, cuts: state.auto_cut.cut_count,
+      }) + ' ' + t('printFit.connectionNote') : '';
+    }
     if (!plates || !plates.length) {
       box.textContent = t("panel.plates.none");
       return;
@@ -746,6 +865,13 @@ export class Panel {
       count: plates.length,
       list: plates.map((p) => t("panel.plates.item", { index: p.index, parts: (p.parts || []).length })).join(t("panel.plates.itemSeparator")),
     });
+    if (state.auto_cut) {
+      const note = document.createElement('p');
+      note.textContent = t('printFit.completed', { parts: state.auto_cut.output_parts, cuts: state.auto_cut.cut_count });
+      const limits = document.createElement('p');
+      limits.textContent = t('printFit.connectionNote');
+      box.append(note, limits);
+    }
   }
 
   // ---------------------------------------------------------------- 摆盘质量 / 打印预估（打印计划栏）
@@ -994,7 +1120,7 @@ export class Panel {
 
   _renderMfPrinterRow(state) {
     const printer = state && state.printer;
-    el("mf-printer-name").textContent = printer && printer.name ? printer.name : "—";
+    el("mf-printer-name").textContent = printer && printer.name ? (printer.display_name || printer.name) : "—";
     el("mf-printer-bed").textContent = printer && printer.bed_mm ? printer.bed_mm.map((v) => fmtNum(v, 0)).join("×") + " mm" : "—";
   }
 
@@ -1089,7 +1215,7 @@ export class Panel {
     optAll.value = "all";
     optAll.textContent = t("panel.plate.all");
     sel.appendChild(optAll);
-    if (prev && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
+    if (prev && (prev !== 'all' || this._sendAllExplicit) && [...sel.options].some((o) => o.value === prev)) sel.value = prev;
     this._syncSendAllFromSelect();
   }
 
@@ -1097,9 +1223,19 @@ export class Panel {
     el("send-all-check").checked = el("send-plate-select").value === "all";
   }
 
+  _renderSlicerHint() {
+    const target = el("slicer-select").value;
+    const source = this._lastState?.printer?.slicer || "bambu";
+    el("slicer-hint").textContent = (target && target !== source) || this._lastState?.export?.manual_setup_required
+      ? t("panel.slicer.manual") : t("panel.slicer.project");
+  }
+
   _handleSend() {
     const all = el("send-all-check").checked;
     const body = { all };
+    const source = this._lastState?.printer?.slicer || "bambu";
+    body.slicer = el("slicer-select").value || source;
+    body.geometry_only = body.slicer !== source || !!this._lastState?.export?.manual_setup_required;
     if (!all) body.plate = Number(el("send-plate-select").value || 1);
     this.opts.onSend(body);
   }
@@ -1112,14 +1248,16 @@ export class Panel {
     const projectNames = (sent.plates || [])
       .map((idx) => {
         const p = state.export && (state.export.plates || []).find((pp) => pp.index === idx);
-        return p && p.project_3mf ? basename(p.project_3mf) : `plate_${String(idx).padStart(2, "0")}.project.3mf`;
+        const path = sent.manual_setup_required ? p?.geometry_3mf : p?.project_3mf;
+        return path ? basename(path) : `plate_${String(idx).padStart(2, "0")}.3mf`;
       })
       .join(t("common.listSeparator"));
     const div = document.createElement("div");
     div.className = "result-plate";
     let msg = sent.launched
-      ? t("panel.send.launched", { names: projectNames })
+      ? t("panel.send.launched", { names: projectNames, slicer: (this._slicers || []).find((s) => s.id === sent.slicer)?.name || sent.slicer || "Bambu Studio" })
       : t("panel.send.dryRun");
+    if (sent.manual_setup_required) msg += ` ${t("panel.slicer.manual")}`;
     if (sent.was_running_before) msg += t("panel.send.wasRunningSuffix");
     div.textContent = msg;
     box.appendChild(div);

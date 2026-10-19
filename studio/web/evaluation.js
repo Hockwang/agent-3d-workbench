@@ -28,7 +28,11 @@ export function createObserve(api){
   // Editor polling pauses outside edit mode; route focus needs its own cheap
   // local status read, otherwise AI selection never reaches an open review tab.
   const syncTimer=setInterval(async()=>{if(!active||disposed||syncing||!api.evaluation)return;syncing=true;try{const s=await api.evaluation({action:'status'});if(!disposed)setState({evaluation_focus:s.focus});}catch{/* The connection panel reports actionable errors. */}finally{syncing=false;}},3000);
-  return{ready:Promise.all([local.ready,assembly.ready]),setState,setActive(v){active=v;switchMode(mode);},dispose(){disposed=true;clearInterval(syncTimer);local.dispose();assembly.dispose();remote.dispose();}};
+  return{ready:Promise.all([local.ready,assembly.ready]),setState,
+    async openTemplate(id,kind){switchMode(kind==='review'?1:0);if(kind==='review')await assembly.openRecipe(id);else local.openNew();},
+    getPresentation:()=>({tab:mode,local:local.getPresentation(),assembly:assembly.getPresentation()}),
+    async restorePresentation(value){if(!value)return;switchMode([0,1,2].includes(value.tab)?value.tab:0);if(mode===0)await local.restorePresentation(value.local);if(mode===1)await assembly.restorePresentation(value.assembly);},
+    setActive(v){active=v;switchMode(mode);},dispose(){disposed=true;clearInterval(syncTimer);local.dispose();assembly.dispose();remote.dispose();}};
 }
 
 export function createEvaluation(api,root){

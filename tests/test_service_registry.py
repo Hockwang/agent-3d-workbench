@@ -126,7 +126,9 @@ def test_task_schema_template_enum_is_derived_from_builtins_not_hand_maintained(
     from studio.shell.task_schema import TOOLS
 
     assert "assembly" not in TEMPLATES
-    assert all(BUILTINS[key].get("key_env") and BUILTINS[key].get("enabled", True) is not False for key in TEMPLATES)
+    assert all(BUILTINS[key].get("enabled", True) is not False for key in TEMPLATES)
+    assert all(BUILTINS[key].get("key_env") for key in TEMPLATES if key != "p3sam")
+    assert BUILTINS["p3sam"]["requires_key"] is False
 
     schema = next(t for t in TOOLS if t["name"] == "studio_services")
     assert schema["inputSchema"]["properties"]["template"]["enum"] == list(TEMPLATES)

@@ -4,7 +4,7 @@
 
 工作台默认使用当前 Codex 中的 GPT 编写脚本，调用本机 Blender / CadQuery/OCP，交付模型、工程、图像及检查报告。它不要求购买生成 API，仍消耗用户当前 GPT 额度与本机算力。明确操作也可以直接点选模板、参数和选区。
 
-Assembly 是可选的远端处理服务。本次依据公司内部的接口文档（API 链路、Web 关节动画、Web 骨骼动作）实现。它处理已有 GLB 或生成动作，不是文/图生几何接口。
+Assembly 是可选的远端处理服务。适配器实现可配置的装配、绑定和动作工作流协议。它处理已有 GLB 或生成动作，不是文/图生几何接口。
 
 | operation | 服务模板 | 交付 |
 |---|---|---|
@@ -32,50 +32,20 @@ Assembly 是可选的远端处理服务。本次依据公司内部的接口文�
 
 此示例不是完整鉴权配置。OpenAPI 的鉴权应按实际部署提供的规范配置，不能从 Web 登录方式推导。若部署要求 Authorization 请求头，可用 `"headers_env":{"Authorization":"ASSEMBLY_AUTHORIZATION"}`；对应环境变量是完整请求头值。若已明确使用 Bearer API key，也可配置 `key_env`，由适配器添加 `Bearer `。不要同时给同一个请求头配置两种来源。
 
-Web 测试入口是 `https://beta.aholo3d.cn`，路径为 `/cubely/v1/api/workflow`，需要公司登录态；其凭据也必须通过已配置的环境变量引用提供。不能填写、猜测或冒用 `x-qh-id`，请求体不接受用户 ID。
 
 可选 `oneapi_appkey_env` 引用后端装配推理使用的 OneAPI appkey（例如用户已配置的 `ONEAPI_API_KEY`）；发送时才注入 `oneapiAppKey`，不会进入任务参数或收据。该 appkey 不等同于 Assembly 接口登录凭据。`model` 可按部署权限覆盖装配主链模型；不代表覆盖全部分支。不要在 `params` 放明文 appkey。
 
 环境变量需要进入实际插件后端进程，配置后重启/重新连接后端。UI 的“已配置”只代表启用且引用存在，不代表网络、鉴权、余额或服务质量已经验证。
 
-### prod-test 内网路由（方案 0，2026-09-22 补充）
+### 连接诊断
 
-Claude 会话 `bfc7ec9a-9cf8-41b0-b2c8-0dde1058ed5e` 提供了不修改系统网络的入口。本轮独立复测：
+使用服务运营方提供的地址和鉴权方式。运行
+`uv run python scripts/diagnose_assembly.py` 可对已配置服务做只读诊断；
+默认不发送凭据、不提交任务，`--with-auth` 才显式使用已配置的凭据引用。
+网络可达、鉴权和生成分别报告；连接成功不代表计费、服务质量或真实生成已通过。
 
-- 连接 `<your-assembly-endpoint>`，仅该请求设置 `Host: api-beta.aholo3d.cn` 且不使用 HTTP 代理，`/cubely/v1/workflow/history` 返回 HTTP 200、`c=-1`、`appKey missing`。
-- 同一入口不设置 Host 返回 HTTP 401。通过这个入口连接 HTTPS，即使保留原域名的 SNI，也收到 `Kubernetes Ingress Controller Fake Certificate`，不是有效的 api-beta 证书。
-- `/assets` 在本次 prod-test 返回 HTTP 404；诊断使用已部署的 `/history` 和随机不存在的 promptId，不提交任务、不读取已有资产。
-- 安装缓存首测曾收到一次 HTTP 502；随后源码、curl 和安装版复测均恢复为 `appKey missing`。入口可达不代表上游服务稳定，502 不会被识别为鉴权或生成通过。
-
-“0 成本”在这里指不修改 `/etc/resolver`、代理、Shell 或 VPN 配置，**不代表免费生成或加密传输**。默认地址、TLS 校验及其他服务行为保留。无凭据复测：
-
-```bash
-uv run --frozen python scripts/diagnose_assembly.py --internal-prodtest
-```
-
-即使环境中已有凭据，默认也不会读取它们发送请求。输出分别标明网络、鉴权与生成状态；HTTP 200 不会被当成生成成功。该命令不写配置或更改工作区。
-
-需要实际运行内网服务时，在仓库外的 `services.json` 对 Assembly 增加：
-
-```json
-{
-  "assembly": {
-    "enabled": true,
-    "base_url": "https://api-beta.aholo3d.cn",
-    "transport": "assembly-prodtest-http",
-    "internal_origin": "http://<your-internal-ingress>",
-    "allow_insecure_http": true,
-    "key_env": null,
-    "headers_env": {"Authorization": "ASSEMBLY_AUTHORIZATION"}
-  }
-}
-```
-
-`internal_origin` 是这条内网路由实际连接的地址（替换 `base_url` 但保留其 `Host` 头，见上一节）；它必须是不含凭据、路径、查询参数的纯 HTTP(S) 协议加主机，且只在 `transport: "assembly-prodtest-http"` 下生效——不填会在发请求前直接拒绝。`ASSEMBLY_AUTHORIZATION` 需要是该测试环境真实接受的网关凭据完整请求头值；上述引用名不代表凭据已存在或可用。`allow_insecure_http=true` 明确允许在内网以 HTTP 明文发送凭据与任务参数。缺少此设置时仅允许无凭据只读诊断，任务创建前即拒绝。该选项只适用于固定的 Assembly prod-test OpenAPI 域名、`internal_origin` 指向的内网目标及三个文档路径，不能给任意域名覆盖 Host、放开 HTTP，或影响下载请求。
-
-已配置后可用 `--with-auth` 只读检查，成功也只表示 history 已到业务层，不代表生成、余额或质量通过。API 重定向仍拒绝，HTTP 入口不会在 HTTPS 失败后自动启用。
-
-鉴权依据：Aholo OpenAPI 开发指南（指向独立网关和测试权限流程）与测试 OpenAPI 文档（说明测试账号、appkey/appsecret 和签名方式）。Aholo token 模式与公司旧签名模式不能仅凭 `appKey missing` 推断；当前适配器支持完整 Authorization 请求头，尚未实现旧 appkey/appsecret 动态签名。不要填入 OneAPI 推理 key，也不要模拟用户身份。本轮检查到服务配置文件及 Aholo 网关环境变量均未配置，未从历史 transcript 恢复旧 token。
+本预览版不分发私人部署地址、会话标识或内部网络诊断记录。
+旧传输配置必须显式指定目标，不会在 HTTPS 失败后自动启用。
 
 ## 调用和收件
 
@@ -106,7 +76,6 @@ uv run --frozen python scripts/diagnose_assembly.py --internal-prodtest
 
 - 新增 29 项 Assembly 测试，连同既有服务测试共 33 项通过。使用真实本机 HTTP + 独立任务子进程验证五种模板、状态轮询、失败恢复、单次提交、产物解包和凭据隔离。模拟服务不证明真实后端模型质量。
 - 全量：339 项 Python 测试通过，2 项真实 Bambu 测试排除；62 项 Node 测试通过；`npm run build:app` 通过。
-- 首轮 CF 指定的两个测试域名在本机 Python/curl 中均发生 TLS EOF；浏览器访问 Web 测试站报 `ERR_CONNECTION_CLOSED`。后续通过上述方案 0 收到了真实网关鉴权响应，修正了“没有可达入口”的判断。仍未提交真实计费任务，真实端到端尚未通过；未关闭 TLS 校验、未模拟身份、未改系统网络设置。
 - 未把混合材质、URDF 渲染、SVInput 或 Lux3D 文/图生模型算作已集成；它们需要各自契约和真实验证。本次也未实现 API 套餐销售、充值或计费系统。
 
 复现不依赖生成 API 的例子：

@@ -47,6 +47,10 @@ register(
             "zh-CN": "缺少或错误的令牌",
             "en": "Missing or invalid token",
         },
+        "server.workspace_mismatch": {
+            "zh-CN": "此页面的工程与当前聊天连接的工程不一致，已停止读取和修改。请在聊天中让 Agent 重新打开当前工作台；不要手动替换链接中的聊天 ID。原工程仍保留。",
+            "en": "This page's project does not match the project connected to this chat. Reading and editing have stopped. Ask your agent to reopen the current workbench from chat; do not replace the chat ID in the URL. The original project is preserved.",
+        },
         "server.route_not_found": {
             "zh-CN": "未知接口: {path}",
             "en": "Unknown endpoint: {path}",

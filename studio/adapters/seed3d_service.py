@@ -1,4 +1,4 @@
-"""Seed3D's company gateway contract; chat envelope carries only a 3D request.
+"""Seed3D-compatible gateway contract; chat envelope carries only a 3D request.
 
 This synchronous API has no supported polling endpoint. Submit once, persist the
 result privately, and resume only its downloads. An ambiguous POST is never

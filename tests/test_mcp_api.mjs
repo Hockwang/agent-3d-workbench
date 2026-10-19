@@ -1,6 +1,52 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createMcpApi, payload } from "../studio/app/api.js";
+import { downloadFile } from '../studio/web/download.js';
+
+test('shared export delivers exact binary bytes and a safe filename through the MCP host', async () => {
+  const calls = [];
+  const api = createMcpApi({ downloadFile: async request => { calls.push(request); return {}; } });
+  const bytes = Uint8Array.from([0, 255, 1, 128]);
+  await downloadFile(api, bytes.subarray(1, 3), 'artifacts/蘑菇 sample.glb', 'model/gltf-binary');
+  const resource = calls[0].contents[0].resource;
+  assert.equal(calls[0].contents[0].type, 'resource');
+  assert.equal(resource.uri, 'file:///%E8%98%91%E8%8F%87%20sample.glb');
+  assert.equal(resource.mimeType, 'model/gltf-binary');
+  assert.deepEqual(Buffer.from(resource.blob, 'base64'), Buffer.from([255, 1]));
+});
+
+test('host download denial and transport failure are reported, never silently retried in the iframe', async () => {
+  await assert.rejects(downloadFile(createMcpApi({ downloadFile: async () => ({isError:true}) }), 'report', 'report.json'), /取消|拒绝/);
+  await assert.rejects(downloadFile(createMcpApi({ downloadFile: async () => { throw new Error('host disconnected'); } }), '', 'file'), /host disconnected/);
+  await assert.rejects(downloadFile(createMcpApi({}), '', 'file'), /不支持下载/);
+});
+
+test('older hosts open a workspace-scoped download page without exposing binary data or tokens in the URL', async () => {
+  const opened = [], calls = [];
+  const api = createMcpApi({
+    downloadFile: async () => { throw Object.assign(new Error('Method not found'), {code:-32601}); },
+    callServerTool: async request => { calls.push(request); return {structuredContent:{url:'http://127.0.0.1:55606/?workspace=task-a'}}; },
+    openLink: async request => { opened.push(request.url); return {}; },
+  }, 'task-a');
+  await downloadFile(api, 'test', 'file.svg', 'image/svg+xml', {kind:'laser',id:'flow',artifact:'nest/sheet-01.svg'});
+  assert.equal(calls[0].arguments.presentation, 'browser');
+  assert.equal(calls[0].arguments.workspace_id, 'task-a');
+  const url = new URL(opened[0]);
+  assert.equal(url.pathname, '/download.html');
+  assert.deepEqual(Object.fromEntries(url.searchParams), {workspace:'task-a',kind:'laser',id:'flow',artifact:'nest/sheet-01.svg'});
+});
+
+test('download compatibility path rejects nonlocal targets and respects host denial', async () => {
+  const api = createMcpApi({
+    callServerTool: async () => ({structuredContent:{url:'https://example.com'}}),
+    openLink: async () => assert.fail('must not open a remote target'),
+  }, 'task-a');
+  await assert.rejects(downloadFile(api, '', 'file', '', {kind:'task',id:'t',artifact:'a'}), /不支持下载/);
+  let called = false;
+  const denied = createMcpApi({downloadFile:async()=>({isError:true}),callServerTool:async()=>{called=true;}}, 'task-a');
+  await assert.rejects(downloadFile(denied, '', 'file', '', {kind:'task',id:'t',artifact:'a'}), /取消|拒绝/);
+  assert.equal(called,false);
+});
 
 test('workspace binding scopes tool calls and every asset resource and cannot drift', async () => {
   const calls = [], reads = [];
@@ -30,7 +76,7 @@ test("workspace writes keep their human attribution across the MCP transport", a
     { name: "studio_get_state", arguments: {} },
     { name: "studio_ui_action", arguments: { name: "studio_select", arguments: { parts: ["body"] } } },
     { name: "studio_ui_action", arguments: { name: "studio_undo", arguments: { id: 12 } } },
-    { name: "studio_ui_action", arguments: { name: "studio_send_to_bambu", arguments: { dry_run: true } } },
+    { name: "studio_ui_action", arguments: { name: "studio_send_to_slicer", arguments: { dry_run: true } } },
     { name: "studio_ui_action", arguments: { name: "studio_evaluation", arguments: { action: 'review', id: 'cr-1', expected_sha256: 'evidence' } } },
   ]);
 });
@@ -129,6 +175,11 @@ test('part chat recovers from human_required through the same one-shot nonce ref
 test("MCP errors retain codes for the workspace busy and error states", () => {
   assert.throws(() => payload({ isError: true, content: [{ type: "text", text: JSON.stringify({ ok: false, error: { code: "busy", message: "Please wait" } }) }] }),
     (error) => error.code === "busy" && error.message === "Please wait");
+});
+
+test('MCP fit errors preserve structured recovery data instead of only message text', () => {
+  const value = { ok: false, error: { code: 'part_too_large', message: 'too large' }, part: 'shell', dims_mm: [300, 150, 300], available_mm: [246, 246, 245] };
+  assert.throws(() => payload({ structuredContent: value }), error => error.payload === value);
 });
 
 test('part chat calls a scoped app-only tool and never sends a parent message', async () => {

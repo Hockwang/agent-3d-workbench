@@ -96,8 +96,8 @@ def check_region(spec):
 def unwrap(response):
     if response.get("c") != "0":
         code = response.get("c")
-        safe = str(code) if re.fullmatch(r"[A-Z0-9_-]{1,80}", str(code), re.I) else "INVALID_RESPONSE"
-        raise EditorError.coded("lux3d_service.request_failed", code=safe)
+        safe = str(code) if code is not None and re.fullmatch(r"[A-Z0-9_-]{1,80}", str(code), re.I) else "INVALID_RESPONSE"
+        raise EditorError.coded("lux3d_service.request_failed", code=safe, remote_code=safe)
     if "d" not in response:
         raise EditorError.coded("lux3d_service.response_missing_data")
     return response["d"]
@@ -105,7 +105,13 @@ def unwrap(response):
 
 def request(spec, method, path, payload=None):
     check_region(spec)
-    return unwrap(_api_request(spec, method, path, payload))
+    response = _api_request(spec, method, path, payload)
+    # The Asset API returns a bare token object in production. Older regional
+    # gateways wrap it in c/d; explicit errors must still pass through unwrap.
+    # Generation and commerce responses keep their stricter envelope contract.
+    if method == "GET" and path == "/asset/v1/token" and "c" not in response:
+        return response
+    return unwrap(response)
 
 
 def task_id(value):

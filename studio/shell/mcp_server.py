@@ -19,6 +19,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import os
 import secrets
 import sys
 import urllib.error
@@ -59,6 +60,9 @@ _OPEN_TOOL_DESCRIPTION = (
     "projects are preserved and can be explicitly copied into a folder with studio_workspaces "
     "open_project. Pass presentation='browser' to get a web URL when the host does not render MCP "
     "Apps or the user asks for the web page. "
+    "Hosts that have a built-in browser pane but do not render MCP Apps (e.g. the Claude desktop app's "
+    "Code tab) get the URL by default when the server sets PRINT_PREP_DEFAULT_PRESENTATION=browser: "
+    "open that URL in the host's browser pane once and reuse it. "
     "This tool never sends anything to a printer."
 )
 
@@ -217,6 +221,12 @@ def _workspace_action(arguments: dict) -> dict:
     raise ValueError("Unknown workspace action")
 
 
+def _task_store(info):
+    from studio.core.tasks import Tasks
+
+    return Tasks(Path(info["job"]) / "tasks")
+
+
 def _call_http(
     method: str,
     path: str,
@@ -293,11 +303,18 @@ def _tool_list() -> list[types.Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "presentation": {"type": "string", "enum": ["app", "browser"], "default": "app"},
+                    "presentation": {
+                        "type": "string",
+                        "enum": ["app", "browser"],
+                        "description": (
+                            "Default 'app' (inline MCP App), or 'browser' (a web URL) when the server "
+                            "sets PRINT_PREP_DEFAULT_PRESENTATION=browser. An explicit value always wins."
+                        ),
+                    },
                     "mode": {
                         "type": "string",
-                        "enum": ["edit", "motion", "print", "tasks", "observe"],
-                        "default": "edit",
+                        "enum": ["home", "edit", "motion", "print", "tasks", "observe", "manufacture", "laser"],
+                        "default": "home",
                     },
                     "task_id": {"type": "string", "description": "Open the model artifact of the given task"},
                 },
@@ -499,12 +516,11 @@ async def on_read_resource(ctx: Any, params: types.ReadResourceRequestParams) ->
         )
     if uri.startswith("print-prep://task/"):
         import base64
-        from studio.core.tasks import Tasks
 
         info, _ = await asyncio.to_thread(_ensure_running, workspace_id)
         parsed = urllib.parse.urlsplit(uri)
         task_id, artifact_id = parsed.path.lstrip("/").split("/")
-        path, item = await asyncio.to_thread(Tasks(Path(info["job"]) / "tasks").artifact, task_id, artifact_id)
+        path, item = await asyncio.to_thread(_task_store(info).artifact, task_id, artifact_id)
         if path.stat().st_size > 200 * 1024 * 1024:
             raise ValueError(render("mcp_server.preview_artifact_too_large"))
         raw = await asyncio.to_thread(path.read_bytes)
@@ -555,7 +571,11 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
             )
         if name == "studio_open":
             info, already_running = await asyncio.to_thread(_ensure_running, workspace_id)
-            if arguments.get("presentation") == "browser":
+            presentation = arguments.get("presentation")
+            if presentation is None:
+                env_default = os.environ.get("PRINT_PREP_DEFAULT_PRESENTATION")
+                presentation = env_default if env_default in ("app", "browser") else "app"
+            if presentation == "browser":
                 query = {"workspace": workspace_id}
                 if arguments.get("mode"):
                     query["mode"] = arguments["mode"]
@@ -571,7 +591,7 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
             state = await asyncio.to_thread(
                 _call_http, "GET", "/api/state", info["token"], info["url"], workspace_id=workspace_id
             )
-            state["workspace_mode"] = arguments.get("mode", "edit")
+            state["workspace_mode"] = arguments.get("mode", "home")
             state["workspace_id"] = workspace_id
             if arguments.get("task_id"):
                 state["focus_task_id"] = arguments["task_id"]
@@ -636,7 +656,6 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
         is_error = not bool(result.get("ok", True))
         if name == "studio_observe" and not is_error and result.get("ready"):
             import base64
-            from studio.core.tasks import Tasks
 
             report = result["report"]
             images = []
@@ -647,7 +666,7 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
                     raise ValueError(render("mcp_server.image_not_in_observation_list"))
                 item = next(a for a in result["task"]["artifacts"] if a["name"] == filename)
                 path, _ = await asyncio.to_thread(
-                    Tasks(Path(info["job"]) / "tasks").artifact, result["task"]["id"], item["id"]
+                    _task_store(info).artifact, result["task"]["id"], item["id"]
                 )
                 if path.stat().st_size > 12 * 1024 * 1024:
                     raise ValueError(render("mcp_server.observation_image_too_large"))
@@ -690,7 +709,7 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
 server: Server = Server(
     "print-prep-studio",
     title="3D Workbench",
-    version="0.8.6",
+    version="0.9.0",
     on_list_tools=on_list_tools,
     on_call_tool=on_call_tool,
     on_list_resources=on_list_resources,

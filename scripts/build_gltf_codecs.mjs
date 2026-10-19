@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const source=path.join(root,'node_modules/three/examples/jsm');
 const target=path.join(root,'studio/web/vendor/addons');
-for(const name of ['loaders/DRACOLoader.js','loaders/KTX2Loader.js','utils/WorkerPool.js',
+for(const name of ['loaders/DRACOLoader.js','loaders/KTX2Loader.js','exporters/STLExporter.js','utils/WorkerPool.js',
   'libs/ktx-parse.module.js','libs/zstddec.module.js','libs/meshopt_decoder.module.js','math/ColorSpaces.js']){
   await mkdir(path.dirname(path.join(target,name)),{recursive:true});
   await copyFile(path.join(source,name),path.join(target,name));

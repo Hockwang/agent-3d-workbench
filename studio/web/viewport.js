@@ -219,8 +219,10 @@ export class Viewport {
 
   // --- 打印床 ---
   _syncBed(printer) {
-    if (!printer) return;
-    const key = JSON.stringify([printer.bed_mm, printer.exclude_areas, printer.margin_mm]);
+    this.bedGroup.visible = Array.isArray(printer?.bed_mm) && printer.bed_mm.length >= 2 &&
+      printer.bed_mm.slice(0, 2).every(v => Number.isFinite(v) && v > 0);
+    if (!this.bedGroup.visible) return;
+    const key = JSON.stringify([printer.bed_mm, printer.bed_origin_mm, printer.exclude_areas, printer.margin_mm]);
     if (key === this._lastPrinterKey) return;
     this._lastPrinterKey = key;
     while (this.bedGroup.children.length) {
@@ -228,19 +230,20 @@ export class Viewport {
       disposeObject(c);
     }
     const [bx, by] = printer.bed_mm;
+    const [ox, oy] = printer.bed_origin_mm || [0, 0];
     const margin = printer.margin_mm || 0;
 
     const bedPlaneGeo = new THREE.PlaneGeometry(bx, by);
-    const bedPlaneMat = new THREE.MeshBasicMaterial({ color: 0x17191e });
+    const bedPlaneMat = new THREE.MeshBasicMaterial({ color: 0x202631, side: THREE.DoubleSide });
     const bedPlane = new THREE.Mesh(bedPlaneGeo, bedPlaneMat);
     bedPlane.position.set(bx / 2, by / 2, -0.06);
     bedPlane.raycast = () => {}; // 不参与拾取
     this.bedGroup.add(bedPlane);
 
-    const grid = makeGridLines(bx, by, 10, 0x24272e);
+    const grid = makeGridLines(bx, by, 10, 0x36404d);
     this.bedGroup.add(grid);
     // major lines every 50 mm, drawn a hair above the minor grid
-    const gridMajor = makeGridLines(bx, by, 50, 0x363b46);
+    const gridMajor = makeGridLines(bx, by, 50, 0x526278);
     gridMajor.position.z = 0.01;
     this.bedGroup.add(gridMajor);
 
@@ -254,6 +257,12 @@ export class Viewport {
 
     const marginRect = makeRectLine([margin, margin], [bx - margin, by - margin], 0x565d6c, 0.025, true);
     this.bedGroup.add(marginRect);
+
+    // Bed decoration uses local dimensions; exclusions remain in machine coordinates.
+    for (const child of this.bedGroup.children) {
+      child.position.x += ox;
+      child.position.y += oy;
+    }
 
     for (const area of printer.exclude_areas || []) {
       const [x0, y0, x1, y1] = area;
@@ -385,6 +394,24 @@ export class Viewport {
         this._setPartVisible(p.name, true);
       }
     }
+    // Assembly is a size reference above the same real bed. Translate the whole
+    // display group only: preserve geometry, scale and relative part positions.
+    // Arranged transforms already use machine coordinates and must stay exact.
+    this.partsGroup.position.set(0, 0, 0);
+    if (!usePlate && this.bedGroup.visible) {
+      const bounds = new THREE.Box3();
+      for (const part of state.parts || []) {
+        const geometry = this._meshes.get(part.name)?.mesh?.geometry;
+        if (geometry?.boundingBox) bounds.union(geometry.boundingBox);
+      }
+      if (!bounds.isEmpty()) {
+        const center = bounds.getCenter(new THREE.Vector3());
+        const [ox, oy] = state.printer.bed_origin_mm || [0, 0];
+        this.partsGroup.position.set(ox + state.printer.bed_mm[0] / 2 - center.x,
+          oy + state.printer.bed_mm[1] / 2 - center.y, -bounds.min.z);
+      }
+    }
+    this.partsGroup.updateMatrixWorld(true);
     this._selectHelper?.update();
     this._loop?.invalidate();
   }

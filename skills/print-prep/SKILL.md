@@ -19,8 +19,8 @@ pass it as `workspace_id` on every `studio_*` call for the rest of the session. 
 task's id, never substitute an MCP connection id or PID, and never fall back to a legacy/global
 workspace when no stable id is available.
 
-Open the workbench with `studio_open({"mode": ...})`, mode one of `edit` (default), `motion`,
-`print`, `tasks`, `observe`. Reuse the same open workbench across calls; do not reopen it before
+Open the workbench with `studio_open({"mode": ...})`, mode one of `home` (default), `edit`, `motion`,
+`print`, `tasks`, `observe`, `manufacture`, `laser`. Reuse the same open workbench across calls; do not reopen it before
 every step. Only pass `{"presentation":"browser"}` if the host cannot show MCP Apps or the user
 asks for a browser/file-upload flow.
 
@@ -33,7 +33,7 @@ asset bindings, original evidence, and required dependency license notices intac
 
 ## Tool overview
 
-All 26 tools share `workspace_id`. Full parameter tables: [`../../docs/TOOLS.md`](../../docs/TOOLS.md).
+All 30 tools share `workspace_id`. Full parameter tables: [`../../docs/TOOLS.md`](../../docs/TOOLS.md).
 
 | Tool | What it does |
 |---|---|
@@ -41,6 +41,10 @@ All 26 tools share `workspace_id`. Full parameter tables: [`../../docs/TOOLS.md`
 | `studio_select` | Highlight parts in the viewport without changing geometry |
 | `studio_undo` | Undo the last undoable orient/arrange step |
 | `studio_list_printers` | List printer presets |
+| `studio_list_slicers` | List installed slicers and supported handoff modes |
+| `studio_send_to_slicer` | Open an exported copy in the chosen slicer; never prints |
+| `studio_manufacture` | Persistent inspection, splitting, connectors, coupons, audit and delivery |
+| `studio_laser` | Experimental board design/nesting and optional local LightBurn import |
 | `studio_load` | Load mesh files and measure geometry |
 | `studio_orient` | Choose a print orientation per shape label |
 | `studio_arrange` | Pack oriented parts onto the bed |
@@ -69,6 +73,20 @@ in one call). After each step, read the real warnings before moving on: `fits_be
 `watertight` / `suggested_scale` from load, `upright_rejected` / `unstable_contact` from orient,
 `unmatched_parts` from export. Earlier steps invalidate later ones (`undo`, a reload, a new
 orient) — re-check `readiness` and do not report stale numbers as current.
+
+**Manufacturing loop**: use `studio_manufacture(action:"create")` with explicit source files
+or a revision-checked selection, then run named stages and poll their task IDs. Re-read the
+workflow revision before every mutation. `completed` describes execution, not print quality;
+read the audit and slicing receipts before delivery. Missing/incomplete thickness evidence,
+open geometry, stale source hashes and scoped-operation violations must remain failures.
+Automatic repair service integration is not implemented. See [plugin preview](../../docs/PLUGIN_PREVIEW.md).
+
+**Slicers and colors**: get exact preset IDs from `studio_list_printers` and availability from
+`studio_list_slicers`. Keep the project in its originating slicer unless the user explicitly
+chooses geometry-only handoff; other slicers require their own printer/material/process setup.
+`part_colors` explicitly maps part names to opaque `#RRGGBB` values. The exported project's
+color readback checks mapping, not installed filament or physical color. No tool submits a
+print job or operates laser hardware.
 
 **Edit loop**: `studio_open({"mode":"edit"})`, read `studio_get_state.workbench`, then call
 `studio_edit` with the current `expected_revision`. On `revision_conflict`, re-read state before

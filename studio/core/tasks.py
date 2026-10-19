@@ -110,7 +110,8 @@ class Tasks:
         if state["status"] in ACTIVE and time.time() - state.get("heartbeat", 0) > 30:
             state = {**state, "status": "interrupted", "error": render("tasks.heartbeat_interrupted")}
         if receipt.is_file():
-            state["can_resume"] = bool(cloud.get("remote_id") or (folder / "seed3d-result.json").is_file()) and state[
+            state["can_resume"] = bool(cloud.get("remote_id") or (folder / "seed3d-result.json").is_file()
+                                       or (cloud.get("adapter") == "p3sam" and (folder / "p3-response.zip").is_file())) and state[
                 "status"
             ] not in ACTIVE | {"completed"}
         if include_log and (folder / "run.log").exists():

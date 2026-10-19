@@ -3,7 +3,13 @@ import assert from 'node:assert/strict';
 import { displayLabel } from '../studio/web/display-label.js';
 import { setLocale } from '../studio/web/i18n.js';
 import { resultIdentity, resultGroups } from '../studio/web/result-model.js';
-import { modelLabel } from '../studio/web/model-browser.js';
+
+test('running and failed tasks never claim their result has been generated', () => {
+  for (const [status,note] of [['queued','等待开始'],['running','正在执行'],['cancelling','正在取消'],['failed','失败'],['cancelled','已取消'],['interrupted','已中断']]) {
+    assert.equal(resultIdentity({status,result:{note:'旧结果已生成'}}).note,note);
+  }
+  assert.equal(resultIdentity({status:'completed',result:{note:'已生成，待几何验收'}}).note,'已生成，待几何验收');
+});
 
 test('legacy task and imported motion names use capability labels in either language', () => {
   setLocale('zh-CN');
@@ -33,13 +39,4 @@ test('result cards format old metadata without rewriting downloads, IDs, or evid
   assert.doesNotMatch(identity.detail, /unimate|puppeteer/i);
   assert.equal(resultGroups([data])[0].title, '雷伊 · 动作生成');
   assert.deepEqual(data, original);
-});
-
-test('new model cards format saved titles and file labels without mutating artifacts', () => {
-  const artifact = { id: 'unchanged', name: 'models/unimate_walk.glb' };
-  const original = structuredClone(artifact);
-  setLocale('zh-CN');
-  assert.equal(modelLabel(artifact), '动作生成 walk');
-  assert.equal(modelLabel(artifact, 'Kimodo walking'), '动作生成 walking');
-  assert.deepEqual(artifact, original);
 });

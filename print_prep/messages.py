@@ -252,6 +252,10 @@ register(
             "zh-CN": "没有第 {plate} 盘",
             "en": "There is no plate {plate}",
         },
+        "cli.project_color_changed": {
+            "en": "Project filament assignment does not match part color intent",
+            "zh-CN": "工程耗材分配与零件颜色意图不一致",
+        },
         "cli.project_geometry_changed": {
             "zh-CN": "plate {plate} Bambu 工程写出后拓扑改变；原始 geometry.3mf 已保留，请勿将该工程视为保真交付",
             "en": (
@@ -397,3 +401,19 @@ register(
         },
     }
 )
+
+register({
+    "slicer.creality_manual": {
+        "en": "Creality Print: geometry and preset files are prepared. Select printer, material and process and slice in Creality Print; automated project export/slicing is not validated for its 7.3 CLI. You can also select a Creality printer under OrcaSlicer for the automated route.",
+        "zh-CN": "Creality Print：已准备模型和参数文件。请在软件内选择机型、材料和工艺后切片；7.3 命令行的自动工程导出和切片尚未验证通过。也可在 OrcaSlicer 下选择创想三维机型，使用自动流程。",
+    },
+    "slicer.unknown": {"en": "Unknown slicer: {slicer}", "zh-CN": "未知切片软件：{slicer}"},
+    "slicer.file_missing": {"en": "Export file is missing: {path}", "zh-CN": "导出文件不存在：{path}"},
+    "slicer.app_missing": {"en": "{slicer} is not installed at {path}. Configure its APP environment variable.", "zh-CN": "未在 {path} 找到 {slicer}，请安装或设置对应 APP 环境变量。"},
+    "slicer.open_failed": {"en": "Could not open {slicer}: {error}", "zh-CN": "无法打开 {slicer}：{error}"},
+    "slicer.mismatch": {"en": "This project targets {source}, not {target}. Use geometry_only=true and select the printer/material in the target slicer.", "zh-CN": "该工程的参数属于 {source}，与 {target} 不匹配。可用 geometry_only=true 仅交接模型，在目标软件里重新选择机型和材料。"},
+    "slicer.manual": {"en": "Geometry only: select printer, material and process in the target slicer before slicing.", "zh-CN": "仅交接模型：切片前请在目标软件里选择机型、材料和工艺。"},
+    "slicer.profile_id": {"en": "Invalid printer profile ID: {name}", "zh-CN": "无效的机型预设 ID：{name}"},
+})
+
+register({"slicer.stats_failed": {"en": "Could not read Orca slicing output: {error}", "zh-CN": "无法读取 Orca 切片结果：{error}"}})

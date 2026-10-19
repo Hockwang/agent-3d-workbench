@@ -66,7 +66,7 @@ Part 保留大体摆放，却改变拓扑、颜色和面数。
 先安装仓库依赖。本地路线不需要 3D 服务 key。
 API 路线需要实现 [Hunyuan 3D Responses 协议](zh-CN/HUNYUAN_API.md) 的网关，
 自己的有效凭据须在启动进程环境中，并使用私有 `services.json`。
-作者的公司端点与密钥不作为公共服务提供。配置方法见 [API 接入教程](API_GENERATION_DEMO.zh-CN.md)。
+作者的私人端点与密钥不作为公共服务提供。配置方法见 [API 接入教程](API_GENERATION_DEMO.zh-CN.md)。
 
 ```bash
 mkdir -p /absolute/cup-demo

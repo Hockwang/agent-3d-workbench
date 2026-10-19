@@ -27,7 +27,7 @@ async def test_native_entry_without_arguments_binds_and_reopens_over_stdio(mcp_h
             assert not opened.is_error, opened.content
             state = opened.structured_content
             assert state["workspace_id"] == "native-entry-a"
-            assert state["workspace_mode"] == "edit"
+            assert state["workspace_mode"] == "home"
             resource = await client.read_resource(opened.meta["ui"]["resourceUri"])
             assert 'data-workspace-id="native-entry-a"' in resource.contents[0].text
             # A UI action can immediately use the workspace's nonce and host identity.
@@ -37,6 +37,7 @@ async def test_native_entry_without_arguments_binds_and_reopens_over_stdio(mcp_h
             }, meta=meta)
             assert not changed.is_error, changed.content
             reopened = await client.call_tool("studio_open", {}, meta=meta)
+            assert reopened.structured_content["workspace_mode"] == "home"
             assert reopened.structured_content["workbench"]["revision"] == 1
             assert len(reopened.structured_content["workbench"]["objects"]) == 1
             assert reopened.meta["openai/widgetSessionId"] == opened.meta["openai/widgetSessionId"]

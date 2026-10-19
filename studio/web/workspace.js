@@ -11,6 +11,12 @@ import { createEditor } from "./editor.js";
 import { Recipes } from "./recipes.js";
 import { t } from "./i18n.js";
 import { createQuickAccess } from "./quick-access.js";
+import { createRefreshQueue } from './refresh-queue.js';
+import { createFitNotice } from './print-fit.js';
+import { createLaser } from "./laser.js";
+import { createManufacturing } from "./manufacturing.js";
+import { createStart } from './start.js';
+import { captureCamera, restoreCamera, viewModes } from './session-view.js';
 
 const OP_LABELS = {
   load: t("flow.verb.model"),
@@ -29,7 +35,8 @@ const OP_LABELS = {
 
 function createPrintWorkspace(api, options = {}) {
   const isMock = !!options.mock;
-  let disposed = false, active = true, events = null, resizeObserver = null, refreshPromise = null;
+  let disposed = false, active = true, events = null, resizeObserver = null;
+  const refresh = createRefreshQueue(readState);
   let selectionQueue = Promise.resolve(), pendingSelection = 0;
 
 
@@ -92,6 +99,28 @@ function createPrintWorkspace(api, options = {}) {
     onOpenStep: openPrintStep,
   });
 
+  const fitNotice = createFitNotice({
+    onCut: name => options.onPrintCut?.(currentState, name),
+    onAutoCut: () => {
+      const arrange = panel.useAutomaticArrangement();
+      if (!arrange) return false;
+      const settings = panel.bodyFor('export');
+      return runAction('prepare', () => api.prepare({ auto_cut: true,
+        expected_inspect_rev: currentState.inspect_rev, gap: arrange.gap,
+        shape: settings.shape, process: settings.process, filament: settings.filament,
+        export_set: settings.set, no_project: settings.no_project }), () => {
+        panel.syncModelInputs(currentState, { force: true });
+        currentPlateIndex = 0; viewport.setPlateIndex(0); setViewInternal('plate');
+        viewport.fitView();
+      });
+    },
+    onOrient: () => openPrintStep('orient'),
+    onMultiPlate: () => {
+      const body = panel.useAutomaticArrangement();
+      return body ? runAction('arrange', () => api.arrange(body)) : false;
+    },
+  });
+
   wireViewportHud();
   setViewInternal("assembly");
   wireStatusBar();
@@ -108,6 +137,7 @@ function createPrintWorkspace(api, options = {}) {
     try {
       const printersResp = await api.getPrinters();
       panel.setPrinters(printersResp.printers || []);
+      panel.setSlicers(printersResp.slicers || []);
     } catch (e) {
       lastError = { op: "session", code: e.code || "error", message: t("workspace.status.printersLoadFailed", { detail: e.message }) };
     }
@@ -136,7 +166,7 @@ function createPrintWorkspace(api, options = {}) {
     if (!isMock && api.subscribeEvents) {
       events = api.subscribeEvents(
         (rev) => {
-          if (!currentState || rev !== currentState.rev) refresh();
+          if (!currentState || rev !== currentState.rev) refresh(true);
         },
         () => stopPolling(),
         () => startPolling()
@@ -170,45 +200,46 @@ function createPrintWorkspace(api, options = {}) {
     }
   }
 
-  async function refresh() {
+  async function readState() {
     if (disposed) return;
-    if (refreshPromise) return refreshPromise;
-    refreshPromise = (async () => {
-      try {
-        const next = await api.getState();
-        const changed = JSON.stringify(next) !== JSON.stringify(currentState);
-        const recovered = lastError?.op === "state";
-        currentState = next;
-        if (recovered) lastError = null;
-        options.onState?.(next);
-        if (!disposed && (changed || recovered || lastError?.op === "preview")) renderAll();
-      } catch (e) {
-        lastError = { op: "state", code: e.code || "error", message: e.message || t("workspace.status.stateReadFailed") };
-        if (!disposed) renderAll();
-      } finally { refreshPromise = null; }
-    })();
-    return refreshPromise;
+    try {
+      const next = await api.getState();
+      const changed = JSON.stringify(next) !== JSON.stringify(currentState);
+      const recovered = lastError?.op === "state";
+      currentState = next;
+      if (recovered) lastError = null;
+      options.onState?.(next);
+      if (!disposed && (changed || recovered || lastError?.op === "preview")) renderAll();
+    } catch (e) {
+      lastError = { op: "state", code: e.code || "error", message: e.message || t("workspace.status.stateReadFailed") };
+      if (!disposed) renderAll();
+    }
   }
 
   function composedState() {
     if (!currentState) return null;
     if (!localBusy) return currentState;
-    return Object.assign({}, currentState, { busy: localBusy });
+    return Object.assign({}, currentState, { busy: { ...localBusy, detail: currentState.busy?.detail } });
   }
 
-  async function runAction(op, fn) {
+  async function runAction(op, fn, onSuccess) {
     const cur = composedState();
     if (!cur || cur.busy) return false; // 服务器已在忙，防御性丢弃（按钮理应已置灰）
+    lastError = null;
     localBusy = { op, since: new Date().toISOString(), actor: "human" };
+    fitNotice.reset();
     renderAll();
     try {
       await fn();
       lastError = null;
     } catch (e) {
-      lastError = { op, code: (e && e.code) || "error", message: (e && e.message) || String(e) };
+      lastError = { op, code: (e && e.code) || "error", message: (e && e.message) || String(e), payload: e?.payload };
     } finally {
+      // Keep controls locked until the final snapshot AND its form fields agree.
+      // Unlocking before refresh lets a second click consume the previous model.
+      await refresh(true);
+      if (!lastError) onSuccess?.();
       localBusy = null;
-      await refresh();
       if (!disposed) renderAll();
     }
     return !lastError;
@@ -217,6 +248,9 @@ function createPrintWorkspace(api, options = {}) {
   function renderAll() {
     if (disposed) return;
     const s = composedState();
+    if(s && api.workspaceId) for(const part of s.parts || []) {
+      if(part.stl_url && !part.stl_url.includes('workspace='))part.stl_url+=(part.stl_url.includes('?')?'&':'?')+'workspace='+encodeURIComponent(api.workspaceId);
+    }
     adoptRemoteSelection(s);
     panel.render(s);
     flow.render(s, { selectedName });
@@ -225,12 +259,15 @@ function createPrintWorkspace(api, options = {}) {
       const stamp = JSON.stringify(s.parts?.map((p) => p.stl_url));
       if (stamp !== geometryStamp) { geometryStamp = stamp; firstFit = true; }
       const priorView = currentView;
+      const priorPrinter = viewport._lastPrinterKey;
       maybeAutoSwitchView(s);
       viewport.update(s);
-      if (priorView !== currentView) viewport.fitView();
+      if (priorView !== currentView || priorPrinter !== viewport._lastPrinterKey) viewport.fitView();
     }
+    renderBedReference(s);
     renderPlateTabs(s);
     updateStatusBar(s);
+    fitNotice.update(lastError || s?.last_error, s, active);
   }
 
   // ------------------------------------------------------------- 视口 HUD
@@ -249,8 +286,18 @@ function createPrintWorkspace(api, options = {}) {
   function setViewInternal(mode) {
     currentView = mode;
     viewport.setView(mode);
-    viewport.bedGroup.visible = mode === "plate";
     document.querySelectorAll(".view-btn").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.view === mode)));
+  }
+
+  function renderBedReference(state) {
+    const label = document.getElementById('bed-reference');
+    label.hidden = !state || !viewport.bedGroup.visible;
+    if (label.hidden) return;
+    const [width, depth, height] = state.printer.bed_mm;
+    label.querySelector('strong').textContent = t('print.hud.bedReference', {
+      name: state.printer.name, width, depth,
+    });
+    label.querySelector('small').textContent = t('print.hud.bedScale', { height: height ?? '—' });
   }
 
   function maybeAutoSwitchView(state) {
@@ -470,12 +517,12 @@ function createPrintWorkspace(api, options = {}) {
     card.hidden = false;
     const since = new Date(busy.since).getTime();
     const elapsed = Math.max(0, Math.round((Date.now() - since) / 1000));
-    document.getElementById("busy-card-title").textContent = t("workspace.busyCard.title", { label: OP_LABELS[busy.op] || busy.op });
+    document.getElementById("busy-card-title").textContent = busy.detail || t("workspace.busyCard.title", { label: OP_LABELS[busy.op] || busy.op });
     document.getElementById("busy-card-time").textContent = t("workspace.busyCard.elapsed", { seconds: elapsed });
   }
 
   function updateStatusBar(s) {
-    const busy = localBusy || (s && s.busy);
+    const busy = s?.busy || localBusy;
     updateBusyCard(busy);
     const busyEl = document.getElementById("status-busy");
     if (busy) {
@@ -520,10 +567,41 @@ function createPrintWorkspace(api, options = {}) {
 
   return {
     ready, refresh, openRow: openPrintStep,
+    getPresentation:()=>({camera:captureCamera(viewport),view:currentView,plate:currentPlateIndex}),
+    async waitForPresentation(){const until=Date.now()+5000;while(viewport._pending && Date.now()<until)await new Promise(r=>setTimeout(r,50));await viewport._loop.waitForFrame();},
+    async restorePresentation(value) {
+      await ready;await refresh();autoPlateApplied=true;
+      if(['assembly','plate'].includes(value?.view))currentView=value.view;
+      if(Number.isInteger(value?.plate)&&value.plate>=0)currentPlateIndex=value.plate;
+      setViewInternal(currentView);viewport.setPlateIndex(currentPlateIndex);renderAll();
+      const until=Date.now()+5000;while(viewport._pending && Date.now()<until)await new Promise(r=>setTimeout(r,50));
+      restoreCamera(viewport,value?.camera);
+    },
+    async syncModel() { await ready; lastError = null; fitNotice.reset(); await refresh(true); finishModelLoad(); },
+    async loadTaskModel(taskId, artifactId) {
+      await ready;
+      const ok = await runAction('load', () => api.load({ task_id: taskId, artifact_id: artifactId, printer: document.getElementById('printer-select').value || undefined }), finishModelLoad);
+      if (!ok) throw new Error(lastError?.message || t('workspace.status.busyRetryHint'));
+    },
+    async loadPose(files) {
+      await ready;
+      const ok = await runAction('load', async () => {
+        const paths = [];
+        for (const file of files) paths.push((await api.upload(file)).path);
+        await api.load({ files: paths, printer: document.getElementById('printer-select').value || undefined });
+      }, finishModelLoad);
+      if (!ok) throw new Error(lastError?.message || t('workspace.status.busyRetryHint'));
+    },
     setState(next) { currentState = next; options.onState?.(next); renderAll(); },
-    setActive(value) { active = value; viewport.setActive(value && !document.hidden); if (value) refresh(); },
-    dispose() { disposed = true; stopPolling(); clearInterval(statusTimer); events?.close(); resizeObserver?.disconnect(); disposeCards?.(); viewport.dispose(); },
+    setActive(value) { active = value; viewport.setActive(value && !document.hidden); fitNotice.update(lastError || currentState?.last_error, composedState(), active); if (value) refresh(); },
+    dispose() { disposed = true; stopPolling(); clearInterval(statusTimer); events?.close(); resizeObserver?.disconnect(); disposeCards?.(); fitNotice.dispose(); viewport.dispose(); },
   };
+
+  function finishModelLoad() {
+    panel.syncModelInputs(currentState, { force: true });
+    document.getElementById('plan-reopen').click();
+    panel.openCard('card-model'); panel.openCard('card-arrange');
+  }
 }
 
 // A recipe step's `tool` may carry a `#action`/`#template`/`#operation` suffix
@@ -535,20 +613,45 @@ export function recipeStepBaseTool(step) {
   return String(step?.tool || "").split("#")[0];
 }
 
+export function recipeVisibleInWorkspace(mode, recipe, preview = null) {
+  if (mode === 'home') return false;
+  if (mode === 'motion' || mode === 'observe' || (mode === 'tasks' && preview)) return false;
+  if (!recipe) return mode === 'tasks';
+  return mode === (recipe.workspace || 'print');
+}
+
 // Each mode owns its controls and camera; they share the same transport and
 // backend. A print job is a deliberate copy of editable assets, not their state.
 export function createWorkspace(api, options = {}) {
-  let editor = null, print = null, mode = options.mock ? "print" : "edit", active = true, nextState = null;
-  let tasks = null, observe = null, previewResult = null;
+  let editor = null, print = null, mode = options.mock ? "print" : "home", active = true, nextState = null;
+  let editorChosen = false;
+  let tasks = null, observe = null, manufacture = null, laser = null, previewResult = null;
+  let savedViews={},restoringChild=Promise.resolve();
+  let navigations = 0;
   const workflow = document.createElement('details'); workflow.className = 'workspace-workflow';
   const workflowSummary = document.createElement('summary');
   const recipeElement = document.getElementById('recipe');
   recipeElement.before(workflow); workflow.append(workflowSummary, recipeElement);
   let disposed = false, updateBusy = false, updatesTimer = null;
+  const start = createStart({
+    onResume: () => { show('edit'); editor.fitView(); },
+    onResults: () => access.openResults(),
+    onOpen: async files => {
+      const paths = [];
+      for (const file of files) paths.push((await api.upload(file)).path);
+      const state = await api.getState();
+      await api.edit({ action: 'import', expected_revision: state.workbench.revision,
+        params: { files: paths, ...(!state.workbench.collaboration ? { new_scene: true } : {}) } });
+      nextState = await api.getState();
+      show('edit'); editor.endPrintCut(); editor.setState(nextState);
+    },
+  });
+  document.getElementById('editor-space').before(start.root);
   const access = createQuickAccess({ api,
     onModel: () => { show('edit'); editor.fitView(); },
-    onOpenFile: () => { show('edit'); editor.openFile(); },
-    onOpenResult: (id, files) => openResult(id, files),
+    onOpenFile: () => { if (!editorChosen) start.openFile(); else { show('edit'); editor.openFile(); } },
+    onOpenResult: (id, files, artifactId) => openResult(id, files, artifactId),
+    onPrintTask: async (id, artifactId) => { show('print'); await print.loadTaskModel(id, artifactId); },
     onAttachSelection: options.onAttachSelection ? async () => {
       if (mode === 'motion') editor?.pauseMotion();
       await publishSelection();
@@ -556,9 +659,12 @@ export function createWorkspace(api, options = {}) {
     } : undefined,
     onOpenHistory: () => { show('tasks'); tasks.openHistory(); },
   });
-  async function openResult(id, files = false) {
+  async function openResult(id, files = false, artifactId = null, artifactName = null) {
     show('tasks');
-    try { await tasks.openResult(id, files); }
+    // Restoring a saved task view is asynchronous. Let it settle before the
+    // explicit result selection, so the old view cannot replace this click.
+    await restoringChild.catch(() => {});
+    try { await tasks.openResult(id, files, artifactId, artifactName); }
     catch (e) {
       const error = document.getElementById('recipe-error');
       error.textContent = e.message; error.hidden = false;
@@ -568,22 +674,25 @@ export function createWorkspace(api, options = {}) {
     if (disposed || !active || document.hidden || updateBusy || !api.tasks) return;
     updateBusy = true;
     try {
-      if (mode === 'tasks' || mode === 'observe') { nextState = await api.getState(); renderRecipe(); }
+      if (['home', 'tasks', 'observe'].includes(mode)) { nextState = await api.getState(); renderRecipe(); }
       const result = await api.tasks();
       access.setResults(result.tasks);
     } catch (error) { access.setError(error); }
     finally { updateBusy = false; }
   }
-  const child = () => mode === 'observe' ? observe : mode === 'tasks' ? tasks : ['edit','motion'].includes(mode) ? editor : print;
+  const child = () => mode === 'home' ? null : mode === 'laser' ? laser : mode === 'manufacture' ? manufacture : mode === 'observe' ? observe : mode === 'tasks' ? tasks : ['edit','motion'].includes(mode) ? editor : print;
   let recipes = null, recipeBusy = false;
   const renderRecipe = () => {
+    start.setState(nextState);
     access.setState(nextState);
     recipes?.render({ ...nextState, busy: recipeBusy || nextState?.busy });
-    if (mode === 'motion' || (mode === 'tasks' && previewResult)) document.getElementById('recipe').hidden = true;
+    if (!recipeVisibleInWorkspace(mode, nextState?.recipe, previewResult)) recipeElement.hidden = true;
     workflow.hidden = recipeElement.hidden;
     workflowSummary.textContent = t('entry.projectWorkflow', { name: nextState?.recipe?.title || nextState?.recipe?.name || t('entry.chooseWorkflow') });
   };
-  const publishSelection = () => nextState && options.onSelectionContext?.({ mode, state: nextState, motion: mode === 'motion' ? editor?.getMotionContext() : null });
+  const publishSelection = () => nextState && options.onSelectionContext?.({ mode, state: nextState, motion: mode === 'motion' ? editor?.getMotionContext() : null,
+    modelSource:mode==='tasks'&&previewResult?.type==='glb'&&!previewResult.loading?{task_id:previewResult.task.id,artifact_id:previewResult.artifact.id}:null,
+    hasModel:mode==='tasks'?previewResult?.type==='glb'&&!previewResult.loading:['edit','motion'].includes(mode)?Boolean(nextState.workbench?.objects?.length):['print','manufacture','laser'].includes(mode)?Boolean(nextState.parts?.length||nextState.workbench?.objects?.length):false });
   const childOptions = { ...options, onMotionContextChange: publishSelection, onState(next) { nextState = next; renderRecipe(); options.onState?.(next); publishSelection(); } };
   async function runRecipe(fn, viewMode = null) {
     if (recipeBusy || nextState?.busy) return false;
@@ -666,7 +775,7 @@ export function createWorkspace(api, options = {}) {
     onOpenRow: openRecipeStep,
     onRunStep(step) {
       const methods = { studio_orient: "orient", studio_arrange: "arrange", studio_export: "exportProject",
-        studio_check: "check", studio_send_to_bambu: "send" };
+        studio_check: "check", studio_send_to_bambu: "send", studio_send_to_slicer: "send" };
       const method = methods[step.tool];
       if (!method || recipeStepBaseTool(step) === "studio_edit") return openRecipeStep(step.row, step);
       return runRecipe(() => api[method](step.args || {}));
@@ -678,42 +787,98 @@ export function createWorkspace(api, options = {}) {
   serviceButton.onclick = () => serviceSettings?.open();
   const buttons = [...document.querySelectorAll("[data-workspace-mode]")];
   document.querySelector('.wb-symbol').innerHTML = icon('box');
-  const navIcons = {edit:'layers', motion:'clapperboard', tasks:'wand-sparkles', observe:'scan-eye', print:'printer'};
+  const navIcons = {edit:'layers', motion:'clapperboard', tasks:'wand-sparkles', observe:'scan-eye', print:'printer', manufacture:'package-check', laser:'scan-eye'};
   buttons.forEach(b => { if (!b.querySelector('svg')) b.insertAdjacentHTML('afterbegin', icon(navIcons[b.dataset.workspaceMode])); });
   function show(value) {
-    mode = ['edit', 'motion', 'print', 'tasks', 'observe'].includes(value) ? value : 'edit';
-    workflow.open = !['edit', 'motion'].includes(mode);
+    navigations++;
+    mode = ['home', 'edit', 'motion', 'print', 'tasks', 'observe', 'manufacture', 'laser'].includes(value) ? value : 'home';
+    if (mode === 'home') editorChosen = false;
+    if (['edit', 'motion'].includes(mode)) editorChosen = true;
+    start.root.hidden = mode !== 'home';
+    workflow.open = !['edit', 'motion', 'print'].includes(mode);
     document.getElementById("editor-space").hidden = !["edit","motion"].includes(mode);
     document.getElementById("print-space").hidden = mode !== "print";
     document.getElementById('task-space').hidden = mode !== 'tasks';
     document.getElementById('observe-space').hidden = mode !== 'observe';
+    document.getElementById('laser-space').hidden = mode !== 'laser';
+    document.getElementById('manufacture-space').hidden = mode !== 'manufacture';
     renderRecipe();
     access.setMode(mode);
     buttons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.workspaceMode === mode)));
-    if (["edit","motion"].includes(mode) && !editor) editor = createEditor(api, { ...childOptions, onPrint: () => show("print"), onMotion: () => show("motion"), onResults: () => access.openResults() });
-    if (mode === "print" && !print) print = createPrintWorkspace(api, childOptions);
-    if (mode === 'tasks' && !tasks) tasks = createTasks(api, { serviceSettings, onImport: () => { show('edit'); editor.refresh?.(); }, onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); } });
+    if (["edit","motion"].includes(mode) && !editor) editor = createEditor(api, { ...childOptions, onPrint: () => { show("print"); return print.syncModel(); }, onMotion: () => show("motion"), onResults: () => access.openResults() });
+    if (mode === "print" && !print) print = createPrintWorkspace(api, { ...childOptions,
+      onPrintCut: async (source, name) => {
+        show('edit');
+        try { await editor.openPrintCut(source, name); return true; }
+        catch (error) { show('print'); throw error; }
+      },
+    });
+    if (mode === 'tasks' && !tasks) tasks = createTasks(api, {
+      serviceSettings, importIntoNewScene: () => !editorChosen,
+      onImport: async () => {
+        const fresh = !editorChosen;
+        // Adopt the completed import before creating/showing the editor so the
+        // saved scene cannot flash or start loading while a refresh is pending.
+        nextState = await api.getState();
+        show('edit'); if (fresh) editor.endPrintCut(); editor.setState(nextState);
+      },
+      onPrintTask: async (id, artifactId) => { show('print'); await print.loadTaskModel(id, artifactId); },
+      onPrintPose: async files => { show('print'); await print.loadPose(files); },
+      onPreview: result => { previewResult = result; access.setPreview(result); renderRecipe(); publishSelection(); },
+    });
+    if (mode === 'manufacture' && !manufacture) manufacture = createManufacturing(api, {
+      onResult: (id, files) => openResult(id, files),
+      onService: async (provider, operation) => { show('tasks'); await tasks.openService(provider, operation); },
+    });
+    if (mode === 'laser' && !laser) laser = createLaser(api, {onModel: async path => {
+      const state=await api.getState();
+      await api.edit({action:'import',expected_revision:state.workbench.revision,params:{files:[path]}});
+      nextState=await api.getState();show('edit');editor.setState(nextState);
+    }});
     if (mode === 'observe' && !observe) observe = createObserve(api);
     editor?.setWorkspaceMode(mode);
     editor?.setActive(active && ["edit","motion"].includes(mode));
     print?.setActive(active && mode === "print");
     tasks?.setActive(active && mode === 'tasks');
     observe?.setActive(active && mode === 'observe');
+    laser?.setActive(active && mode === 'laser');
+    manufacture?.setActive(active && mode === 'manufacture');
     if (nextState) child()?.setState(nextState);
+    const viewKey=['edit','motion'].includes(mode)?'edit':mode;
+    if(savedViews[viewKey] && child()?.restorePresentation){
+      const value=savedViews[viewKey];delete savedViews[viewKey];
+      const target=child();restoringChild=Promise.resolve(target.ready).then(()=>target.restorePresentation(value));
+      restoringChild.catch(()=>{});
+    }
     publishSelection();
   }
-  buttons.forEach((b) => { b.onclick = () => show(b.dataset.workspaceMode); });
+  buttons.forEach((b) => { b.onclick = () => show(!editorChosen && ['edit', 'motion'].includes(b.dataset.workspaceMode) ? 'home' : b.dataset.workspaceMode); });
+  const brand = document.querySelector('.wb-brand');
+  brand.tabIndex = 0; brand.setAttribute('role', 'button'); brand.setAttribute('aria-label', t('start.back'));
+  brand.onclick = () => show('home');
+  brand.onkeydown = event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); show('home'); } };
   show(mode);
   updatesTimer = setInterval(pollUpdates, 2000); pollUpdates();
-  const ready = child().ready.then(async () => {
+  const ready = (child()?.ready || (async () => { await api.init(); nextState = await api.getState(); renderRecipe(); })()).then(async () => {
     if (api.getRecipes) { await recipes.start(); renderRecipe(); }
   });
   return {
     ready,
     openResult,
+    getPresentation:()=>({mode,edit:editor?.getPresentation()||savedViews.edit,print:print?.getPresentation()||savedViews.print,tasks:tasks?.getPresentation()||savedViews.tasks,
+      observe:observe?.getPresentation()||savedViews.observe,manufacture:manufacture?.getPresentation()||savedViews.manufacture,laser:laser?.getPresentation()||savedViews.laser}),
+    async restorePresentation(value) {
+      if(!value||!viewModes.includes(value.mode))return;
+      savedViews={...value};show(value.mode);await child()?.ready;await restoringChild;
+      await child()?.waitForPresentation?.();
+      publishSelection();
+    },
+    async openLaser(id,stage) {show('laser');return laser.openWorkflow(id,stage);},
+    async openManufacture(id) {show('manufacture');return manufacture.openWorkflow(id);},
+    get hasNavigated() { return navigations > 1; },
     setMode: show,
-    setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); publishSelection(); },
-    setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); },
-    dispose() { disposed = true; clearInterval(updatesTimer); access.dispose(); serviceSettings?.dispose(); serviceButton.onclick = null; recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); buttons.forEach((b) => { b.onclick = null; }); },
+    setState(state) { nextState = state; renderRecipe(); if (state.workspace_mode) show(state.workspace_mode); editor?.setState(state); print?.setState(state); observe?.setState(state); tasks?.setState(state); manufacture?.setState(state); laser?.setState(state); publishSelection(); },
+    setActive(value) { if (active === value) return; active = value; editor?.setActive(value && ["edit","motion"].includes(mode)); print?.setActive(value && mode === "print"); tasks?.setActive(value && mode === 'tasks'); observe?.setActive(value && mode === 'observe'); manufacture?.setActive(value && mode === 'manufacture'); laser?.setActive(value && mode === 'laser'); },
+    dispose() { disposed = true; clearInterval(updatesTimer); start.dispose(); access.dispose(); serviceSettings?.dispose(); serviceButton.onclick = null; recipes?.dispose(); workflow.replaceWith(recipeElement); editor?.dispose(); print?.dispose(); tasks?.dispose(); observe?.dispose(); manufacture?.dispose(); laser?.dispose(); buttons.forEach((b) => { b.onclick = null; }); brand.onclick = null; brand.onkeydown = null; },
   };
 }

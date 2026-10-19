@@ -146,6 +146,8 @@ def resolve(name: str, idx: dict[str, Path], chain: tuple[str, ...] = ()) -> dic
 def _parse_points(tokens) -> list[tuple[float, float]]:
     """把 `"18x28"` 这类角点串解析成 (x, y) 浮点数对列表。"""
     pts = []
+    if isinstance(tokens, str):
+        tokens = tokens.split(",")
     for tok in tokens or []:
         x_str, y_str = tok.split("x")
         pts.append((float(x_str), float(y_str)))
@@ -180,12 +182,23 @@ def bed_params(machine: dict[str, Any]) -> dict[str, Any]:
     bed_z = float(machine.get("printable_height", 0))
     exclude_pts = _parse_points(machine.get("bed_exclude_area"))
     exclude_areas = _bbox_groups(exclude_pts)
-    return {"bed_mm": [bed_x, bed_y, bed_z], "exclude_areas": exclude_areas}
+    return {"bed_mm": [bed_x, bed_y, bed_z],
+            "bed_origin_mm": [min(xs), min(ys)] if area_pts else [0.0, 0.0],
+            "exclude_areas": exclude_areas}
 
 
 def list_printers(root: Optional[Path] = None, filter_str: Optional[str] = None) -> list[dict[str, Any]]:
     """列出 `machine/` 下所有 `instantiation == "true"` 的机器预设（展开 inherits 后）。"""
-    root = root or profile_root()
+    if root is None:
+        from .printer_catalog import catalog
+
+        printers = []
+        if profile_root().is_dir() or os.environ.get("MFG_BAMBU_PROFILE_ROOT"):
+            printers = list_printers(profile_root(), filter_str)
+            for printer in printers:
+                printer.update(slicer="bambu", display_name=printer["name"], vendor="BBL")
+        printers += [p for p in catalog()["printers"] if not filter_str or filter_str.lower() in p["name"].lower()]
+        return printers
     idx = _index(root)
     machine_dir = root / "machine"
     seen_paths: set[Path] = set()
@@ -215,6 +228,7 @@ def list_printers(root: Optional[Path] = None, filter_str: Optional[str] = None)
             "printer_model": resolved.get("printer_model"),
             "nozzle_mm": nozzle_mm,
             "bed_mm": bed["bed_mm"],
+            "bed_origin_mm": bed["bed_origin_mm"],
             "exclude_areas": bed["exclude_areas"],
             "default_process": resolved.get("default_print_profile"),
             "default_filament": default_filament_list[0] if default_filament_list else None,

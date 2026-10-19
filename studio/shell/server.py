@@ -45,6 +45,7 @@ from studio.core import print_state
 from studio.shell import tools_schema  # noqa: E402
 from studio.core.editor import Workspace, EditorError  # noqa: E402
 from studio.core import collaboration  # noqa: E402
+from studio.core import workspaces
 from studio.core.tasks import Tasks
 from studio.adapters import services  # noqa: E402  （仅用于枚举托管操作 id，不在这里调用任何一个）
 
@@ -161,7 +162,7 @@ def _cli_call(fn: Callable[[], dict[str, Any]]) -> tuple[int, dict[str, Any], Op
             "error": {"code": exc.code, "message": str(exc), "params": getattr(exc, "params", {})},
         }
         body.update(exc.payload or {})
-        return status, body, dict(body["error"])
+        return status, body, {**body["error"], "payload": dict(exc.payload or {})}
     except Exception as exc:  # noqa: BLE001 —— 未预期异常也要落成 JSON，不能让 traceback 炸 HTTP 层
         body = {"ok": False, "error": {"code": "unexpected", "message": str(exc), "params": getattr(exc, "params", {})}}
         return 500, body, dict(body["error"])
@@ -204,6 +205,11 @@ class StudioBackend:
         self._recipe_catalog = None
         self.editor = Workspace(self.job_dir / "workbench")
         self.tasks = Tasks(self.job_dir / "tasks")
+        from studio.core.manufacturing import Manufacturing
+        self.manufacturing = Manufacturing(self.job_dir / "manufacturing", self.tasks)
+        from studio.core.laser import Laser
+        from studio.adapters.lightburn import LightBurn
+        self.laser = Laser(self.job_dir / "laser", connector_factory=LightBurn)
         from studio.core.observation import Observations
 
         self.observations = Observations(self.tasks)
@@ -264,6 +270,8 @@ class StudioBackend:
         if action == "resume":
             return self.tasks.resume(body.get("id"))
         if action == "import":
+            if body.get("new_scene") is True and body.get("replace_ids"):
+                raise EditorError.coded("editor.new_scene_replace_conflict")
             path, item = self.tasks.artifact(body.get("id"), body.get("artifact_id"))
             return self.editor.execute(
                 {
@@ -272,12 +280,44 @@ class StudioBackend:
                     **({"expected_versions": body["expected_versions"]} if "expected_versions" in body else {}),
                     "params": {
                         "files": [str(path)],
+                        **({"new_scene": True} if body.get("new_scene") is True and not body.get("replace_ids") else {}),
                         **({"ids": body["replace_ids"]} if body.get("replace_ids") else {}),
                     },
                 },
                 actor,
             )
         raise EditorError(render("server.task_bad_action"))
+
+    def api_manufacture(self, body, actor):
+        from studio.core import collaboration
+        scope = None
+        doc = self.editor.doc
+        if doc.get("collaboration"):
+            _, value = collaboration.member(doc)
+            scope = value["scope"]
+        if body.get("action") == "create":
+            if body.get("from_selection"):
+                if body.get("files"):
+                    raise EditorError("选区与文件不能同时指定 / Conflicting model sources")
+                selected = self.editor.state()["selection"]
+                if not selected:
+                    raise EditorError("请先选择模型 / Select model first")
+                exported = self.editor.execute({"action": "export", "expected_revision": body.get("expected_editor_revision"),
+                                                "params": {"format": "glb", "ids": selected}}, actor)
+                body = {**body, "files": [exported["path"]], "source_ids": selected}
+            else:
+                if scope is not None:
+                    raise EditorError("部件会话只能使用当前选区 / Scoped workflow requires selection", code="scope_violation")
+                body = {**body, "source_ids": []}
+        return self.manufacturing.execute(body, actor, scope)
+
+    def api_laser(self, body, actor):
+        from studio.core import collaboration
+        if self.editor.doc.get("collaboration"):
+            _, member = collaboration.member(self.editor.doc)
+            if member["scope"] is not None:
+                raise EditorError("请在独立完整对话中制作激光板件", code="scope_violation")
+        return self.laser.execute(body, actor)
 
     # ---------------------------------------------------------------- rev/SSE
     def current_rev(self) -> int:
@@ -402,7 +442,7 @@ class StudioBackend:
     # `_delivered`），因为那两个字段的写入受 `self._cond` 保护，不能下沉到
     # 无锁的 core 层。
     def api_load(self, body: dict[str, Any]) -> dict[str, Any]:
-        return print_state.api_load(self.job_dir, body)
+        return print_state.api_load(self.job_dir, body, task_artifact=self.tasks.artifact)
 
     def api_orient(self, body: dict[str, Any]) -> dict[str, Any]:
         return print_state.api_orient(self.job_dir, body)
@@ -416,7 +456,16 @@ class StudioBackend:
     def api_check(self, body: dict[str, Any]) -> dict[str, Any]:
         return print_state.api_check(self.job_dir, body)
 
+    def api_send_to_slicer(self, body: dict[str, Any]) -> dict[str, Any]:
+        result, dry_run = print_state.api_send(self.job_dir, body)
+        self._record_sent(result, dry_run)
+        return result
+
     def api_send(self, body: dict[str, Any]) -> dict[str, Any]:
+        source = cli.job.load_job(self.job_dir).get("export", {}).get("slicer", "bambu")
+        if source != "bambu":
+            raise cli.UserError(cli.render("slicer.mismatch", source=source, target="bambu"), code="slicer_mismatch")
+        body = {**body, "slicer": None, "geometry_only": False}
         result, dry_run = print_state.api_send(self.job_dir, body)
         self._record_sent(result, dry_run)
         return result
@@ -666,6 +715,20 @@ class StudioBackend:
         return result
 
     def api_prepare(self, body: dict[str, Any]) -> dict[str, Any]:
+        if body.get("auto_cut") is True:
+            from studio.core.auto_cut import prepare_copy
+
+            if body.get("expected_inspect_rev") != self._inspect_rev:
+                raise cli.UserError(render("auto_cut.changed"), code="print_source_changed")
+
+            def progress(detail):
+                with self._cond:
+                    if self.busy:
+                        self.busy["detail"] = detail
+                        self.rev += 1
+                        self._cond.notify_all()
+
+            return prepare_copy(self.job_dir, body, progress=progress)
         result = print_state.api_prepare(self.job_dir, body)
         for step in result.get("steps", []):
             if step.get("step") == "open":
@@ -679,6 +742,9 @@ class StudioBackend:
             self.sent = {
                 "plates": [o.get("plate") for o in open_result.get("opened", [])],
                 "launched": open_result.get("launched"),
+                "dry_run": dry_run,
+                "slicer": open_result.get("slicer", "bambu"),
+                "manual_setup_required": open_result.get("manual_setup_required", False),
                 "loaded": open_result.get("loaded", "unverified"),
                 "was_running_before": open_result.get("was_running_before"),
                 "at": _iso_now(),
@@ -735,10 +801,12 @@ class StudioBackend:
 
     def _source_centers(self, inspect_parts: list[dict[str, Any]]) -> dict[str, Optional[list[float]]]:
         """`parts[].source_center_mm`：算一次后缓存，只有 `inspect` 重新跑过
-        （落盘的 STL 路径集合变了）才重算，避免每次 `/api/state` 轮询都重新
+        （落盘的 STL 路径或文件版本变了）才重算，避免每次 `/api/state` 轮询都重新
         载入全部零件的网格。缓存与加锁留在这里——实际的网格载入/中心点计算
         是纯函数，见 `studio.core.print_state.compute_source_centers`。"""
-        sig = tuple(p["stl_path"] for p in inspect_parts)
+        # Resize/reload rewrites the same paths; a path-only cache leaves the
+        # assembly viewport and size readout using the previous model's centers.
+        sig = tuple((p["name"], p["stl_path"], print_state.file_version(p["stl_path"])) for p in inspect_parts)
         with self._cond:
             if self._center_cache.get("sig") == sig:
                 return self._center_cache["centers"]
@@ -751,6 +819,9 @@ class StudioBackend:
 class _ThreadingServer(http.server.ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+    # A populated page requests settings, thumbnails and meshes together. The
+    # default backlog of five resets valid local connections during that burst.
+    request_queue_size = 64
 
 
 def _is_part_stl_path(path: str) -> bool:
@@ -921,6 +992,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         "/api/state": "_get_state",
         "/api/events": "_get_events",
         "/api/printers": "_get_printers",
+        "/api/slicers": "_get_slicers",
         "/api/shapes": "_get_shapes",
     }
 
@@ -947,13 +1019,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             reset_language(token)
 
     def _dispatch_get(self) -> None:
-        collaboration.SESSION.set(self.headers.get("X-Studio-Workspace"))
+        collaboration.SESSION.set(self._workspace_id())
         if not self._host_ok():
             self._send_json(
                 400, {"ok": False, "error": {"code": "bad_host", "message": render("server.bad_host"), "params": {}}}
             )
             return
-        backend: StudioBackend = self.server.backend  # type: ignore[attr-defined]
+        backend = self._backend()
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
@@ -970,6 +1042,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 403,
                 {"ok": False, "error": {"code": "forbidden", "message": render("server.missing_token"), "params": {}}},
             )
+            return
+
+        if path.startswith("/api/") and not self._workspace_matches(backend):
             return
 
         handler_name = self._GET_EXACT_ROUTES.get(path)
@@ -995,12 +1070,44 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         self._serve_static(path)
 
+    def _backend(self):
+        return self.server.backend
+
+    def _workspace_id(self):
+        claimed = self.headers.get("X-Studio-Workspace")
+        parsed = urllib.parse.urlsplit(self.path)
+        if claimed is None and (parsed.path == "/api/events" or _is_part_stl_path(parsed.path)):
+            claimed = urllib.parse.parse_qs(parsed.query).get("workspace", [None])[0]
+        return claimed
+
+    def _workspace_matches(self, backend: StudioBackend) -> bool:
+        """A URL chat ID is a claim, not a request to rebind this server's job.
+
+        Check the same registry used by MCP on every scoped read/write, including
+        after a browser has obtained a token. Unscoped standalone use is allowed.
+        """
+        workspace_id = self._workspace_id()
+        if workspace_id is None:
+            return True
+        try:
+            expected = workspaces.job_dir(workspaces.validate_id(workspace_id))
+            if expected.resolve() == backend.job_dir.resolve():
+                return True
+        except (ValueError, OSError, KeyError, TypeError):
+            pass
+        self._send_json(409, {"ok": False, "error": {
+            "code": "workspace_mismatch", "message": render("server.workspace_mismatch"), "params": {},
+        }})
+        return False
+
     def _get_session(self, backend: StudioBackend) -> None:
         if not self._origin_ok() or not self._fetch_site_ok():
             self._send_json(
                 403,
                 {"ok": False, "error": {"code": "bad_origin", "message": render("server.bad_origin"), "params": {}}},
             )
+            return
+        if not self._workspace_matches(backend):
             return
         cookie = f"studio_token={backend.token}; HttpOnly; SameSite=Strict; Path=/"
         self._send_json(
@@ -1079,6 +1186,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def _get_events(self, backend: StudioBackend, query: dict[str, list[str]]) -> None:
         self._stream_events(backend)
+
+    def _get_slicers(self, backend: StudioBackend, query: dict[str, list[str]]) -> None:
+        self._send_json(200, {"ok": True, "slicers": cli.slicers.list_slicers(), "print_submitted": False})
 
     def _get_printers(self, backend: StudioBackend, query: dict[str, list[str]]) -> None:
         filter_str = (query.get("filter") or [None])[0]
@@ -1214,7 +1324,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
 
     # -------------------------------------------------------------- POST
-    _WRITE_ROUTES = ("load", "orient", "arrange", "export", "check", "send", "prepare", "undo")
+    _WRITE_ROUTES = ("load", "orient", "arrange", "export", "check", "send", "send_to_slicer", "prepare", "undo")
     # Precomputed once at class-definition time (was rebuilt on every request
     # before this refactor; `_WRITE_ROUTES` never changes at runtime).
     _WRITE_ROUTE_MAP: dict[str, str] = {f"/api/{name}": name for name in _WRITE_ROUTES}
@@ -1229,6 +1339,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         "/api/evaluation": "_post_evaluation",
         "/api/observe": "_post_observe",
         "/api/task": "_post_task",
+        "/api/manufacture": "_post_manufacture",
+        "/api/laser": "_post_laser",
         "/api/services": "_post_services",
         "/api/recipe/use": "_post_recipe_use",
     }
@@ -1264,10 +1376,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 },
             )
             return
-        backend: StudioBackend = self.server.backend  # type: ignore[attr-defined]
+        backend = self._backend()
         parsed = urllib.parse.urlsplit(self.path)
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
+
+        # Joining establishes the binding; its invitation/project checks run in
+        # collaboration itself. All ordinary operations require an existing match.
+        if path != "/api/collaboration" and not self._workspace_matches(backend):
+            return
 
         if path == "/api/upload":
             self._handle_upload(backend, query)
@@ -1301,7 +1418,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
 
         method = getattr(backend, f"api_{op_name}")
-        status, result = backend.run_write(op_name, lambda: method(body), actor=self._actor(), request_body=body)
+        history_op = "send" if op_name == "send_to_slicer" else op_name
+        status, result = backend.run_write(history_op, lambda: method(body), actor=self._actor(), request_body=body)
         self._send_json(status, result)
 
     def _post_select(self, backend: StudioBackend, body: dict[str, Any]) -> None:
@@ -1372,11 +1490,33 @@ class Handler(http.server.BaseHTTPRequestHandler):
         )
         self._send_json(status, result)
 
+    def _post_manufacture(self, backend: StudioBackend, body: dict[str, Any]) -> None:
+        actor = self._actor()
+        def fn():
+            return backend.api_manufacture(body, actor)
+        if body.get("action", "list") in ("list", "read", "repair_status", "photo"):
+            status, result = backend.call_readonly(fn)
+        else:
+            status, result = backend.run_write("manufacture", fn, actor=actor,
+                                                request_body={"action": body.get("action")}, skip_history=lambda _: True)
+        self._send_json(status, result)
+
     def _post_services(self, backend: StudioBackend, body: dict[str, Any]) -> None:
         from studio.adapters.service_connections import execute
 
         # Configuration has its own atomic lock and no project/history entry.
         status, result = backend.call_readonly(lambda: execute(body))
+        self._send_json(status, result)
+
+    def _post_laser(self, backend: StudioBackend, body: dict[str, Any]) -> None:
+        actor = self._actor()
+        def fn():
+            return backend.api_laser(body, actor)
+        if body.get("action") in ("list", "read", "artifact", "connection"):
+            status, result = backend.call_readonly(fn)
+        else:
+            status, result = backend.run_write("laser", fn, actor=actor,
+                request_body={"action":body.get("action")}, skip_history=lambda _:True)
         self._send_json(status, result)
 
     def _post_recipe_use(self, backend: StudioBackend, body: dict[str, Any]) -> None:

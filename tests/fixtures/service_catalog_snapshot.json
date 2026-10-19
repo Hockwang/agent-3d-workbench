@@ -31,6 +31,56 @@
     "title": "Hi3D"
   },
   {
+    "adapter": "p3sam",
+    "configured": false,
+    "id": "p3sam",
+    "input_mode": "files",
+    "key_env": null,
+    "needs_base_url": true,
+    "operation_templates": [
+      {
+        "choices": {
+          "face_label_solver": {
+            "random_walker": "Random walker"
+          },
+          "mask_branch_strategy": {
+            "all": "保留多个候选",
+            "best_iou": "单一最优候选"
+          }
+        },
+        "description": "上传一个模型，返回分区预览和绑定原始面的标签。分区仍需封口、连接和制造检查。",
+        "id": "segment",
+        "labels": {
+          "cluster_similarity_threshold": "候选合并相似度",
+          "face_label_solver": "标签补全",
+          "mask_branch_strategy": "分区候选保留方式",
+          "point_num": "采样点数",
+          "post_process": "后处理",
+          "prompt_bs": "提示批量",
+          "prompt_num": "候选提示数",
+          "seed": "随机种子"
+        },
+        "params": {
+          "cluster_similarity_threshold": 0.9,
+          "face_label_solver": "random_walker",
+          "mask_branch_strategy": "best_iou",
+          "point_num": 40000,
+          "post_process": false,
+          "prompt_bs": 8,
+          "prompt_num": 400,
+          "seed": 42
+        },
+        "title": "模型分区"
+      }
+    ],
+    "operations": [
+      "segment"
+    ],
+    "setup_message": "配置自己的 HTTPS 或本机回环服务地址 / Configure your own HTTPS or loopback service endpoint.",
+    "timeout_seconds": 600,
+    "title": "模型分区"
+  },
+  {
     "adapter": "lux3d",
     "configured": false,
     "id": "lux3d",

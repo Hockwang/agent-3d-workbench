@@ -207,11 +207,19 @@ def import_files(ws, doc, p):
             new.append(ws._object(mesh, name, conversion @ transform))
     if not new:
         raise EditorError.coded("editor_actions.no_editable_mesh_in_files")
+    previous_project = None
+    if p.get("new_scene") is True:
+        # Parse every incoming model before changing the current document.
+        # Keep a self-contained archive as well as the normal undo snapshot.
+        if doc["objects"]:
+            previous_project = save(ws, doc, {})["path"]
+        doc["objects"] = []
     doc["objects"].extend(new)
     doc["selection"] = [o["id"] for o in new]
     if not doc["objects"][: -len(new)]:
         doc["name"] = Path(files[0]).stem
-    return {"summary": _render_message("editor_actions.summary_imported", count=len(new)), "created": doc["selection"]}
+    return {"summary": _render_message("editor_actions.summary_imported", count=len(new)), "created": doc["selection"],
+            **({"previous_project": previous_project} if previous_project else {})}
 
 
 @action("primitive")

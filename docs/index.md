@@ -2,6 +2,8 @@
 
 # Documentation index
 
+Plugin preview: [PLUGIN_PREVIEW.md](PLUGIN_PREVIEW.md) and [PRINT_COLOR_INTENT.md](PRINT_COLOR_INTENT.md).
+
 Documents are written in English; the ones that also have a Chinese version link to it as `[中文](zh-CN/…)`. The Chinese copies live in [`docs/zh-CN/`](zh-CN/) and mirror the English files one-to-one. Root-level specs follow the same pattern: [SPEC.md](../SPEC.md) / [SPEC.zh-CN.md](../SPEC.zh-CN.md) (workbench spec) and [SPEC_RECIPES.md](../SPEC_RECIPES.md) / [SPEC_RECIPES.zh-CN.md](../SPEC_RECIPES.zh-CN.md) (recipe format).
 
 Start here: [TOOLS.md](TOOLS.md), [ARCHITECTURE.md](ARCHITECTURE.md) ([中文](zh-CN/ARCHITECTURE.md)), [CONFIGURATION.md](CONFIGURATION.md) ([中文](zh-CN/CONFIGURATION.md)), [CORE_CLI.md](CORE_CLI.md) ([中文](zh-CN/CORE_CLI.md)), and [AGENT_PLAYBOOK.md](AGENT_PLAYBOOK.md) ([中文](zh-CN/AGENT_PLAYBOOK.md)) cover the tool reference, system architecture, service configuration, the core CLI, and the agent-facing operating playbook, respectively.

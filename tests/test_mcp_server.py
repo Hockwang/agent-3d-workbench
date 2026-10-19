@@ -77,7 +77,7 @@ async def test_tools_list_contains_workflow_and_app_tools(mcp_session):
         "studio_part_chat",
     }
     assert names == expected
-    assert len(expected) == 26
+    assert len(expected) == 30
     assert "studio_services" in names
     assert "studio_evaluation" in names
     bridge = next(t for t in result.tools if t.name == "studio_ui_action")
@@ -536,3 +536,39 @@ def test_call_http_forwards_the_mcp_process_language(monkeypatch):
     finally:
         reset_language(token)
     assert captured["headers"]["accept-language"] == "zh-CN"
+
+
+async def _open_with_default_presentation(mcp_home, default, arguments):
+    from mcp import ClientSession, StdioServerParameters, stdio_client
+    from tests.helpers import MCP_SERVER_SCRIPT
+
+    env = {"PRINT_PREP_HOME": str(mcp_home), "PRINT_PREP_WORKSPACE_ID": "test-workspace", "STUDIO_LANG": "zh-CN"}
+    if default is not None:
+        env["PRINT_PREP_DEFAULT_PRESENTATION"] = default
+    params = StdioServerParameters(command=sys.executable, args=[str(MCP_SERVER_SCRIPT)], env=env)
+    async with stdio_client(params) as (read_stream, write_stream):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+            return await session.call_tool("studio_open", arguments)
+
+
+@pytest.mark.anyio
+async def test_open_env_default_browser_without_argument(mcp_home):
+    result = await _open_with_default_presentation(mcp_home, "browser", {})
+    assert result.is_error is False
+    assert content_json(result)["url"].startswith("http://127.0.0.1:")
+
+
+@pytest.mark.anyio
+async def test_open_explicit_app_beats_env_default_browser(mcp_home):
+    result = await _open_with_default_presentation(mcp_home, "browser", {"presentation": "app"})
+    assert result.is_error is False
+    assert content_json(result)["presentation"] == "app"
+    assert "url" not in content_json(result)
+
+
+@pytest.mark.anyio
+async def test_open_garbage_env_default_falls_back_to_app(mcp_home):
+    result = await _open_with_default_presentation(mcp_home, "sideways", {})
+    assert result.is_error is False
+    assert content_json(result)["presentation"] == "app"

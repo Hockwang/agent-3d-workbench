@@ -23,6 +23,7 @@ import manifold3d
 import numpy as np
 import trimesh
 from trimesh.visual.material import MultiMaterial
+from print_prep import color_intent
 from studio.i18n import render as _render_message
 from studio.core import geometry_store
 from studio.core import motion as motion_edit
@@ -249,6 +250,8 @@ class Workspace:
     def execute(self, body, actor="ai"):
         with self.lock, _KERNEL_LOCK:
             if "collaboration" in self.doc:
+                if isinstance(body.get("params"), dict) and body["params"].get("new_scene") is True:
+                    raise EditorError.coded("editor.new_scene_shared")
                 return collaboration.execute(self, body, actor)
             if type(body.get("expected_revision")) is not int or body["expected_revision"] != self.doc["revision"]:
                 raise EditorError.coded("editor.stale_project_revision", code="revision_conflict")
@@ -502,9 +505,13 @@ class Workspace:
                 path = self._output_path(
                     {"path": str(self.root / "exports" / (name + "_" + uuid.uuid4().hex[:8] + ".stl"))}, ".stl"
                 )
-                raw = geometry_store.stl_bytes(self.mesh(obj, world=True))
+                print_mesh = self.mesh(obj, world=True)
+                color = color_intent.uniform_mesh_color(print_mesh)
+                raw = geometry_store.stl_bytes(print_mesh)
                 with path.open("xb") as f:
                     f.write(raw)
+                if color:
+                    color_intent.write_stl_color(path, color)
                 paths.append(str(path))
             return {"summary": _render_message("editor.summary_print_copy_created"), "files": paths}
         fmt = p.get("format", "glb")

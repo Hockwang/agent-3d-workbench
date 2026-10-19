@@ -1,8 +1,10 @@
+import { downloadFile } from './download.js';
 import { displayLabel } from './display-label.js';
 import { createStudioShell } from "./studio-shell.js";
 import { TaskPreview } from './task-preview.js';
 import { uploadFile } from './upload.js';
 import { t } from './i18n.js';
+import { captureCamera, restoreCamera } from './session-view.js';
 const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=displayLabel(text);if(cls)n.className=cls;return n;};
 export function createObserve(api, root=document.getElementById('observe-space')){
   root.innerHTML=`<header class="observe-head"><div><h2>${t('observe.header.title')}</h2><small>${t('observe.header.subtitle')}</small></div><span>${t('observe.header.badge')}</span></header>
@@ -75,7 +77,9 @@ export function createObserve(api, root=document.getElementById('observe-space')
   $('.observe-new form').onsubmit=e=>{e.preventDefault();act(async()=>{const inputs=$('.observe-paths').value.split('\n').map(x=>x.trim()).filter(Boolean);const r=await api.observe({action:'start',inputs,params:{urdf_up:$('.observe-up').value,phases:$('.observe-phases').value.split(',').map(Number)}});selected=r.task.id;});};
   $('.observe-upload').onchange=()=>act(async()=>{const paths=[];for(const f of $('.observe-upload').files)paths.push((await uploadFile(b=>api.task(b),f)).path);$('.observe-paths').value=[$('.observe-paths').value,...paths].filter(Boolean).join('\n');$('.observe-upload').value='';});
   $('.observe-review').onsubmit=e=>{e.preventDefault();act(async()=>{const id=receipt.task.id;const result=await api.observe({action:'review',id,expected_sha256:receipt.report_sha256,verdict:$('.observe-review select').value,note:$('.observe-review textarea').value});if(receipt.task.id===id){receipt=result;metrics();}});};
-  $('.observe-save').onclick=()=>{if(!receipt)return;const url=URL.createObjectURL(new Blob([JSON.stringify(receipt,null,2)],{type:'application/json'})),a=el('a');a.href=url;a.download='observation.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);};
+  $('.observe-save').onclick=()=>{if(receipt)act(()=>downloadFile(api,JSON.stringify(receipt,null,2),'observation.json','application/json',{kind:'observation',id:receipt.task.id}));};
   const ready=refresh().catch(error);timer=setInterval(()=>{if(!pending)refresh().catch(error);},2000);
-  return{ready,setState(state){if(state?.focus_task_id){selected=state.focus_task_id;stamp='';refresh().catch(error);}},setActive(v){active=v;preview?.setActive(v);if(v)refresh().catch(error);},dispose(){disposed=true;clearInterval(timer);shell.dispose();preview?.dispose();if(imageUrl)URL.revokeObjectURL(imageUrl);}};
+  return{ready,openNew(){shell.reveal($('.observe-new'));$('.observe-new').open=true;},getPresentation:()=>({task_id:selected,variant,phase,camera:captureCamera(preview)}),
+    async restorePresentation(value){if(value?.task_id){await ready;await api.observe({action:'focus',id:value.task_id,variant:value.variant||0,phase_index:value.phase||0});selected=value.task_id;await refresh();restoreCamera(preview,value.camera);}},
+    setState(state){if(state?.focus_task_id){selected=state.focus_task_id;stamp='';refresh().catch(error);}},setActive(v){active=v;preview?.setActive(v);if(v)refresh().catch(error);},dispose(){disposed=true;clearInterval(timer);shell.dispose();preview?.dispose();if(imageUrl)URL.revokeObjectURL(imageUrl);}};
 }

@@ -2,6 +2,8 @@
 
 # 文档索引
 
+Plugin 预览：[PLUGIN_PREVIEW.md](PLUGIN_PREVIEW.md)；[打印颜色](PRINT_COLOR_INTENT.md)。
+
 文档默认用英文写；已经有中文版本的文档会用 `[中文](zh-CN/…)` 这样的形式
 链到中文版。中文版本都放在 [`docs/zh-CN/`](./) 目录下（也就是本文件所在
 目录），与英文文件一一对应。根目录下的规格文档遵循同样的模式：

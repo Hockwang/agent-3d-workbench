@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createGLTFLoader } from './gltf-loader.js';
 import { RenderLoop, resizeDrawingBuffer } from './render-loop.js';
 import { t } from './i18n.js';
+import { printPoseFiles } from './print-pose.js';
 
 export class TaskPreview {
   constructor(element, { insets } = {}) {
@@ -84,6 +85,10 @@ export class TaskPreview {
     resizeDrawingBuffer(this.renderer, this.camera, this.element, false);
     this.fit(); this.renderer.render(this.scene, this.camera);
     return this.renderer.domElement.toDataURL('image/webp', .75);
+  }
+  printPose() {
+    this.play(false);
+    return printPoseFiles(this.root).map(({ name, bytes }) => new File([bytes], name, { type: 'model/stl' }));
   }
   selectClip(index) { this.mixer?.stopAllAction(); this.action = null; if (this.clips?.[index]) this.action = this.mixer.clipAction(this.clips[index]).reset().play(); this.mixer?.update(0); this.onTime?.(0); this.loop.invalidate(); }
   play(value) { this.playing = value && !!this.mixer; this.last = performance.now(); this.loop.invalidate(); }

@@ -28,6 +28,7 @@ from . import orient
 from . import profiles
 from . import shape_table
 from .messages import render
+from . import printer_catalog, slicers, color_intent
 
 DEFAULT_PRINTER = "Bambu Lab P1S 0.4 nozzle"
 DEFAULT_STRATEGY = "auto"
@@ -111,7 +112,7 @@ def cmd_printers(args: argparse.Namespace) -> dict[str, Any]:
         printers = profiles.list_printers(filter_str=args.filter)
     except profiles.ProfileError as exc:
         raise EnvError(str(exc)) from exc
-    return {"ok": True, "command": "printers", "job": None, "print_submitted": False, "printers": printers}
+    return {"ok": True, "command": "printers", "job": None, "print_submitted": False, "printers": printers, "slicers": slicers.list_slicers(), "catalog_diagnostics": {k: v for k, v in printer_catalog.catalog().items() if k != "printers"}}
 
 
 # ---------------------------------------------------------------------------
@@ -195,6 +196,14 @@ def cmd_inspect(args: argparse.Namespace) -> dict[str, Any]:
         fits, suggested = mesh_io.fits_any_axis(mesh, avail_w, avail_h, avail_z)
         stl_path = parts_dir / f"{p['name']}.stl"
         mesh_io.save_part_stl(mesh, stl_path)
+        try:
+            color = (
+                color_intent.read_stl_color(Path(p["source"]))
+                if Path(p["source"]).suffix.lower() == ".stl"
+                else color_intent.uniform_mesh_color(mesh)
+            )
+        except (ValueError, KeyError) as exc:
+            raise UserError(str(exc), code="bad_part_color") from exc
         part_warnings = mesh_io.warnings_for_part(p["name"], measured)
         warnings.extend(part_warnings)
         parts_out.append(
@@ -211,6 +220,7 @@ def cmd_inspect(args: argparse.Namespace) -> dict[str, Any]:
                 "fits_bed": fits,
                 "suggested_scale": suggested,
                 "stl_path": str(stl_path),
+                "color": color,
             }
         )
 
@@ -337,9 +347,8 @@ def cmd_arrange(args: argparse.Namespace) -> dict[str, Any]:
     printer_name = inspect_data["printer"]
 
     try:
-        root = profiles.profile_root()
-        idx = profiles._index(root)
-        machine = profiles.resolve(printer_name, idx)
+        _slicer, root, idx, native_name = printer_catalog.context(printer_name)
+        machine = profiles.resolve(native_name, idx)
     except profiles.ProfileError as exc:
         raise EnvError(str(exc)) from exc
     bed = profiles.bed_params(machine)
@@ -355,6 +364,7 @@ def cmd_arrange(args: argparse.Namespace) -> dict[str, Any]:
         plates = arrange_mod.arrange(
             parts,
             bed_mm=bed["bed_mm"],
+            bed_origin_mm=bed["bed_origin_mm"],
             margin_mm=DEFAULT_MARGIN_MM,
             exclude_areas=bed["exclude_areas"],
             mode=args.mode,
@@ -366,7 +376,11 @@ def cmd_arrange(args: argparse.Namespace) -> dict[str, Any]:
         ) from exc
     except arrange_mod.PartTooLargeError as exc:
         raise UserError(
-            str(exc), code="part_too_large", payload={"part": exc.name, "suggested_scale": exc.suggested_scale}
+            str(exc), code="part_too_large", payload={
+                "part": exc.name, "suggested_scale": exc.suggested_scale,
+                "dims_mm": exc.dims_mm,
+                "available_mm": [exc.avail[axis] for axis in ("w", "h", "z")],
+            }
         ) from exc
 
     data["arrange"] = {"mode": args.mode, "gap_mm": args.gap, "plates": plates}
@@ -399,17 +413,16 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
     shape_label = shape_table.normalize_label(args.shape or (data.get("orient") or {}).get("shape") or "generic")
     shape_entry = shape_table.lookup(shape_label)
 
-    root = profiles.profile_root()
     try:
-        idx = profiles._index(root)
-        machine = profiles.resolve(printer_name, idx)
+        slicer_id, root, idx, native_name = printer_catalog.context(printer_name)
+        machine = profiles.resolve(native_name, idx)
     except profiles.ProfileError as exc:
         raise EnvError(str(exc)) from exc
 
     used_fallback_default = False
     process_name = args.process
     if not process_name:
-        process_name = profiles.find_process_by_layer_height(root, printer_name, shape_entry["layer_height_mm"])
+        process_name = profiles.find_process_by_layer_height(root, native_name, shape_entry["layer_height_mm"])
         if not process_name:
             process_name = machine.get("default_print_profile")
             used_fallback_default = True
@@ -463,12 +476,23 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
     (profiles_dir / "provenance.json").write_text(json.dumps(provenance, indent=1, ensure_ascii=False))
 
     parts_by_name = {p["name"]: p for p in inspect_data["parts"]}
+    part_colors = {n: p["color"] for n, p in parts_by_name.items() if p.get("color")}
+    try:
+        for entry in getattr(args, "part_color", None) or []:
+            name, color = entry.rsplit("=", 1)
+            if name not in parts_by_name:
+                raise ValueError(f"Unknown color part: {name}")
+            part_colors[name] = color_intent.normalize_color(color)
+    except ValueError as exc:
+        raise UserError(str(exc), code="bad_part_color") from exc
     # Output paths are reused. Once writing starts, an earlier successful export
     # cannot remain marked ready if this attempt fails its readback gate.
     job.invalidate_from(data, "export")
     job.save_job(job_dir, data)
     plates_out: list[dict[str, Any]] = []
-    notes: list[str] = []
+    manual_setup = slicer_id == "creality"
+    no_project = bool(args.no_project or manual_setup)
+    notes: list[str] = [render("slicer.creality_manual")] if manual_setup else []
     for plate in data["arrange"]["plates"]:
         idx_plate = plate["index"]
         plate_dir = job_dir / "plates"
@@ -479,7 +503,25 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
         for pl in plate["placements"]:
             name = pl["part"]
             meshes_by_name[name] = mesh_io.load_part_stl(parts_by_name[name]["stl_path"])
-        export3mf.write_geometry_3mf(geom_path, meshes_by_name, plate["placements"])
+        colors = {n: part_colors[n] for n in meshes_by_name if n in part_colors}
+        palette = []
+        if colors:
+            if set(colors) != set(meshes_by_name):
+                default = filament.get("filament_colour", ["#00AE42"])[0]
+                palette.append(color_intent.normalize_color(default))
+            for color in colors.values():
+                if color not in palette:
+                    palette.append(color)
+        filament_paths = [filament_path]
+        if palette:
+            filament_paths = []
+            for slot, color in enumerate(palette, start=1):
+                colored = _strip_internal_keys(filament)
+                colored["filament_colour"] = [color]
+                target = profiles_dir / f"plate_{idx_plate:02d}.filament-{slot}.json"
+                target.write_text(json.dumps(colored, indent=1, ensure_ascii=False))
+                filament_paths.append(target)
+        export3mf.write_geometry_3mf(geom_path, meshes_by_name, plate["placements"], colors, palette)
         readback = export3mf.read_back_geometry_3mf(geom_path, meshes_by_name, plate["placements"], tol_mm=0.01)
         if not readback["pass"]:
             raise CliError(
@@ -488,16 +530,21 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
             )
 
         plate_record: dict[str, Any] = {"index": idx_plate, "geometry_3mf": str(geom_path), "readback": readback}
-        if not args.no_project:
-            print(f"calling Bambu Studio CLI for plate {idx_plate}...", file=sys.stderr)
+        plate_record["color_mapping"] = {
+            n: {"color": c, "filament_slot": palette.index(c) + 1} for n, c in colors.items()
+        }
+        plate_record["filament_paths"] = [str(p) for p in filament_paths]
+        if not no_project:
+            print(f"calling {slicer_id} CLI for plate {idx_plate}...", file=sys.stderr)
             try:
                 project_info = bambu.export_project_3mf(
                     geom_path,
                     plate_dir,
                     machine_path,
                     process_path,
-                    [filament_path],
+                    filament_paths,
                     project_name=f"plate_{idx_plate:02d}",
+                    **({"binary": slicers.binary_path(slicer_id)} if slicer_id != "bambu" else {}),
                 )
             except bambu.BambuCliError as exc:
                 raise EnvError(str(exc)) from exc
@@ -526,14 +573,25 @@ def cmd_export(args: argparse.Namespace) -> dict[str, Any]:
                     code="project_geometry_changed",
                     payload={"geometry_readback": topology, "geometry_3mf": str(geom_path)},
                 )
+            color_readback = export3mf.compare_project_colors(Path(project_info["project_3mf"]), colors)
+            plate_record["color_readback"] = color_readback
+            if not color_readback["pass"]:
+                raise CliError(
+                    render("cli.project_color_changed"),
+                    code="project_color_changed",
+                    payload={"color_readback": color_readback, "geometry_3mf": str(geom_path)},
+                )
         plates_out.append(plate_record)
 
     export_record = {
+        "slicer": slicer_id,
+        "profiles_dir": str(profiles_dir.resolve()),
         "printer": printer_name,
         "shape": shape_label,
         "process_preset": process_name,
         "filament_preset": filament_name,
-        "no_project": bool(args.no_project),
+        "no_project": no_project,
+        "manual_setup_required": manual_setup,
         "plates": plates_out,
         "notes": notes,
     }
@@ -562,7 +620,9 @@ def cmd_check(args: argparse.Namespace) -> dict[str, Any]:
     if "export" not in data:
         raise UserError(render("cli.missing_step_check"), code="missing_step")
     export_data = data["export"]
-    profiles_dir = job_dir / "profiles"
+    if export_data.get("slicer") == "creality":
+        raise UserError(render("slicer.creality_manual"), code="slicer_manual_required")
+    profiles_dir = Path(export_data.get("profiles_dir") or job_dir / "profiles")
     machine_path = profiles_dir / "machine.json"
     process_path = profiles_dir / "process.json"
     filament_path = profiles_dir / "filament-0.json"
@@ -586,8 +646,9 @@ def cmd_check(args: argparse.Namespace) -> dict[str, Any]:
                 out_dir,
                 machine_path,
                 process_path,
-                [filament_path],
+                [Path(p) for p in plate.get("filament_paths", [str(filament_path)])],
                 name=f"plate_{idx_plate:02d}",
+                **({"binary": slicers.binary_path(export_data["slicer"]), "statistics_format": "orca"} if export_data.get("slicer", "bambu") != "bambu" else {}),
             )
         except bambu.BambuCliError as exc:
             raise EnvError(str(exc)) from exc
@@ -622,6 +683,8 @@ def cmd_open(args: argparse.Namespace) -> dict[str, Any]:
     data = job.load_job(job_dir)
     if "export" not in data:
         raise UserError(render("cli.missing_step_open"), code="missing_step")
+    if getattr(args, "slicer", None) or data["export"].get("slicer", "bambu") != "bambu":
+        return cmd_open_slicer(args, data)
     plates = data["export"]["plates"]
     app = profiles.app_root()
     if not args.dry_run and not app.exists():
@@ -669,6 +732,40 @@ def cmd_open(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_open_slicer(args: argparse.Namespace, data: dict[str, Any]) -> dict[str, Any]:
+    export = data["export"]
+    source = export.get("slicer", "bambu")
+    target = getattr(args, "slicer", None) or source
+    geometry_only = bool(getattr(args, "geometry_only", False) or (target == source and export.get("manual_setup_required")))
+    try:
+        slicers.definition(target)
+        if target != source and not geometry_only:
+            raise UserError(render("slicer.mismatch", source=source, target=target), code="slicer_mismatch")
+        targets = export["plates"]
+        if not args.all:
+            plate_no = args.plate if args.plate is not None else 1
+            targets = [p for p in targets if p["index"] == plate_no]
+            if not targets:
+                raise UserError(render("cli.plate_not_found", plate=plate_no), code="plate_not_found")
+        # Validate every file before opening any window.
+        key = "geometry_3mf" if geometry_only else "project_3mf"
+        for plate in targets:
+            if not plate.get(key):
+                raise UserError(render("cli.missing_project_3mf", plate=plate["index"]), code="missing_project_3mf")
+            if not Path(plate[key]).is_file():
+                raise slicers.SlicerError(render("slicer.file_missing", path=plate[key]))
+        opened = [{"plate": p["index"], **slicers.open_file(target, Path(p[key]), dry_run=args.dry_run)} for p in targets]
+    except slicers.SlicerError as exc:
+        raise EnvError(str(exc), code="slicer_handoff_failed") from exc
+    return {
+        "ok": True, "command": "open", "job": str(Path(args.job).resolve()),
+        "print_submitted": False, "slicer": target, "geometry_only": geometry_only,
+        "manual_setup_required": geometry_only, "opened": opened,
+        "launched": not args.dry_run, "loaded": "unverified", "was_running_before": None,
+        "notes": [render("slicer.manual")] if geometry_only else [],
+    }
+
+
 # ---------------------------------------------------------------------------
 # 3.8 prepare
 # ---------------------------------------------------------------------------
@@ -711,6 +808,7 @@ def cmd_prepare(args: argparse.Namespace) -> dict[str, Any]:
         shape=args.shape,
         set=args.export_set,
         no_project=args.no_project,
+        part_color=getattr(args, "part_color", []),
     )
     run_step("export", cmd_export, export_ns)
 
@@ -809,6 +907,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_export.add_argument("--filament", default=None)
     p_export.add_argument("--shape", choices=shape_table.VALID_LABELS, default=None)
     p_export.add_argument("--set", action="append", default=[])
+    p_export.add_argument("--part-color", action="append", default=[], metavar="PART=#RRGGBB")
     p_export.add_argument("--no-project", action="store_true", dest="no_project")
     p_export.set_defaults(func=cmd_export, _command_name="export")
 
@@ -822,6 +921,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_open.add_argument("--plate", type=int, default=None)
     p_open.add_argument("--all", action="store_true")
     p_open.add_argument("--dry-run", action="store_true", dest="dry_run")
+    p_open.add_argument("--slicer", choices=list(slicers.SLICERS))
+    p_open.add_argument("--geometry-only", action="store_true")
     p_open.set_defaults(func=cmd_open, _command_name="open")
 
     # prepare 是 inspect->orient->arrange->export(->check)(->open) 的超集；orient
@@ -844,6 +945,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_prepare.add_argument("--process", default=None)
     p_prepare.add_argument("--filament", default=None)
     p_prepare.add_argument("--export-set", action="append", default=[], dest="export_set")
+    p_prepare.add_argument("--part-color", action="append", default=[], metavar="PART=#RRGGBB")
     p_prepare.add_argument("--no-project", action="store_true", dest="no_project")
     p_prepare.add_argument("--check", action="store_true")
     p_prepare.add_argument("--open", action="store_true")

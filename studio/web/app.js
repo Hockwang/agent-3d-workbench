@@ -7,6 +7,7 @@ const workspace = createWorkspace(mock ? createMockApi() : createApi(), { mock }
 if (!mock) {
   const entry = browserEntry(location.search);
   workspace.ready.then(() => {
+    if (workspace.hasNavigated) return;
     if (entry.taskId) return workspace.openResult(entry.taskId);
     workspace.setMode(entry.mode);
   }).catch(error => {

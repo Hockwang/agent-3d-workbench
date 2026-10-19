@@ -11,10 +11,9 @@ export class ApiError extends Error {
   }
 }
 
-export function createApi() {
+export function createApi({workspaceId = new URLSearchParams(globalThis.location?.search || '').get('workspace')} = {}) {
   let token = null;
   let job = null;
-  const workspaceId = new URLSearchParams(globalThis.location?.search || '').get('workspace');
   let initializing;
   function ensureSession(){
     if(token)return Promise.resolve();
@@ -102,23 +101,25 @@ export function createApi() {
     getRecipe: (id) => raw("GET", "/api/recipe?id=" + encodeURIComponent(id)),
     useRecipe: (id) => raw("POST", "/api/recipe/use", { json: { id } }),
     edit: (body) => raw("POST", "/api/edit", { json: body }),
+    laser: (body) => raw("POST", "/api/laser", { json: body }),
+    manufacture: (body) => raw("POST", "/api/manufacture", { json: body }),
     capabilities: () => raw("GET", "/api/capabilities"),
     services: (body) => raw("POST", "/api/services", { json: body }),
     tasks: (id) => raw("GET", "/api/tasks" + (id ? "?id=" + encodeURIComponent(id) : "")),
     task: (body) => raw("POST", "/api/task", { json: body }),
     async taskAsset(id, artifact, { presentation = false } = {}) {
       const res = await fetch(`/api/task-asset/${encodeURIComponent(id)}/${encodeURIComponent(artifact.id)}${presentation ? '?presentation=studio' : ''}`,
-        { headers: { "X-Studio-Token": token } });
+        { headers: { "X-Studio-Token": token, ...(workspaceId ? {'X-Studio-Workspace':workspaceId} : {}) } });
       if (!res.ok) throw new ApiError("artifact_error", t("api.error.artifactReadFailed"));
       return res.arrayBuffer();
     },
     async editorAsset(obj) {
-      const response = await fetch(obj.asset_url, { headers: { "X-Studio-Token": token } });
+      const response = await fetch(obj.asset_url, { headers: { "X-Studio-Token": token, ...(workspaceId ? {'X-Studio-Workspace':workspaceId} : {}) } });
       if (!response.ok) throw new ApiError("preview_error", t("api.error.meshReadFailed"));
       return response.arrayBuffer();
     },
     async cityResource(digest, name) {
-      const response = await fetch(`/api/city-resource/${digest}/${encodeURIComponent(name)}`, {headers:{'X-Studio-Token':token}});
+      const response = await fetch(`/api/city-resource/${digest}/${encodeURIComponent(name)}`, {headers:{'X-Studio-Token':token, ...(workspaceId ? {'X-Studio-Workspace':workspaceId} : {})}});
       if (!response.ok) throw new Error(t('api.error.cityResourceReadFailed', { name }));
       return response.arrayBuffer();
     },
@@ -130,19 +131,20 @@ export function createApi() {
     arrange: (body) => raw("POST", "/api/arrange", { json: body || {} }),
     exportProject: (body) => raw("POST", "/api/export", { json: body || {} }),
     check: (body) => raw("POST", "/api/check", { json: body || {} }),
-    send: (body) => raw("POST", "/api/send", { json: body || {} }),
+    send: (body) => raw("POST", "/api/send_to_slicer", { json: body || {} }),
     prepare: (body) => raw("POST", "/api/prepare", { json: body || {} }),
     select: (parts) => raw("POST", "/api/select", { json: { parts: parts || [] } }),
     undo: (id) => raw("POST", "/api/undo", { json: id == null ? {} : { id } }),
     // 通用路径调用，供页面工具（WebMCP）复用同一套接口定义（§8）。
     callPath: (method, path, json) =>
       (method || "GET").toUpperCase() === "GET" ? raw("GET", path) : raw("POST", path, { json: json || {}, actor: "ai" }),
-    partStlUrl: (name, rev) => `/api/part/${encodeURIComponent(name)}.stl?rev=${rev}`,
+    partStlUrl: (name, rev) => `/api/part/${encodeURIComponent(name)}.stl?rev=${rev}${workspaceId ? '&workspace='+encodeURIComponent(workspaceId) : ''}`,
     upload(file, onProgress) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/upload?name=" + encodeURIComponent(file.name));
         if (token) xhr.setRequestHeader("X-Studio-Token", token);
+        if (workspaceId) xhr.setRequestHeader("X-Studio-Workspace", workspaceId);
         xhr.setRequestHeader("X-Studio-Actor", "human");
         xhr.upload.onprogress = (e) => {
           if (onProgress && e.lengthComputable) onProgress(e.loaded / e.total);
@@ -169,7 +171,7 @@ export function createApi() {
     subscribeEvents(onRev, onOpen, onClose) {
       let es;
       try {
-        es = new EventSource("/api/events");
+        es = new EventSource("/api/events" + (workspaceId ? '?workspace='+encodeURIComponent(workspaceId) : ''));
       } catch (e) {
         onClose && onClose(e);
         return { close() {} };

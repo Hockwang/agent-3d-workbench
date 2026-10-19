@@ -11,6 +11,7 @@ schema 与 Bambu Studio 的实际读法。
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Optional, Sequence
 from xml.etree import ElementTree as ET
@@ -21,8 +22,10 @@ import trimesh
 from scipy.spatial import cKDTree
 
 from .messages import render
+from .color_intent import normalize_color
 
 CORE_NS = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
+MATERIAL_NS = "http://schemas.microsoft.com/3dmanufacturing/material/2015/02"
 CONTENT_TYPES_XML = (
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
@@ -83,7 +86,11 @@ def _fmt_triangle(a: int, b: int, c: int) -> str:
 
 
 def write_geometry_3mf(
-    path: Path, meshes_by_name: dict[str, trimesh.Trimesh], placements: Sequence[dict[str, Any]]
+    path: Path,
+    meshes_by_name: dict[str, trimesh.Trimesh],
+    placements: Sequence[dict[str, Any]],
+    part_colors: dict[str, str] | None = None,
+    filament_colors: Sequence[str] = (),
 ) -> dict[str, Any]:
     """写一份几何 3MF：每个零件是一个顶层 object（局部系几何），build item 用
     3MF 标准 `transform` 属性存摆盘变换；`Metadata/model_settings.config` 挂
@@ -97,6 +104,12 @@ def write_geometry_3mf(
     一个 `<object>`+一个 `<metadata>`，量级小，继续用 `ElementTree`。
     """
     path = Path(path)
+    part_colors = {n: normalize_color(c) for n, c in (part_colors or {}).items()}
+    palette = [normalize_color(c) for c in filament_colors]
+    if part_colors and (not palette or any(c not in palette for c in part_colors.values())):
+        raise ValueError("Every part color must have a filament palette entry")
+    if set(part_colors) - {pl["part"] for pl in placements}:
+        raise ValueError("Color mapping contains an unplaced part")
     config = ET.Element("config")
 
     written = []
@@ -107,6 +120,8 @@ def write_geometry_3mf(
 
         settings = ET.SubElement(config, "object", {"id": str(obj_id)})
         ET.SubElement(settings, "metadata", {"key": "name", "value": name})
+        if name in part_colors:
+            ET.SubElement(settings, "metadata", {"key": "extruder", "value": str(palette.index(part_colors[name]) + 1)})
 
     path.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(path, "w", ZIP_DEFLATED) as z:
@@ -116,14 +131,26 @@ def write_geometry_3mf(
         with z.open("3D/3dmodel.model", "w") as fh:
             fh.write(b'<?xml version="1.0" encoding="UTF-8"?>')
             fh.write(
-                f'<model xmlns="{CORE_NS}" unit="millimeter" xml:lang="en-US">'
+                f'<model xmlns="{CORE_NS}" xmlns:m="{MATERIAL_NS}" unit="millimeter" xml:lang="en-US">'
                 f'<metadata name="Application">print-prep</metadata><resources>'.encode("utf-8")
             )
+            if palette:
+                fh.write(f'<m:colorgroup id="{len(placements) + 1}">'.encode())
+                for color in palette:
+                    fh.write(f'<m:color color="{color}FF"/>'.encode())
+                fh.write(b"</m:colorgroup>")
             for obj_id, pl in enumerate(placements, start=1):
                 name = pl["part"]
                 mesh = meshes_by_name[name]
                 name_attr = _escape_xml_attr(name)
-                fh.write(f'<object id="{obj_id}" type="model" name="{name_attr}"><mesh><vertices>'.encode("utf-8"))
+                material = (
+                    f' pid="{len(placements) + 1}" pindex="{palette.index(part_colors[name])}"'
+                    if name in part_colors
+                    else ""
+                )
+                fh.write(
+                    f'<object id="{obj_id}" type="model" name="{name_attr}"{material}><mesh><vertices>'.encode("utf-8")
+                )
                 for chunk in _iter_xml_chunks(mesh.vertices, _fmt_vertex):
                     fh.write(chunk.encode("utf-8"))
                 fh.write(b"</vertices><triangles>")
@@ -140,7 +167,7 @@ def write_geometry_3mf(
 
         z.writestr("Metadata/model_settings.config", ET.tostring(config, encoding="utf-8", xml_declaration=True))
 
-    return {"path": str(path), "objects": written}
+    return {"path": str(path), "objects": written, "part_colors": part_colors, "filament_colors": palette}
 
 
 def read_back_geometry_3mf(
@@ -399,3 +426,67 @@ def compare_project_geometry(path: Path, sources: dict[str, trimesh.Trimesh]) ->
         "pass": bool(results) and set(actual_by_name) == set(sources) and all(x["pass"] for x in results.values()),
         "parts": results,
     }
+
+
+def compare_project_colors(path: Path, expected: dict[str, str]) -> dict[str, Any]:
+    """Resolve actual Bambu object/volume extruder indices through project filament colours.
+
+    No positional matching and no trust in our own intent manifest or core display colors.
+    Missing/ambiguous bindings, invalid slots, and painted volumes fail closed.
+    """
+    expected = {name: normalize_color(color) for name, color in expected.items()}
+    if not expected:
+        return {"pass": True, "status": "not_requested", "parts": {}}
+    try:
+        with ZipFile(path) as archive:
+            config = ET.fromstring(archive.read("Metadata/model_settings.config"))
+            project = json.loads(archive.read("Metadata/project_settings.config"))
+            model = ET.fromstring(archive.read("3D/3dmodel.model"))
+            # Per-face painting cannot be certified by an object-level check.
+            painted = any(
+                b"paint_color=" in archive.read(n) or b"mmu_segmentation=" in archive.read(n)
+                for n in archive.namelist()
+                if n.endswith(".model")
+            )
+        palette = [normalize_color(c) for c in project["filament_colour"]]
+        built = [item.get("objectid") for item in model.findall(f"{{{CORE_NS}}}build/{{{CORE_NS}}}item")]
+        objects = {}
+        for obj in config.findall("object"):
+            objects.setdefault(obj.get("id"), []).append(obj)
+        results = {}
+        for name, color in expected.items():
+            matches = []
+            for oid in built:
+                for obj in objects.get(oid, []):
+                    md = {m.get("key"): m.get("value") for m in obj.findall("metadata")}
+                    if md.get("name") == name or _strip_known_extension(md.get("name", "")) == _strip_known_extension(
+                        name
+                    ):
+                        matches.append((oid, obj, md))
+            info = {"expected_color": color, "pass": False}
+            if len(matches) != 1:
+                info["error"] = "missing_or_ambiguous_part"
+            else:
+                oid, obj, md = matches[0]
+                slots = []
+                for part in obj.findall("part") or [obj]:
+                    part_md = {m.get("key"): m.get("value") for m in part.findall("metadata")}
+                    slot = int(part_md.get("extruder", "0"))
+                    if slot == 0:
+                        slot = int(md.get("extruder", "1")) or 1
+                    slots.append(slot)
+                actual = [palette[slot - 1] if 1 <= slot <= len(palette) else None for slot in slots]
+                info.update(
+                    object_id=oid,
+                    filament_slots=slots,
+                    actual_colors=actual,
+                    **{"pass": not painted and bool(actual) and all(c == color for c in actual)},
+                )
+            results[name] = info
+        return {
+            "pass": all(p["pass"] for p in results.values()),
+            "parts": results,
+            "painted_volumes_unverified": painted,
+        }
+    except (KeyError, ValueError, TypeError, ET.ParseError) as exc:
+        return {"pass": False, "error": str(exc), "parts": {}}

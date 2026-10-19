@@ -33,7 +33,11 @@ export function createServiceSettings(api, onChange) {
   const field = name => form.elements.namedItem(name);
   let data, current = null, busy = false, dirty = false;
   const status = (message, failed = false) => { $('.service-status').textContent = message; $('.service-status').classList.toggle('error', failed); };
-  const protocolNote = () => { $('.service-protocol-note').textContent = ['hunyuan', 'seed3d'].includes(field('template').value)
+  const protocolNote = () => { const segmentation = field('template').value === 'p3sam';
+    field('secret').closest('label').hidden = segmentation;
+    field('key_env').closest('details').hidden = segmentation;
+    $('.service-key-note').hidden = segmentation;
+    $('.service-protocol-note').textContent = segmentation ? t('serviceSettings.protocolNote.segmentation') : ['hunyuan', 'seed3d'].includes(field('template').value)
     ? t('serviceSettings.protocolNote.adapted')
     : field('template').value.startsWith('lux3d') ? t('serviceSettings.protocolNote.lux3d')
     : t('serviceSettings.protocolNote.generic'); };
@@ -90,6 +94,7 @@ export function createServiceSettings(api, onChange) {
       template: field('template').value, title: field('title').value.trim(), base_url: field('base_url').value.trim(),
       enabled: field('enabled').checked, key_env: field('key_env').value.trim(), clear_key: field('clear_key').checked };
     let secret = field('secret').value.trim(); field('secret').value = '';
+    if (body.template === 'p3sam') { body.key_env = ''; secret = ''; }
     run(async () => {
       if (secret) { body.sealed_key = await sealCredential(secret, data.encryption, body.base_url); body.key_env = ''; }
       secret = '';

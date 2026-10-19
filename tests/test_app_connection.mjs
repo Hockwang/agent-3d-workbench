@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {createMcpApi} from '../studio/app/api.js';
+import {createMcpApi,payload} from '../studio/app/api.js';
+import {browserEntry} from '../studio/web/quick-access.js';
 import {presentationFor, safeAreaFor} from '../studio/app/presentation.js';
 import {t} from '../studio/web/i18n.js';
 import {createSelectionContextSync} from '../studio/app/selection-context.js';
@@ -29,14 +30,31 @@ function fixture({workspaceId='task-a',connect,modelContext}={}) {
     }
   }
   vm.runInNewContext(main,{
-    App,THREE:{},createMcpApi,presentationFor,safeAreaFor,t,
+    App,THREE:{},createMcpApi,payload,browserEntry,URLSearchParams,presentationFor,safeAreaFor,t,
     createSelectionContextSync,
-    createWorkspace(api,options){const item={api,options,ready:Promise.resolve(),setState(){},setActive(value){this.active=value;},dispose(){}};workspaces.push(item);return item;},
+    createWorkspace(api,options){const item={api,options,ready:Promise.resolve(),setState(value){this.state=value;},setActive(value){this.active=value;},dispose(){}};workspaces.push(item);return item;},
     document:{getElementById:node,addEventListener(){},hidden:false},window:{addEventListener(){},innerWidth:1000},
     ResizeObserver:class {observe(){}disconnect(){}},requestAnimationFrame(){return 1;},cancelAnimationFrame(){},setTimeout(){return 1;},clearTimeout(){},
   });
   return {node,calls,workspaces,contexts,get app(){return app;},get attempts(){return attempts;}};
 }
+
+test('native startup ignores legacy implicit edit mode but preserves explicit destinations',async()=>{
+  const f=fixture(); await tick();
+  const oldResult=()=>({structuredContent:{ok:true,parts:[],workspace_id:'task-a',workspace_mode:'edit',workbench:{objects:[{id:'saved'}],selection:[]}}});
+  f.app.ontoolinput({arguments:{workspace_id:'task-a'}});
+  f.app.ontoolresult(oldResult());
+  assert.equal(f.workspaces[0].state.workspace_mode,'home');
+  assert.equal(f.workspaces[0].state.workbench.objects.length,1,'saved data is retained');
+  for(const mode of ['edit','print','motion']) {
+    f.app.ontoolinput({arguments:{workspace_id:'task-a',mode}});
+    f.app.ontoolresult(oldResult());
+    assert.equal(f.workspaces[0].state.workspace_mode,mode);
+  }
+  f.app.ontoolinput({arguments:{workspace_id:'task-a',task_id:'chosen'}});
+  f.app.ontoolresult(oldResult());
+  assert.equal(f.workspaces[0].state.workspace_mode,'tasks');
+});
 
 test('host startup and reconnect clear old context; workspace attaches only on explicit action',async()=>{
   const f=fixture();await tick();

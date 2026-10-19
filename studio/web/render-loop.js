@@ -10,6 +10,11 @@ export class RenderLoop {
     this.clear = clock.clear || ((id) => clearTimeout(id));
     this.frame = null; this.timer = null; this.active = true; this.disposed = false;
     this.dirty = false; this.sizeDirty = false; this.resizing = false; this.last = -Infinity;
+    this.waiters = [];
+  }
+  waitForFrame() {
+    if(!this.active || this.disposed)return Promise.resolve(false);
+    return new Promise(resolve=>{this.waiters.push(resolve);this.invalidate();});
   }
   invalidate() {
     if (this.disposed) return;
@@ -33,16 +38,18 @@ export class RenderLoop {
     this.last = time; this.dirty = false;
     const resize = this.sizeDirty; this.sizeDirty = false;
     if (this.draw({ resize, resizing: this.resizing })) this.invalidate();
+    this.waiters.splice(0).forEach(resolve=>resolve(true));
   }
   setActive(value) {
     if (this.active === value || this.disposed) return;
     this.active = value;
     if (value) this.resize();
-    else { this.cancel(this.frame); this.frame = null; }
+    else { this.cancel(this.frame); this.frame = null; this.waiters.splice(0).forEach(resolve=>resolve(false)); }
   }
   dispose() {
     this.disposed = true; this.cancel(this.frame); this.clear(this.timer);
     this.frame = null; this.timer = null;
+    this.waiters.splice(0).forEach(resolve=>resolve(false));
   }
 }
 

@@ -42,51 +42,6 @@ from studio.i18n import render
 # tests/test_core_cli.py asserts it stays equal to the live shell list.
 _DEFAULT_TOOL_SCHEMAS = Path(__file__).resolve().with_name("tool_schemas.json")
 
-# Action names dispatched by studio.core.editor.Workspace._apply (directly, or
-# via the "scene_"/"city_"/"motion_" prefixed handoffs to scene_assets.py /
-# city.py / motion.py). Read from studio/core/editor.py by hand on 2026-09-24;
-# used only for `editor apply --help` text, never to reject a value — an
-# unrecognised action already gets a clear error from Workspace.execute itself.
-_FALLBACK_EDITOR_ACTIONS: tuple[str, ...] = (
-    "boolean",
-    "city_catalog",
-    "city_checkout",
-    "city_import",
-    "city_register",
-    "delete",
-    "duplicate",
-    "export",
-    "extract_faces",
-    "import",
-    "inspect",
-    "isolate",
-    "material",
-    "merge",
-    "motion_clear",
-    "motion_export",
-    "motion_import",
-    "motion_set",
-    "open",
-    "plane_cut",
-    "primitive",
-    "print_copy",
-    "redo",
-    "rename",
-    "replace",
-    "save",
-    "scene_export",
-    "scene_import",
-    "scene_replace",
-    "select",
-    "show_all",
-    "simplify",
-    "split_components",
-    "transform",
-    "undo",
-    "visibility",
-)
-
-
 class _CliError(Exception):
     """A CLI-side error (bad JSON, bad file, unknown recipe/artifact) that
     isn't already one of `EditorError`/`RecipeError`. Same shape as those
@@ -109,20 +64,10 @@ class _Parser(argparse.ArgumentParser):
 
 
 def _editor_action_names() -> list[str]:
-    """Action names for `editor apply --help`. Prefers the canonical registry
-    in `studio.core.editor_actions` if that module exists (a future refactor
-    may extract `Workspace._apply`'s if/elif chain into one); falls back to
-    the static list above otherwise. Import is deferred so this keeps working
-    whether or not that module has landed yet."""
-    try:
-        from studio.core import editor_actions  # type: ignore[import-not-found]
-    except ImportError:
-        return sorted(_FALLBACK_EDITOR_ACTIONS)
-    actions = getattr(editor_actions, "ACTIONS", None)
-    if actions is None:
-        return sorted(_FALLBACK_EDITOR_ACTIONS)
-    names = actions.keys() if isinstance(actions, dict) else actions
-    return sorted(str(name) for name in names)
+    """Read editor help names from the same registry that dispatches actions."""
+    from studio.core.editor_actions import ACTIONS
+
+    return sorted(ACTIONS)
 
 
 def _load_tool_schemas(path: Optional[str]) -> list[dict[str, Any]]:

@@ -54,15 +54,15 @@ PLY is a fully-saved output file; there is currently no Gaussian-splat renderer,
 
 This round used local HTTP fixtures to verify the request/response contract, upload, quoting, collection, identity checks, resume, errors, and key isolation; a browser test ran the full chain from quote to import-into-editing against the real Studio backend. Compressed models were verified with the Khronos Draco Box, a Three.js KTX2 sample, and a generated Meshopt triangle, and the offline canvas was checked to actually have an image.
 
-No Lux3D-specific credentials were found in the company/personal environment configs or Studio connections examined on this machine, so **the domestic or global site's real-account balance, billing, and model-generation acceptance has not yet been completed, and full capability and quality parity cannot be claimed**. Once connected, run at least one real image-to-model or text-to-model job, and keep the task ID, quote, original artifact, edited artifact, and observation report.
+No Lux3D-specific credentials were found in the configuration used for that validation, so **the domestic or global site's real-account balance, billing, and model-generation acceptance has not yet been completed, and full capability and quality parity cannot be claimed**. Once connected, run at least one real image-to-model or text-to-model job, and keep the task ID, quote, original artifact, edited artifact, and observation report.
 
 ### Open gap: LUX3D-LIVE-001
 
-- Status: no Lux3D-specific key, pending a usable domestic or global account configuration. On 2026-09-23 the user asked for this gap to be recorded, and for an alternate-chain test using the company OneAPI Hunyuan.
+- Status: no Lux3D-specific key, pending a usable domestic or global account configuration. On 2026-09-23 the user asked for this gap to be recorded, and for an alternate-chain test using a configured compatible gateway Hunyuan.
 - Alternate verification available: submission, polling, and collection through a professional 3D service, unified preview, bringing it back into editing, exporting, and Hunyuan Part splitting.
 - Cannot substitute for: Lux3D regional auth, balance and plan quoting, asset upload, real billing, and server-side compatibility for the seven operation categories. A Hunyuan success does not close this gap.
 - Closing condition: a valid regional key is configured, and at least one real Lux3D generation runs the full quote-to-collection, observation, and editing path; every other operation is recorded either as a real success or an explicit limitation — full capability parity is never inferred from one sample.
 
-The company OneAPI alternate chain has been tested and passed; see [Hunyuan real verification and normal-fixing](history/VALIDATION_20260923_ONEAPI_HUNYUAN.md). This gap is still open.
+The configured compatible gateway alternate chain has been tested and passed; see [Hunyuan real verification and normal-fixing](history/VALIDATION_20260923_ONEAPI_HUNYUAN.md). This gap is still open.
 
 Test entry points: `tests/test_lux3d.py`, `tests/test_projects.py`; run with `uv run pytest -q` and `node --test tests/*.mjs`; frontend with `npm run build:app`.

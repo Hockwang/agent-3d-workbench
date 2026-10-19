@@ -61,3 +61,11 @@ test("drawing buffers only reallocate for a changed size or resolution", () => {
     assert.equal(renderer.domElement.style.objectFit, 'contain');
   } finally { if (original === undefined) delete globalThis.devicePixelRatio; else globalThis.devicePixelRatio = original; }
 });
+test('scene readiness waits for a real frame after resize settles',async()=>{
+  const h=harness();h.loop.resize();let ready=false;
+  const pending=h.loop.waitForFrame().then(value=>{ready=value;});
+  h.advance(40);await Promise.resolve();assert.equal(ready,false);
+  h.advance(160);await pending;assert.equal(ready,true);assert.equal(h.draws.length,1);
+  h.loop.setActive(false);assert.equal(await h.loop.waitForFrame(),false);
+  h.loop.setActive(true);const stopped=h.loop.waitForFrame();h.loop.dispose();assert.equal(await stopped,false);
+});

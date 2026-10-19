@@ -336,7 +336,7 @@ generation. View the real result with `observe` before delivering it; see [Lux3D
 the complete field list, version limits, and verified scope.
 
 Seed3D uses `provider:"seed3d"`, `operation:"image-to-3d"`; put one reference image in `inputs`
-and it returns a GLB. It's currently wired to the company gateway's Seed3D 2.0 professional
+and it returns a GLB. It's currently wired to a compatible gateway’s Seed3D 2.0 professional
 model — although the transport uses `chat/completions`, it never calls a general-purpose LLM.
 This is a synchronous interface with no reliable polling contract; only a download failure
 *after* a result has been received can be resumed — an ambiguous submission cannot be

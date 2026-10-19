@@ -17,6 +17,7 @@ from studio.i18n import register
 
 register(
     {
+        "services.title_segmentation": {"en": "Model segmentation", "zh-CN": "模型分区"},
         # --- lux3d_commerce.py ---
         "lux3d_commerce.account_context_expired": {
             "zh-CN": "Lux3D 账户上下文已过期",
@@ -317,8 +318,8 @@ register(
             "en": "Lux3D remote task failed or was cancelled: {status}",
         },
         "lux3d_service.request_failed": {
-            "zh-CN": "Lux3D 请求未成功：{code}",
-            "en": "Lux3D request did not succeed: {code}",
+            "zh-CN": "Lux3D 请求未成功：{remote_code}",
+            "en": "Lux3D request did not succeed: {remote_code}",
         },
         "lux3d_service.response_missing_data": {
             "zh-CN": "Lux3D 响应缺少数据",

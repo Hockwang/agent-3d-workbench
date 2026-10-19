@@ -251,6 +251,7 @@ def arrange(
     exclude_areas: Sequence[list[float]],
     mode: str = "auto",
     gap_mm: float = 4.0,
+    bed_origin_mm: Sequence[float] = (0.0, 0.0),
 ) -> list[dict[str, Any]]:
     """主入口。`parts` 每项至少要有 `name`/`mesh`/`print_up`。v0.1 没有
     `--group-by`（载入阶段不解析颜色，SPEC.md §3.4）。
@@ -263,11 +264,12 @@ def arrange(
     if gap_mm < 0:
         raise ValueError(render("arrange.gap_negative", gap_mm=gap_mm))
 
+    ox, oy = bed_origin_mm
     avail = {
-        "x0": margin_mm,
-        "y0": margin_mm,
-        "x1": bed_mm[0] - margin_mm,
-        "y1": bed_mm[1] - margin_mm,
+        "x0": ox + margin_mm,
+        "y0": oy + margin_mm,
+        "x1": ox + bed_mm[0] - margin_mm,
+        "y1": oy + bed_mm[1] - margin_mm,
         "w": bed_mm[0] - 2 * margin_mm,
         "h": bed_mm[1] - 2 * margin_mm,
         "z": bed_mm[2] - margin_mm,

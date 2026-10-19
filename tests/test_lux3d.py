@@ -118,7 +118,10 @@ def api(tmp_path, monkeypatch):
                 self.send_response(404)
                 self.end_headers()
                 return
-            encoded = json.dumps({"f": None, "c": "0", "m": "", "d": result}).encode()
+            response = {"f": None, "c": "0", "m": "", "d": result}
+            if self.path == "/asset/v1/token" and state.get("flat_asset_token"):
+                response = result
+            encoded = json.dumps(response).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
@@ -165,6 +168,8 @@ def test_account_quote_and_generation_bind_exact_request_without_leaking_key(api
     sent = next(x for x in api["calls"] if x["path"].endswith("openapi-quotes"))["body"]
     assert sent["source"] == 1 and sent["items"]["1"]["endpoint"]["path"] == lux.ROUTES["text-to-3d"]
     assert isinstance(sent["items"]["1"]["parameters"]["body"], str)
+    assert sent["items"]["1"]["parameters"]["pathParameters"] == "{}"
+    assert sent["items"]["1"]["parameters"]["queryParameters"] == "{}"
     body = {**params, "quote_id": quoted["quote_id"]}
     w = work(api, payload=body)
     api["outputs"] = [{"content": api["origin"] + "/files/chair.glb"}]
@@ -443,3 +448,24 @@ def test_allow_unquoted_opt_out_bypasses_the_gate(api):
 def test_default_builtins_lux3d_specs_do_not_allow_unquoted():
     assert "allow_unquoted" not in services.BUILTINS["lux3d"]
     assert "allow_unquoted" not in services.BUILTINS["lux3d-global"]
+
+
+def test_flat_asset_token_upload_reaches_real_quote_without_starting_generation(api):
+    api['flat_asset_token'] = True
+    image = api['root'] / 'reference.png'
+    image.write_bytes(api['image'])
+    result = commerce.quote(api['spec'], 'image-to-3d', {}, [str(image)])
+    assert result['quote']['estimatedCreditsTotal'] == 10
+    assert api['posts'] == 0
+    assert all(c['auth'] is None for c in api['calls'] if c['path'].startswith('/ous/'))
+
+
+def test_asset_token_compatibility_does_not_accept_explicit_errors_or_flat_generation(api, monkeypatch):
+    monkeypatch.setattr(lux, '_api_request', lambda *a: {'c': 'DENIED', 'd': {}, 'm': 'private'})
+    with pytest.raises(EditorError) as error:
+        upload.upload(api['spec'], str(api['root'] / 'services.json'))
+    assert 'DENIED' in str(error.value) and '{code}' not in str(error.value)
+    assert 'private' not in str(error.value)
+    monkeypatch.setattr(lux, '_api_request', lambda *a: {'taskId': 123})
+    with pytest.raises(EditorError):
+        lux.request(api['spec'], 'POST', lux.ROUTES['image-to-3d'], {})

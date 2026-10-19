@@ -3,6 +3,20 @@ import assert from 'node:assert/strict';
 import { ViewportFrame } from '../studio/web/viewport-frame.js';
 import { Flow, derivePlanFeedback } from '../studio/web/flow.js';
 import { recipeStepBaseTool } from '../studio/web/workspace.js';
+import * as workspace from '../studio/web/workspace.js';
+
+test('saved head-shell workflow stays in its task workspace, not unrelated print/edit views', () => {
+  const recipe = { id: 'wearable-head-shell', workspace: 'tasks' };
+  for (const mode of ['print', 'edit', 'motion', 'observe']) {
+    assert.equal(workspace.recipeVisibleInWorkspace(mode, recipe), false);
+  }
+  assert.equal(workspace.recipeVisibleInWorkspace('tasks', recipe), true);
+  assert.equal(workspace.recipeVisibleInWorkspace('tasks', recipe, { task: { id: 'cup' } }), false);
+  assert.equal(workspace.recipeVisibleInWorkspace('print', { id: 'image-to-print' }), true);
+  assert.equal(workspace.recipeVisibleInWorkspace('edit', { workspace: 'edit' }), true);
+  assert.equal(workspace.recipeVisibleInWorkspace('print', null), false);
+  assert.equal(workspace.recipeVisibleInWorkspace('tasks', null), true);
+});
 
 // A recipe step's `tool` may carry a `#action`/`#template`/`#operation` suffix
 // (recipes/README.md); every place that routes on it must compare the base tool

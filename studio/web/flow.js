@@ -334,7 +334,7 @@ export class Flow {
     document.getElementById("ctx-file").textContent = title;
     const meta = [];
     if (parts.length) meta.push(t("flow.ctx.partsCountShort", { count: parts.length }));
-    if (s.printer && s.printer.name) meta.push(String(s.printer.name).replace(/^Bambu Lab\s+/, ""));
+    if (s.printer && s.printer.name) meta.push(String(s.printer.display_name || s.printer.name).replace(/^Bambu Lab\s+/, ""));
     document.getElementById("ctx-meta").textContent = meta.join(" · ");
 
     const pill = document.getElementById("ready-pill");

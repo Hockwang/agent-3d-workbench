@@ -13,9 +13,10 @@ export const resultTimeLabel = task => resultDate(task.finished ?? task.created)
 export function primaryArtifact(artifacts = [], result = null) {
   return artifacts.find(a => a.name === result?.primary && /\.glb$/i.test(a.name)) ||
     artifacts.find(a => a.name === 'scene.glb') ||
-    artifacts.find(a => a.name === 'index.html') ||
     artifacts.find(a => !a.name.includes('/') && /\.glb$/i.test(a.name)) ||
+    artifacts.find(a => /^models\/.*\.glb$/i.test(a.name)) ||
     artifacts.find(a => /\.glb$/i.test(a.name)) ||
+    artifacts.find(a => a.name === 'index.html') ||
     artifacts.find(a => /\.(html|png|jpe?g|webp|json|svg)$/i.test(a.name));
 }
 
@@ -24,10 +25,10 @@ export function thumbnailArtifact(task) {
     task.artifacts?.find(a => /^(preview|render)\.(png|jpe?g|webp)$/i.test(a.name));
 }
 
-// A successful probe/report is not a model. Keep it in the full task history.
+// Include every delivered model, including observation copies and review parts.
+// Report-only jobs still live in task history because they have no GLB artifact.
 export function recentResults(tasks = []) {
-  return tasks.filter(task => task.status === 'completed' && task.category !== 'observation' &&
-    !['merge-review', 'a8-review'].includes(task.template) &&
+  return tasks.filter(task => task.status === 'completed' &&
     /\.glb$/i.test(primaryArtifact(task.artifacts, task.result)?.name || ''))
     .sort((a, b) => resultTime(b) - resultTime(a));
 }
@@ -51,9 +52,10 @@ export function resultGroups(tasks = []) {
 }
 
 export function resultIdentity(task, artifact = primaryArtifact(task.artifacts, task.result)) {
+  const pending = ['queued','running','cancelling','failed','cancelled','interrupted'].includes(task.status);
   return {
     title: displayLabel(task.result?.work_title || task.title || t('entry.untitled')),
     detail: displayLabel([task.result?.variant, task.result?.version, resultTimeLabel(task), artifact?.name].filter(Boolean).join(' · ')),
-    note: displayLabel(task.result?.note || t('entry.unreviewed')),
+    note: displayLabel(pending ? t(`tasks.status.${task.status}`) : task.result?.note || t('entry.unreviewed')),
   };
 }

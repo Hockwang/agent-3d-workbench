@@ -56,7 +56,9 @@ export function createPartChatUI(api) {
       actions.append(button(t('common.close'), () => dialog.close()));
       if (result.status === 'binding_failed') actions.append(button(t('partChat.retryBindButton'), () => create(object, revision, result.operation_id)));
       if (result.url) {
-        const link = document.createElement('a'); link.href = result.url; link.textContent = t('partChat.taskLinkText'); dialog.insertBefore(link, actions);
+        const link = document.createElement('a'); link.href = result.url; link.textContent = t('partChat.taskLinkText');
+        link.onclick = async event => { event.preventDefault(); try { await api.openPartChat(result.url); dialog.close(); } catch (e) { error(e); } };
+        dialog.insertBefore(link, actions);
         actions.append(button(bound ? t('partChat.openBranchButton') : t('partChat.viewCreatedTaskButton'), async () => {
           try { await api.openPartChat(result.url); dialog.close(); }
           catch (e) { const warning = document.createElement('p'); warning.textContent = e.message; dialog.insertBefore(warning, actions); }
