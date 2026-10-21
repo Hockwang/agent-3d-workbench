@@ -10,6 +10,12 @@ directory collaborate, and a new worktree is isolated.
 - The first time a new task created inside a Codex project calls Studio, it reads the real cwd via
   the official `thread/read`. A subdirectory inside a Git repo is attributed to the current worktree
   root; a plain directory uses its absolute path.
+- A new desktop chat may not have readable session metadata until its first message. In that
+  case the MCP App opens a preparation screen and retries only startup for the same task, at
+  two-second intervals for at most 15 attempts. If it remains unavailable, send a message in
+  that chat and click **Reconnect**. No project or editor is created before the exact task's
+  directory is verified; no other chat, process cwd or global workspace is used as a fallback.
+  Other errors remain errors, and browser-mode opens do not return a fabricated URL.
 - Plain tasks in the same directory connect to the same project, backend, and assets. After a model
   edit is committed, other open editor UIs sync roughly once a second; during a drag, only the local
   preview updates.
@@ -71,6 +77,25 @@ automatically generate Studio's merge baseline; to use Studio's `merge`, branch 
 `source_id` method above instead. There is currently no automatic rebase or geometry conflict merging.
 
 ## Verification
+
+`tests/test_codex_projects.py` covers unreadable new-chat metadata, genuine errors and refusing
+operations before binding. `tests/test_app_connection.mjs` covers automatic recovery, bounded
+retries, manual recovery, teardown, and preserving the requested mode/task and existing scene.
+
+2026-10-21 startup fix: 102 targeted Python tests, all 202 JavaScript tests, the UI build and
+targeted Ruff checks passed. A fresh stdio MCP process was checked against a real unreadable
+desktop draft: it returned the current preparation UI without creating a project or binding.
+The updated desktop panel also loaded an existing project and retained its 31 objects.
+New MCP processes use the fix; already running Python processes need a host restart to reload it.
+
+| Changed files | Purpose |
+| --- | --- |
+| `studio/shell/codex_projects.py`, `studio/shell/mcp_server.py`, `studio/shell/messages.py` | Recognize the two observed readiness failures; return a preparation App without bypassing project identity checks. |
+| `studio/app/main.js`, `studio/app/index.html`, `studio/app/style.css` | Render the preparation state, bound retries, and delay editor creation until the project is ready. |
+| `studio/web/locales/en.js`, `studio/web/locales/zh-CN.js` | Explain automatic recovery and the first-message/reconnect step. |
+| `tests/test_codex_projects.py`, `tests/test_app_connection.mjs` | Reproduce the failure and cover recovery, errors, teardown and identity isolation. |
+| `studio/app/dist/studio.html`, `studio/app/dist/delivery.html`, `studio/app/dist/motion-cli.cjs` | Rebuild the App and artifacts embedding the shared localization catalog. |
+| `docs/FOLDER_PROJECTS.md`, `docs/zh-CN/FOLDER_PROJECTS.md` | Record the behavior, host limitation and validation. |
 
 `tests/test_projects.py` covers concurrent connections, independent selection and undo, conflicts on
 the same part, restart recovery, an unchanged old source hash, scope not widening, isolation across

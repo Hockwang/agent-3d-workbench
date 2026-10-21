@@ -12,10 +12,33 @@ from __future__ import annotations
 
 from typing import Any
 
-from studio.shell.codex_bridge import CodexBridge, identity
+from studio.i18n import render
+from studio.shell.codex_bridge import BridgeError, CodexBridge, identity
+
+
+class ThreadNotReady(BridgeError):
+    code = "codex_projects.thread_not_ready"
+
+    def __init__(self):
+        super().__init__(render(self.code))
 
 
 def resolve_cwd(workspace_id: str) -> dict[str, Any]:
     """Read the named Codex thread; returns its raw `{"id": ..., "cwd": ...}`."""
     with CodexBridge(identity()) as bridge:
-        return bridge.read(workspace_id)
+        try:
+            return bridge.read(workspace_id)
+        except BridgeError as exc:
+            message = str(exc)
+            # A separate app-server cannot read an in-memory desktop draft yet.
+            # Match only the two observed readiness failures for this exact ID;
+            # permission, corrupt metadata and transport failures stay errors.
+            if message == f"thread not loaded: {workspace_id}" or (
+                message.startswith(
+                    "failed to read thread: thread-store internal error: failed to read session metadata "
+                )
+                and f"-{workspace_id}.jsonl: rollout at " in message
+                and message.endswith(f"-{workspace_id}.jsonl is empty")
+            ):
+                raise ThreadNotReady() from exc
+            raise

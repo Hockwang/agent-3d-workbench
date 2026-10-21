@@ -23,6 +23,11 @@
 #workspace-error { position: fixed; z-index: 1000; top: 12px; left: 12px; right: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 16px; background: #2c2022; color: #ffd5d7; border: 1px solid #70464c; border-radius: 9px; }
 #workspace-error span { flex: 1; overflow-wrap: anywhere; }
 #workspace-retry { flex: none; width: auto; margin: 0; }
+#workspace-startup { padding: 32px; text-align: center; color: var(--text-dim); background: var(--bg-app); }
+[data-presentation="workspace"] #workspace-startup { position: absolute; z-index: 10; inset: 0; display: grid; align-content: center; justify-items: center; }
+#workspace-startup h2 { color: var(--text); font-size: 20px; }
+#workspace-startup p { max-width: 440px; line-height: 1.7; }
+#startup-retry { width: auto; }
 #open-workspace { border: 0; border-radius: 7px; min-height: 34px; padding: 6px 12px; font: inherit; background: #82b5ff; color: #101a29; cursor: pointer; font-weight: 600; }
 #open-workspace:hover:not(:disabled) { background: #a8ceff; }
 @media (max-width: 360px) {

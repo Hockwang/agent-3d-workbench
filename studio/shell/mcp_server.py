@@ -40,6 +40,7 @@ import studio  # noqa: E402
 from studio.core import workspaces  # noqa: E402
 from studio.i18n import get_language, render, set_language  # noqa: E402
 from studio.shell import app_resources, part_chat, tools_schema  # noqa: E402
+from studio.shell.codex_projects import ThreadNotReady  # noqa: E402
 
 # 试切/导出可能耗时数分钟；SPEC.md §6 要求给足 30 分钟超时。
 HTTP_TIMEOUT_S = 1800.0
@@ -452,10 +453,12 @@ async def on_read_resource(ctx: Any, params: types.ReadResourceRequestParams) ->
                 )
             ]
         )
-    workspace_id = workspaces.resolve_id(_workspace_arguments(
-        {"workspace_id": urllib.parse.parse_qs(urllib.parse.urlsplit(uri).query).get("workspace", [None])[0]},
-        params.meta,
-    ))
+    workspace_id = workspaces.resolve_id(
+        _workspace_arguments(
+            {"workspace_id": urllib.parse.parse_qs(urllib.parse.urlsplit(uri).query).get("workspace", [None])[0]},
+            params.meta,
+        )
+    )
     if uri.split("?")[0] == "print-prep://catalog/shapes":
         info, _ = await asyncio.to_thread(_ensure_running, workspace_id)
         result = await asyncio.to_thread(_call_http, "GET", "/api/shapes", info["token"], info["url"])
@@ -570,11 +573,36 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
                 isError=not result.get("ok", False),
             )
         if name == "studio_open":
-            info, already_running = await asyncio.to_thread(_ensure_running, workspace_id)
             presentation = arguments.get("presentation")
             if presentation is None:
                 env_default = os.environ.get("PRINT_PREP_DEFAULT_PRESENTATION")
                 presentation = env_default if env_default in ("app", "browser") else "app"
+            try:
+                info, already_running = await asyncio.to_thread(_ensure_running, workspace_id)
+            except ThreadNotReady:
+                if presentation != "app":
+                    raise
+                # Render the launcher before the desktop draft has a readable
+                # rollout. It retries this read-only startup path, never guesses
+                # a folder or creates an isolated/global fallback project.
+                state = {
+                    "ok": True,
+                    "workspace_id": workspace_id,
+                    "workspace_mode": arguments.get("mode", "home"),
+                    "startup": {"status": "waiting_for_thread"},
+                }
+                if arguments.get("task_id"):
+                    state.update(focus_task_id=arguments["task_id"], workspace_mode="tasks")
+                bundle = app_resources.load_ui()
+                return types.CallToolResult(
+                    content=[types.TextContent(text=json.dumps(state, ensure_ascii=False))],
+                    structuredContent=state,
+                    _meta={
+                        **_app_meta(app_resources.workspace_ui_uri(workspace_id, bundle)),
+                        "openai/widgetSessionId": app_resources.widget_session_id("startup/" + workspace_id, bundle),
+                    },
+                    isError=False,
+                )
             if presentation == "browser":
                 query = {"workspace": workspace_id}
                 if arguments.get("mode"):
@@ -665,9 +693,7 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
                 if filename not in allowed:
                     raise ValueError(render("mcp_server.image_not_in_observation_list"))
                 item = next(a for a in result["task"]["artifacts"] if a["name"] == filename)
-                path, _ = await asyncio.to_thread(
-                    _task_store(info).artifact, result["task"]["id"], item["id"]
-                )
+                path, _ = await asyncio.to_thread(_task_store(info).artifact, result["task"]["id"], item["id"])
                 if path.stat().st_size > 12 * 1024 * 1024:
                     raise ValueError(render("mcp_server.observation_image_too_large"))
                 images.append(
@@ -699,7 +725,11 @@ async def on_call_tool(ctx: Any, params: types.CallToolRequestParams) -> types.C
         _log(f"studio_mcp tool {name!r} failed: {exc!r}")
         payload = {
             "ok": False,
-            "error": {"code": "tool_exception", "message": str(exc), "params": getattr(exc, "params", {})},
+            "error": {
+                "code": getattr(exc, "code", "tool_exception"),
+                "message": str(exc),
+                "params": getattr(exc, "params", {}),
+            },
         }
         return types.CallToolResult(
             content=[types.TextContent(text=json.dumps(payload, ensure_ascii=False))], isError=True

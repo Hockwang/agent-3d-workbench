@@ -224,6 +224,10 @@ register(
             "zh-CN": "Codex 接入超时；请检查创建状态",
             "en": "Codex bridge timed out; check the creation status",
         },
+        "codex_projects.thread_not_ready": {
+            "zh-CN": "新聊天尚未初始化，请先在聊天中发送一条消息，再重新连接工作台。",
+            "en": "This new chat is not initialized yet. Send a message in the chat, then reconnect the workbench.",
+        },
         # -------------------------------------------------------- part_chat.py
         "part_chat.bad_action": {
             "zh-CN": "无效的聊天分支操作",

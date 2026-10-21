@@ -18,6 +18,8 @@ let connected = false, closed = false, connection = null, poll = null, state = n
 let workspace = null, presentation = "card", geometryQueue = Promise.resolve();
 let requestedEntry = browserEntry();
 let presentationKey = "", cardFrame = null, cardSize = "";
+let startupTimer = null, startupRequest = null, startupAttempts = 0;
+const STARTUP_ATTEMPTS = 15;
 function reportCardSize() {
   if (!connected || closed || presentation !== "card" || cardFrame !== null) return;
   cardFrame = requestAnimationFrame(() => {
@@ -66,7 +68,7 @@ function loadGeometry(part) {
   return promise;
 }
 function ensureWorkspace() {
-  if (workspace || !api.workspaceId) return;
+  if (workspace || !api.workspaceId || !Array.isArray(state?.parts)) return;
   workspace = createWorkspace(api, {
     loadGeometry, onState: updateSummary,
     onSelectionContext: (snapshot) => selectionContext.update(snapshot),
@@ -104,8 +106,58 @@ function bindWorkspace(id) {
   if (!id) return;
   const wasBound = !!api.workspaceId;
   api.bindWorkspace(id);
-  if (connected && presentation === 'workspace') ensureWorkspace();
   if (!wasBound && connected) status(t("main.status.taskBoundLoading"));
+}
+
+function waitForThread() {
+  // A replayed pending response must never replace an already restored scene.
+  if (state || closed) return;
+  $("workspace-startup").hidden = false;
+  const message = t(startupAttempts < STARTUP_ATTEMPTS ? 'main.status.threadInitializing' : 'main.status.threadNeedsMessage');
+  $("startup-message").textContent = message;
+  status(message);
+  clearTimeout(startupTimer); startupTimer = null;
+  if (connected && !document.hidden && startupAttempts < STARTUP_ATTEMPTS) {
+    startupTimer = setTimeout(() => { startupTimer = null; return initializeWorkspace(); }, 2000);
+  }
+}
+
+function acceptOpenResult(result) {
+  if (closed) return;
+  const next = payload(result);
+  bindWorkspace(next.workspace_id);
+  const nonce = result._meta?.["studio/uiNonce"];
+  if (typeof nonce === "string") api.setUiNonce(nonce);
+  if (next.startup?.status === 'waiting_for_thread') { waitForThread(); return; }
+  if (!Array.isArray(next.parts)) return;
+  // Only an explicitly requested destination bypasses the model chooser.
+  next.workspace_mode = requestedEntry.taskId ? 'tasks' : requestedEntry.mode;
+  if (requestedEntry.taskId) next.focus_task_id = requestedEntry.taskId;
+  clearTimeout(startupTimer); startupTimer = null;
+  $("workspace-startup").hidden = true;
+  updateSummary(next);
+  if (connected && presentation === 'workspace') ensureWorkspace();
+  workspace?.setState(next);
+  workspace?.setActive(connected && presentation === 'workspace' && !document.hidden);
+  status(t("main.status.workspaceSynced"));
+}
+
+function initializeWorkspace() {
+  if (closed || !connected || !api.workspaceId) return Promise.resolve();
+  if (startupRequest) return startupRequest;
+  clearTimeout(startupTimer); startupTimer = null;
+  startupAttempts++;
+  const args = {workspace_id: api.workspaceId, mode: requestedEntry.mode};
+  if (requestedEntry.taskId) args.task_id = requestedEntry.taskId;
+  startupRequest = app.callServerTool({name: 'studio_open', arguments: args}, {timeout: 30_000})
+    .then(result => { if (connected) acceptOpenResult(result); })
+    .catch(error => {
+      if (closed || !connected) return;
+      $("workspace-startup").hidden = true;
+      status(error.message, true);
+    })
+    .finally(() => { startupRequest = null; });
+  return startupRequest;
 }
 // Global/thread entrypoints can send tool input before a result is available.
 // Bind only host-supplied identity; never guess a workspace from global state.
@@ -113,6 +165,7 @@ app.ontoolinput = ({ arguments: args }) => {
   try {
     requestedEntry = browserEntry(new URLSearchParams({ mode: args?.mode || '', task: args?.task_id || '' }).toString());
     bindWorkspace(args?.workspace_id);
+    if (connected && !state) void initializeWorkspace();
   }
   catch (error) { status(error.message, true); }
 };
@@ -128,28 +181,26 @@ app.ontoolresult = (result) => {
     // replaying an old studio_open result), api.js's write()/partChat() self-heal
     // on human_required by re-minting the nonce once; the retry button below
     // also re-mints it proactively on every reconnect.
-    const nonce = result._meta?.["studio/uiNonce"];
-    if (typeof nonce === "string") api.setUiNonce(nonce);
-    const next = payload(result);
-    // A long-lived MCP process may still return the former implicit "edit"
-    // default. Only an explicit launch destination should bypass the chooser.
-    if (next.workspace_mode) next.workspace_mode = requestedEntry.taskId ? 'tasks' : requestedEntry.mode;
-    bindWorkspace(next.workspace_id);
-    if (Array.isArray(next.parts)) { updateSummary(next); workspace?.setState(next); status(t("main.status.workspaceSynced")); }
+    acceptOpenResult(result);
   } catch (error) { status(error.message, true); }
 };
 app.onhostcontextchanged = () => applyHostContext(app.getHostContext());
-document.addEventListener("visibilitychange", () => workspace?.setActive(connected && presentation === "workspace" && !document.hidden));
-app.onteardown = async () => { closed = true; clearTimeout(poll); cardObserver.disconnect(); cancelAnimationFrame(cardFrame); workspace?.dispose(); await selectionContext.dispose(); return {}; };
+document.addEventListener("visibilitychange", () => {
+  workspace?.setActive(connected && presentation === "workspace" && !document.hidden);
+  if (document.hidden) { clearTimeout(startupTimer); startupTimer = null; }
+  else if (!state && !$("workspace-startup").hidden) waitForThread();
+});
+app.onteardown = async () => { closed = true; clearTimeout(poll); clearTimeout(startupTimer); cardObserver.disconnect(); cancelAnimationFrame(cardFrame); workspace?.dispose(); await selectionContext.dispose(); return {}; };
 app.onclose = () => {
   connected = false;
+  clearTimeout(startupTimer); startupTimer = null;
   presentationKey = '';
   workspace?.setActive(false);
   if (!closed) status(t("main.status.hostDisconnected"), true);
 };
 async function schedule() {
   if (closed) return;
-  if (connected && api.workspaceId && !document.hidden && presentation === "card") {
+  if (connected && api.workspaceId && state && !document.hidden && presentation === "card") {
     try { updateSummary(await api.getState()); status(t("main.status.workspaceSynced")); }
     catch (error) { status(error.message, true); }
   }
@@ -170,8 +221,7 @@ function connectHost() {
 connectHost().then(async () => {
   if (closed) return;
   if (api.workspaceId) {
-    if (!workspace) updateSummary(await api.getState());
-    status(t("main.status.workspaceSynced"));
+    await initializeWorkspace();
   } else status(t("main.status.legacyEntryUnbound"), true);
   if (!closed) poll = setTimeout(schedule, 5000);
 }).catch((error) => status(t("main.status.connectionIncomplete", { detail: error.message }), true));
@@ -182,6 +232,11 @@ $("workspace-retry").onclick = async () => {
     await connectHost();
     if (closed) return;
     if (!api.workspaceId) { status(t("main.status.reconnectedWaitingBind"), true); return; }
+    if (!state) {
+      startupAttempts = 0; await initializeWorkspace();
+      if (!closed && !poll) poll = setTimeout(schedule, 5000);
+      return;
+    }
     // Re-mint the nonce on every reconnect: a stale one otherwise only surfaces
     // later, as a failed write. Best-effort — if this itself fails, the state
     // resync below still runs, and write()/partChat() retry once on their own.
@@ -192,5 +247,6 @@ $("workspace-retry").onclick = async () => {
   } catch (error) { status(t("main.status.reconnectFailed", { detail: error.message }), true); }
   finally { $("workspace-retry").disabled = false; }
 };
+$("startup-retry").onclick = () => $("workspace-retry").onclick();
 window.addEventListener('error', event => status(event.message || t("main.status.uiLoadFailed"), true));
 window.addEventListener('unhandledrejection', event => status(event.reason?.message || t("main.status.connectionFailedGeneric"), true));

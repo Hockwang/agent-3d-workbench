@@ -7,6 +7,7 @@
 ## 使用
 
 - 在 Codex 项目中创建的新任务，第一次调用 Studio 时通过官方 `thread/read` 读取真实 cwd。Git 仓内子目录归到当前 worktree 根；普通目录使用其绝对路径。
+- 桌面新聊天在发送首条消息前可能还没有可读取的会话元数据。此时 MCP App 显示准备页面，只针对同一任务每隔两秒重试启动，最多 15 次；仍未就绪时，先在该聊天发送一条消息，再点击「重新连接」。核实准确任务的目录前不创建工程或编辑器，不使用其他聊天、进程 cwd 或全局工程兜底。其他错误仍按错误处理，浏览器模式不返回虚构 URL。
 - 同一目录的普通任务连接同一工程、后台与资产。模型编辑提交后，其他打开的编辑界面约每秒同步；拖动过程只本地预览。
 - 每个任务仍传自己的 `workspace_id=CODEX_THREAD_ID`。选择、撤销/重做和零件 scope 独立；相机属于当前页面。不能借用别人的任务 ID 绕过范围或写锁。
 - 一个零件同时只有一个编辑者持有租约。不同零件可并行修改；旧页面迟到的续租不能重新取得已释放的零件。修改仍需 `expected_versions` 与 `expected_revision`。
@@ -40,6 +41,19 @@
 直接用 Git 复制已有 `.3dstudio` 会得到独立场景，但不自动生成 Studio 的合入基线；要用 Studio `merge`，应使用上述显式 source_id 分支。当前没有自动 rebase 或几何冲突融合。
 
 ## 验证
+
+`tests/test_codex_projects.py` 覆盖新聊天元数据未就绪、真实错误与绑定前拒绝操作；`tests/test_app_connection.mjs` 覆盖自动恢复、有限重试、手动恢复、关闭清理，以及启动目标和原场景保留。
+
+2026-10-21 启动修复：102 项相关 Python 测试、全部 202 项 JavaScript 测试、界面构建与相关 Ruff 检查通过。新启动的 stdio MCP 进程针对真实不可读的桌面空聊天，返回当前准备页面，未创建工程或绑定。更新后的实际桌面面板正常加载既有项目，保留 31 个对象。新 MCP 进程使用修复；已运行的 Python 进程需重启宿主后重新加载。
+
+| 改动文件 | 内容与原因 |
+| --- | --- |
+| `studio/shell/codex_projects.py`、`studio/shell/mcp_server.py`、`studio/shell/messages.py` | 识别实测两类未就绪错误，返回准备页面，保留工程身份检查。 |
+| `studio/app/main.js`、`studio/app/index.html`、`studio/app/style.css` | 显示准备状态、有限重试；工程就绪后才创建编辑器。 |
+| `studio/web/locales/en.js`、`studio/web/locales/zh-CN.js` | 提供自动恢复及首条消息／重连提示。 |
+| `tests/test_codex_projects.py`、`tests/test_app_connection.mjs` | 复现失败，覆盖恢复、真实错误、关闭清理与身份隔离。 |
+| `studio/app/dist/studio.html`、`studio/app/dist/delivery.html`、`studio/app/dist/motion-cli.cjs` | 重建界面及内嵌共享文案的产物。 |
+| `docs/FOLDER_PROJECTS.md`、`docs/zh-CN/FOLDER_PROJECTS.md` | 记录行为、宿主限制与验证结果。 |
 
 `tests/test_projects.py` 覆盖并发连接、独立选区与撤销、同件冲突、重启恢复、旧源哈希不变、scope 不扩大、目录复制隔离、从工程 ID 分支合入与软链接拒绝。`tests/test_part_chat.py` 覆盖 Git 子目录中的聊天仍在原 cwd fork，并加入项目根的零件范围。
 

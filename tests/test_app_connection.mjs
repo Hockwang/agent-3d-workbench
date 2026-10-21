@@ -10,8 +10,9 @@ import {createSelectionContextSync} from '../studio/app/selection-context.js';
 
 const main=(await readFile(new URL('../studio/app/main.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function fixture({workspaceId='task-a',connect,modelContext}={}) {
-  const nodes=new Map(),calls=[],workspaces=[],contexts=[];
+function fixture({workspaceId='task-a',connect,modelContext,toolResult}={}) {
+  const nodes=new Map(),calls=[],workspaces=[],contexts=[],timers=new Map();
+  let timerId=0;
   const node=id=>{
     if(!nodes.has(id))nodes.set(id,{dataset:{workspaceId},hidden:true,disabled:false,textContent:'',
       classList:{toggle(){}},style:{setProperty(){}},querySelector:()=>node(id+' span')});
@@ -25,6 +26,7 @@ function fixture({workspaceId='task-a',connect,modelContext}={}) {
     getHostContext(){return {displayMode:'fullscreen',availableDisplayModes:['inline','fullscreen']};}
     async callServerTool(request){
       calls.push(request);
+      if(toolResult)return await toolResult(request,calls.length);
       if(request.name==='studio_open')return {_meta:{'studio/uiNonce':`nonce-${attempts}`},structuredContent:{ok:true,parts:[],workspace_id:request.arguments.workspace_id,workbench:{objects:[],selection:[]}}};
       return {structuredContent:{ok:true,parts:[],workspace_id:request.arguments.workspace_id,workbench:{objects:[],selection:[]}}};
     }
@@ -34,10 +36,62 @@ function fixture({workspaceId='task-a',connect,modelContext}={}) {
     createSelectionContextSync,
     createWorkspace(api,options){const item={api,options,ready:Promise.resolve(),setState(value){this.state=value;},setActive(value){this.active=value;},dispose(){}};workspaces.push(item);return item;},
     document:{getElementById:node,addEventListener(){},hidden:false},window:{addEventListener(){},innerWidth:1000},
-    ResizeObserver:class {observe(){}disconnect(){}},requestAnimationFrame(){return 1;},cancelAnimationFrame(){},setTimeout(){return 1;},clearTimeout(){},
+    ResizeObserver:class {observe(){}disconnect(){}},requestAnimationFrame(){return 1;},cancelAnimationFrame(){},
+    setTimeout(fn,ms){timers.set(++timerId,{fn,ms});return timerId;},clearTimeout(id){timers.delete(id);},
   });
-  return {node,calls,workspaces,contexts,get app(){return app;},get attempts(){return attempts;}};
+  return {node,calls,workspaces,contexts,timers,get app(){return app;},get attempts(){return attempts;},
+    async advanceStartup(){const entry=[...timers].find(([,timer])=>timer.ms===2000);if(!entry)return false;
+      timers.delete(entry[0]);await entry[1].fn();await tick();return true;}};
 }
+
+const pendingResult=()=>({structuredContent:{ok:true,workspace_id:'task-a',startup:{status:'waiting_for_thread'}}});
+const readyResult=()=>({_meta:{'studio/uiNonce':'ready-nonce'},structuredContent:{ok:true,parts:[],workspace_id:'task-a',
+  workbench:{objects:[{id:'saved'}],selection:[]}}});
+
+test('draft startup stays in the launcher then automatically restores the requested task',async()=>{
+  const f=fixture({toolResult:async(_request,n)=>n<3?pendingResult():readyResult()});
+  f.app.ontoolinput({arguments:{workspace_id:'task-a',task_id:'chosen'}});
+  await tick();
+  assert.equal(f.workspaces.length,0,'no editor or state polling before the project is ready');
+  assert.equal(f.node('workspace-startup').hidden,false);
+  assert.equal(f.node('workspace-error').hidden,true);
+  await f.advanceStartup();await f.advanceStartup();
+  assert.equal(f.workspaces.length,1);
+  assert.equal(f.node('workspace-startup').hidden,true);
+  assert.equal(f.workspaces[0].state.workbench.objects[0].id,'saved');
+  assert.equal(f.workspaces[0].state.focus_task_id,'chosen');
+  assert.ok(f.calls.every(c=>c.name==='studio_open'&&c.arguments.workspace_id==='task-a'&&c.arguments.task_id==='chosen'));
+});
+
+test('draft retries are bounded and a manual retry starts a new attempt',async()=>{
+  let ready=false;
+  const f=fixture({toolResult:async()=>ready?readyResult():pendingResult()});await tick();
+  for(let n=0;n<30;n++)await f.advanceStartup();
+  assert.equal(f.calls.length,15);
+  assert.equal(f.workspaces.length,0);
+  assert.match(f.node('startup-message').textContent,/发送一条消息/);
+  assert.equal(await f.advanceStartup(),false);
+  ready=true;await f.node('startup-retry').onclick();await tick();
+  assert.equal(f.workspaces.length,1);
+  assert.equal(f.node('workspace-startup').hidden,true);
+});
+
+test('draft retry is cancelled on teardown and an in-flight result cannot create an editor',async()=>{
+  let release;
+  const f=fixture({toolResult:()=>new Promise(r=>{release=r;})});await tick();
+  await f.app.onteardown();release(readyResult());await tick();
+  assert.equal(f.workspaces.length,0);
+  assert.equal(f.timers.size,0);
+});
+
+test('real startup failures stay visible and do not retry automatically',async()=>{
+  const f=fixture({toolResult:async()=>({isError:true,structuredContent:{ok:false,error:{code:'tool_exception',message:'permission denied'}}})});
+  await tick();
+  assert.equal(f.workspaces.length,0);
+  assert.equal(f.node('workspace-error').hidden,false);
+  assert.match(f.node('workspace-error span').textContent,/permission denied/);
+  assert.equal(await f.advanceStartup(),false);
+});
 
 test('native startup ignores legacy implicit edit mode but preserves explicit destinations',async()=>{
   const f=fixture(); await tick();
@@ -93,7 +147,7 @@ test('retry proactively refreshes the nonce via studio_open, and the fresh nonce
   const f=fixture({connect:async n=>{if(n===1)throw Error('host initialization unavailable');}});
   await tick();
   await f.node('workspace-retry').onclick();await tick();
-  assert.deepEqual(f.calls.map(c=>c.name),['studio_open','studio_get_state']);
+  assert.deepEqual(f.calls.map(c=>c.name),['studio_open']);
   assert.equal(f.calls[0].arguments.workspace_id,'task-a');
   await f.workspaces[0].api.select(['body']);
   const write=f.calls.find(c=>c.name==='studio_ui_action');
